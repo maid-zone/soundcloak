@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -24,6 +25,8 @@ type cached[T any] struct {
 	Value   T
 	Expires time.Time
 }
+
+var httpc = fasthttp.Client{Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial}
 
 var usersCache = map[string]cached[User]{}
 var tracksCache = map[string]cached[Track]{}
@@ -114,6 +117,21 @@ func GetClientID() (string, error) {
 	return "", ErrIDNotFound
 }
 
+func DoWithRetry(req *fasthttp.Request, resp *fasthttp.Response) (err error) {
+	for i := 0; i < 5; i++ {
+		err = httpc.DoTimeout(req, resp, time.Second)
+		if err == nil {
+			return nil
+		}
+
+		if !os.IsTimeout(err) && err != fasthttp.ErrTimeout {
+			return
+		}
+	}
+
+	return
+}
+
 func Resolve(path string, out any) error {
 	cid, err := GetClientID()
 	if err != nil {
@@ -130,7 +148,7 @@ func Resolve(path string, out any) error {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = fasthttp.Do(req, resp)
+	err = DoWithRetry(req, resp)
 	if err != nil {
 		return err
 	}
@@ -207,7 +225,7 @@ func (p *Paginated[T]) Proceed() error {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = fasthttp.Do(req, resp)
+	err = DoWithRetry(req, resp)
 	if err != nil {
 		return err
 	}
@@ -258,7 +276,7 @@ func (t Track) GetStream() (string, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = fasthttp.Do(req, resp)
+	err = DoWithRetry(req, resp)
 	if err != nil {
 		return "", err
 	}
