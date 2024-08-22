@@ -12,12 +12,12 @@ templ Track(t sc.Track, stream string) {
     <script>
         var audio = document.getElementById('track');
         var audioSrc = audio.getAttribute('data-stream');
-        if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-            audio.src = audioSrc;
-        } else if (Hls.isSupported()) {
+        if (Hls.isSupported()) {
             var hls = new Hls();
             hls.loadSource(audioSrc);
             hls.attachMedia(audio);
+        } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+            audio.src = audioSrc;
         } else {
             alert('hls not supported');
         }
