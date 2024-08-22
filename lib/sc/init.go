@@ -26,7 +26,13 @@ type cached[T any] struct {
 	Expires time.Time
 }
 
-var httpc = fasthttp.Client{Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial}
+var httpc = fasthttp.HostClient{
+	Addr:          "api-v2.soundcloud.com:443",
+	IsTLS:         true,
+	DialDualStack: true,
+	Dial:          (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	//MaxIdleConnDuration: 1<<63 - 1,
+}
 
 var usersCache = map[string]cached[User]{}
 var tracksCache = map[string]cached[Track]{}
@@ -119,7 +125,7 @@ func GetClientID() (string, error) {
 
 func DoWithRetry(req *fasthttp.Request, resp *fasthttp.Response) (err error) {
 	for i := 0; i < 5; i++ {
-		err = httpc.DoTimeout(req, resp, time.Second)
+		err = httpc.Do(req, resp)
 		if err == nil {
 			return nil
 		}

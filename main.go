@@ -41,17 +41,21 @@ func main() {
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {
+		//h := time.Now()
 		usr, err := sc.GetUser(c.Params("user"))
 		if err != nil {
 			fmt.Printf("error getting %s: %s\n", c.Params("user"), err)
 			return c.SendStatus(404)
 		}
+		//fmt.Println("getuser", time.Since(h))
 
+		//h = time.Now()
 		p, err := usr.GetTracks(c.Query("pagination", "?limit=20"))
 		if err != nil {
 			fmt.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
 			return c.SendStatus(404)
 		}
+		//fmt.Println("gettracks", time.Since(h))
 
 		c.Set("Content-Type", "text/html")
 		return templates.Base(usr.Username, templates.User(usr, p)).Render(context.Background(), c)

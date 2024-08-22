@@ -17,7 +17,7 @@ const UserTTL = 5 * time.Minute
 const TrackTTL = 5 * time.Minute
 
 // default fasthttp one was causing connections to be stuck? todo make it cycle browser useragents or just choose random at startup
-const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"
+const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.3"
 
 // time-to-live for dns cache
 const DNSCacheTTL = 10 * time.Minute
