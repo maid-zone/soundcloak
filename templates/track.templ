@@ -7,17 +7,17 @@ templ Track(t sc.Track, stream string) {
     
     <h1>{t.Title}</h1>
 
-    <video id="track" data-stream={stream} controls style="width: 50rem; height: 2.5rem;"></video>
+    <audio id="track" data-stream={stream} controls></audio>
 
     <script>
-        var video = document.getElementById('track');
-        var videoSrc = video.getAttribute('data-stream');
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = videoSrc;
+        var audio = document.getElementById('track');
+        var audioSrc = audio.getAttribute('data-stream');
+        if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+            audio.src = audioSrc;
         } else if (Hls.isSupported()) {
             var hls = new Hls();
-            hls.loadSource(videoSrc);
-            hls.attachMedia(video);
+            hls.loadSource(audioSrc);
+            hls.attachMedia(audio);
         } else {
             alert('hls not supported');
         }
