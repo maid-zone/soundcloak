@@ -1,0 +1,5 @@
+node_modules
+main
+package-lock.json
+*_templ.go
+fly.toml

@@ -1,0 +1,41 @@
+package templates
+
+import (
+    "github.com/maid-zone/soundcloak/lib/sc"
+    "strconv"
+	"strings"
+    "net/url"
+)
+
+templ User(u sc.User, p *sc.Paginated[sc.Track]) {
+    <div>
+        if u.Avatar != "" {
+            <img src={u.Avatar}>
+        }
+
+        <h1>{u.Username}</h1>
+        if u.FullName != "" {
+            <h2>{u.FullName}</h2>
+        }
+    </div>
+
+    <div>
+        <h2>{strconv.FormatInt(u.Followers, 10)} followers</h2>
+        <h2>{strconv.FormatInt(u.Following, 10)} following</h2>
+        <h2>{strconv.FormatInt(u.Tracks, 10)} tracks</h2>
+    </div>
+
+    if len(p.Collection) != 0 {
+        <div>
+            for _, track := range p.Collection {
+                <div>
+                    <h1><a href={templ.URL("/" + track.Author.Permalink + "/" + track.Permalink)}>{track.Title}</a></h1>
+                </div>
+            }
+        </div>
+
+        <a href={templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1]))}>more tracks</a>
+    } else {
+        <h1>no mroe tracks</h1>
+    }
+}

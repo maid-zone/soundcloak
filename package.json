@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "hls.js": "^1.5.15"
+  }
+}
