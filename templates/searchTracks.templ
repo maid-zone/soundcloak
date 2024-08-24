@@ -1,0 +1,9 @@
+package templates
+
+import "github.com/maid-zone/soundcloak/lib/sc"
+
+templ SearchTracks(p *sc.Paginated[sc.Track]) {
+    for _, track := range p.Collection {
+        <h1>{track.Title}</h1>
+    }
+}

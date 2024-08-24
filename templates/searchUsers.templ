@@ -1,0 +1,9 @@
+package templates
+
+import "github.com/maid-zone/soundcloak/lib/sc"
+
+templ SearchUsers(p *sc.Paginated[sc.User]) {
+    for _, user := range p.Collection {
+        <h1>{user.Username}</h1>
+    }
+}

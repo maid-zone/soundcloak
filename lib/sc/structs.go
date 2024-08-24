@@ -73,6 +73,7 @@ type Track struct {
 
 type Paginated[T any] struct {
 	Collection []T    `json:"collection"`
+	Total      int    `json:"total_results"`
 	Next       string `json:"next_href"`
 }
 

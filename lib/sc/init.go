@@ -36,6 +36,8 @@ var httpc = fasthttp.HostClient{
 
 var usersCache = map[string]cached[User]{}
 var tracksCache = map[string]cached[Track]{}
+var userSearchCache = map[string]cached[Paginated[User]]{}
+var trackSearchCache = map[string]cached[Paginated[Track]]{}
 
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
 var scriptsRegex = regexp.MustCompile(`(?m)^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`)
@@ -307,4 +309,34 @@ func (t Track) GetStream() (string, error) {
 	}
 
 	return s.URL, nil
+}
+
+func SearchTracks(args string) (*Paginated[Track], error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	p := Paginated[Track]{Next: "https://api-v2.soundcloud.com/search/tracks" + args + "&client_id=" + cid}
+	err = p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+func SearchUsers(args string) (*Paginated[User], error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	p := Paginated[User]{Next: "https://api-v2.soundcloud.com/search/users" + args + "&client_id=" + cid}
+	err = p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
 }

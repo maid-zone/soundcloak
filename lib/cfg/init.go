@@ -22,4 +22,7 @@ const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 // time-to-live for dns cache
 const DNSCacheTTL = 10 * time.Minute
 
+// run soundcloak on this address (localhost:4664 by default)
+const Addr = ":4664"
+
 var JSON = jsoniter.ConfigFastest
