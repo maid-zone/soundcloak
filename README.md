@@ -39,6 +39,7 @@ go get
 You can change some values in `lib/cfg/init.go` if you want. Keep in mind that you need to rebuild the binary each time you want to update the config.
 
 7. Generate code from templates & build binary:
+
 *You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
 ```sh
 export PATH=${PATH}:`go env GOPATH`/bin
