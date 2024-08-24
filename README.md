@@ -54,4 +54,4 @@ templ generate && go build main.go
 ./main
 ```
 
-This will run soundcloak on localhost, port 4664.
+This will run soundcloak on localhost, port 4664. (by default)
