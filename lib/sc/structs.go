@@ -80,3 +80,18 @@ type Paginated[T any] struct {
 type Stream struct {
 	URL string `json:"url"`
 }
+
+type Playlist struct {
+	Artwork      string  `json:"artwork_url"`
+	CreatedAt    string  `json:"created_at"`
+	Description  string  `json:"description"`
+	Kind         string  `json:"kind"` // should always be "playlist"!
+	LastModified string  `json:"last_modified"`
+	ReleaseDate  string  `json:"release_date"`
+	TagList      string  `json:"tag_list"`
+	Title        string  `json:"title"`
+	Type         string  `json:"set_type"`
+	Album        bool    `json:"is_album"`
+	Author       User    `json:"user"`
+	Tracks       []Track `json:"tracks"`
+}

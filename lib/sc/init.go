@@ -36,8 +36,7 @@ var httpc = fasthttp.HostClient{
 
 var usersCache = map[string]cached[User]{}
 var tracksCache = map[string]cached[Track]{}
-var userSearchCache = map[string]cached[Paginated[User]]{}
-var trackSearchCache = map[string]cached[Paginated[Track]]{}
+var playlistsCache = map[string]cached[Playlist]{}
 
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
 var scriptsRegex = regexp.MustCompile(`(?m)^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`)
@@ -339,4 +338,40 @@ func SearchUsers(args string) (*Paginated[User], error) {
 	}
 
 	return &p, nil
+}
+
+func SearchPlaylists(args string) (*Paginated[Playlist], error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	p := Paginated[Playlist]{Next: "https://api-v2.soundcloud.com/search/playlists" + args + "&client_id=" + cid}
+	err = p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+func GetPlaylist(permalink string) (Playlist, error) {
+	if cell, ok := playlistsCache[permalink]; ok && cell.Expires.After(time.Now()) {
+		return cell.Value, nil
+	}
+
+	var u Playlist
+	err := Resolve(permalink, &u)
+	if err != nil {
+		return u, err
+	}
+
+	if u.Kind != "playlist" {
+		fmt.Println(u.Kind)
+		return u, ErrKindNotCorrect
+	}
+
+	playlistsCache[permalink] = cached[Playlist]{Value: u, Expires: time.Now().Add(cfg.PlaylistTTL)}
+
+	return u, nil
 }

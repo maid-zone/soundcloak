@@ -53,6 +53,16 @@ func main() {
 
 			c.Set("Content-Type", "text/html")
 			return templates.Base("users: "+q, templates.SearchUsers(p)).Render(context.Background(), c)
+
+		case "playlists":
+			p, err := sc.SearchPlaylists("?q=" + url.QueryEscape(q))
+			if err != nil {
+				fmt.Printf("error getting users for %s: %s\n", q, err)
+				return err
+			}
+
+			c.Set("Content-Type", "text/html")
+			return templates.Base("playlists: "+q, templates.SearchPlaylists(p)).Render(context.Background(), c)
 		}
 
 		return c.SendStatus(404)
@@ -93,6 +103,17 @@ func main() {
 
 		c.Set("Content-Type", "text/html")
 		return templates.Base(usr.Username, templates.User(usr, p)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
+		playlist, err := sc.GetPlaylist(c.Params("user") + "/sets/" + c.Params("playlist"))
+		if err != nil {
+			fmt.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

@@ -1,0 +1,10 @@
+package templates
+
+import "github.com/maid-zone/soundcloak/lib/sc"
+
+
+templ SearchPlaylists(p *sc.Paginated[sc.Playlist]) {
+    for _, playlist := range p.Collection {
+        <h1>{playlist.Title}</h1>
+    }
+}
