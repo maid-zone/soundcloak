@@ -9,13 +9,13 @@ type User struct {
 	FullName     string `json:"full_name"`
 	Kind         string `json:"kind"` // should always be "user"!
 	LastModified string `json:"last_modified"`
-	Liked        int    `json:"likes_count"`
-	Permalink    string `json:"permalink"`
-	Playlists    int    `json:"playlist_count"`
-	Tracks       int64  `json:"track_count"`
-	URN          string `json:"urn"`
-	Username     string `json:"username"`
-	Verified     bool   `json:"verified"`
+	//Liked        int    `json:"likes_count"`
+	Permalink string `json:"permalink"`
+	Playlists int64  `json:"playlist_count"`
+	Tracks    int64  `json:"track_count"`
+	URN       string `json:"urn"`
+	Username  string `json:"username"`
+	Verified  bool   `json:"verified"`
 
 	ID string `json:"-"`
 }

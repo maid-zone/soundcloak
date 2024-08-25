@@ -19,10 +19,19 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
         }
     </div>
 
+    <p>{u.Description}</p>
+
     <div>
         <h2>{strconv.FormatInt(u.Followers, 10)} followers</h2>
         <h2>{strconv.FormatInt(u.Following, 10)} following</h2>
         <h2>{strconv.FormatInt(u.Tracks, 10)} tracks</h2>
+        <h2>{strconv.FormatInt(u.Playlists, 10)} playlists</h2>
+        <br>
+        <h2>Created: {u.CreatedAt}</h2>
+        <h2>Last modified: {u.LastModified}</h2>
+        if u.Verified {
+            <h2>Verified</h2>
+        }
     </div>
 
     if len(p.Collection) != 0 {
@@ -36,6 +45,6 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 
         <a href={templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1]))}>more tracks</a>
     } else {
-        <h1>no mroe tracks</h1>
+        <h1>no more tracks</h1>
     }
 }
