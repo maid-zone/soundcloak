@@ -1,6 +1,6 @@
 package templates
 
-templ Base(title string, content templ.Component) {
+templ Base(title string, content templ.Component, head templ.Component) {
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -10,6 +10,10 @@ templ Base(title string, content templ.Component) {
             <title>{ title } • soundcloak</title>
         } else {
             <title>soundcloak</title>
+        }
+
+        if head != nil {
+            @head
         }
     </head>
     <body>

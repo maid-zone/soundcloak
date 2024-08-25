@@ -2,9 +2,15 @@ package templates
 
 import "github.com/maid-zone/soundcloak/lib/sc"
 
-templ Track(t sc.Track, stream string) {
+templ TrackEmbed(t sc.Track) {
+    <meta name="og:site_name" content={t.Author.Username + " ~ soundcloak"}>
+    <meta name="og:title" content={t.Title}>
+    <meta name="og:description" content={t.FormatDescription()}>
+    <meta name="og:image" content={t.Artwork}>
     <script src="/js/hls.js/hls.light.js"></script>
-    
+}
+
+templ Track(t sc.Track, stream string) {
     <h1>{t.Title}</h1>
 
     <audio id="track" data-stream={stream} controls></audio>

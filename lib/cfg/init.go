@@ -28,4 +28,8 @@ const DNSCacheTTL = 10 * time.Minute
 // run soundcloak on this address (localhost:4664 by default)
 const Addr = ":4664"
 
+// run multiple instances of soundcloud locally to be able to handle more requests
+// each one will be a separate process, so they will have separate cache
+const Prefork = false
+
 var JSON = jsoniter.ConfigFastest

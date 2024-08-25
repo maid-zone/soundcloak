@@ -57,14 +57,16 @@ type Track struct {
 	Artwork       string `json:"artwork_url"`
 	Comments      int    `json:"comment_count"`
 	CreatedAt     string `json:"created_at"`
+	Description   string `json:"description"`
 	Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
 	Genre         string `json:"genre"`
 	ID            int    `json:"id"`
 	Kind          string `json:"kind"` // should always be "track"!
 	LastModified  string `json:"last_modified"`
-	Likes         int    `json:"likes_count"`
+	Likes         int64  `json:"likes_count"`
 	Permalink     string `json:"permalink"`
-	Played        int    `json:"playback_count"`
+	Played        int64  `json:"playback_count"`
+	TagList       string `json:"tag_list"`
 	Title         string `json:"title"`
 	Media         Media  `json:"media"`
 	Authorization string `json:"track_authorization"`

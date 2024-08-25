@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -374,4 +375,70 @@ func GetPlaylist(permalink string) (Playlist, error) {
 	playlistsCache[permalink] = cached[Playlist]{Value: u, Expires: time.Now().Add(cfg.PlaylistTTL)}
 
 	return u, nil
+}
+
+func TagListParser(taglist string) (res []string) {
+	inString := false
+	cur := []rune{}
+	for i, c := range taglist {
+		if c == '"' {
+			if i == len(taglist)-1 {
+				res = append(res, string(cur))
+				return
+			}
+
+			inString = !inString
+			continue
+		}
+
+		if !inString && c == ' ' {
+			res = append(res, string(cur))
+			cur = []rune{}
+			continue
+		}
+
+		cur = append(cur, c)
+	}
+
+	return
+}
+
+func (t Track) FormatDescription() string {
+	desc := t.Description
+	if t.Description != "" {
+		desc += "\n\n"
+	}
+
+	desc += strconv.FormatInt(t.Likes, 10) + " ❤️ | " + strconv.FormatInt(t.Played, 10) + " ▶️"
+	desc += "\nGenre: " + t.Genre
+	desc += "\nCreated: " + t.CreatedAt
+	desc += "\nLast modified: " + t.LastModified
+	if len(t.TagList) != 0 {
+		desc += "\nTags: " + strings.Join(TagListParser(t.TagList), ", ")
+	}
+
+	return desc
+}
+
+func (u User) FormatDescription() string {
+	desc := u.Description
+	if u.Description != "" {
+		desc += "\n\n"
+	}
+
+	desc += strconv.FormatInt(u.Followers, 10) + " followers | " + strconv.FormatInt(u.Following, 10) + " following"
+	desc += "\n" + strconv.FormatInt(u.Tracks, 10) + " tracks | " + strconv.FormatInt(u.Playlists, 10) + " playlists"
+	desc += "\nCreated: " + u.CreatedAt
+	desc += "\nLast modified: " + u.LastModified
+
+	return desc
+}
+
+func (u User) FormatUsername() string {
+	res := u.Username
+	if u.Verified {
+		res += " ☑️"
+	}
+
+	return res
 }

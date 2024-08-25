@@ -18,7 +18,11 @@ import (
 )
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Prefork:     cfg.Prefork,
+		JSONEncoder: cfg.JSON.Marshal,
+		JSONDecoder: cfg.JSON.Unmarshal,
+	})
 	app.Use(compress.New())
 	app.Use(recover.New())
 	app.Use(earlydata.New())
@@ -42,7 +46,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("tracks: "+q, templates.SearchTracks(p)).Render(context.Background(), c)
+			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(context.Background(), c)
 
 		case "users":
 			p, err := sc.SearchUsers("?q=" + url.QueryEscape(q))
@@ -52,7 +56,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("users: "+q, templates.SearchUsers(p)).Render(context.Background(), c)
+			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(context.Background(), c)
 
 		case "playlists":
 			p, err := sc.SearchPlaylists("?q=" + url.QueryEscape(q))
@@ -62,7 +66,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("playlists: "+q, templates.SearchPlaylists(p)).Render(context.Background(), c)
+			return templates.Base("playlists: "+q, templates.SearchPlaylists(p), nil).Render(context.Background(), c)
 		}
 
 		return c.SendStatus(404)
@@ -81,7 +85,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(track, stream)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(track, stream), templates.TrackEmbed(track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {
@@ -102,7 +106,7 @@ func main() {
 		//fmt.Println("gettracks", time.Since(h))
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(usr.Username, templates.User(usr, p)).Render(context.Background(), c)
+		return templates.Base(usr.Username, templates.User(usr, p), templates.UserEmbed(usr)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
@@ -113,7 +117,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist)).Render(context.Background(), c)
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), nil).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))
