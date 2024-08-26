@@ -1,9 +1,17 @@
 package templates
 
-import "github.com/maid-zone/soundcloak/lib/sc"
+import (
+	"github.com/maid-zone/soundcloak/lib/sc"
+	"strconv"
+    "net/url"
+    "strings"
+)
 
 templ SearchTracks(p *sc.Paginated[sc.Track]) {
+    <h1>Found { strconv.FormatInt(p.Total, 10) } tracks</h1>
     for _, track := range p.Collection {
-        <h1>{track.Title}</h1>
+        <h1><a href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>{ track.Title }</a></h1>
     }
+
+    <a href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) }>more tracks</a>
 }

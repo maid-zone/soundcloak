@@ -75,7 +75,7 @@ type Track struct {
 
 type Paginated[T any] struct {
 	Collection []T    `json:"collection"`
-	Total      int    `json:"total_results"`
+	Total      int64  `json:"total_results"`
 	Next       string `json:"next_href"`
 }
 
@@ -90,6 +90,7 @@ type Playlist struct {
 	Kind         string `json:"kind"` // should always be "playlist"!
 	LastModified string `json:"last_modified"`
 	Likes        int64  `json:"likes_count"`
+	Permalink    string `json:"permalink"`
 	//ReleaseDate  string  `json:"release_date"`
 	TagList string  `json:"tag_list"`
 	Title   string  `json:"title"`

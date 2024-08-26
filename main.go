@@ -32,14 +32,10 @@ func main() {
 
 	app.Get("/search", func(c *fiber.Ctx) error {
 		q := c.Query("q")
-		if q == "" {
-			return c.SendStatus(404)
-		}
-
 		t := c.Query("type")
 		switch t {
 		case "tracks":
-			p, err := sc.SearchTracks("?q=" + url.QueryEscape(q))
+			p, err := sc.SearchTracks(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				fmt.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
@@ -49,7 +45,7 @@ func main() {
 			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(context.Background(), c)
 
 		case "users":
-			p, err := sc.SearchUsers("?q=" + url.QueryEscape(q))
+			p, err := sc.SearchUsers(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				fmt.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -59,7 +55,7 @@ func main() {
 			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(context.Background(), c)
 
 		case "playlists":
-			p, err := sc.SearchPlaylists("?q=" + url.QueryEscape(q))
+			p, err := sc.SearchPlaylists(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				fmt.Printf("error getting users for %s: %s\n", q, err)
 				return err

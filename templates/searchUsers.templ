@@ -1,9 +1,17 @@
 package templates
 
-import "github.com/maid-zone/soundcloak/lib/sc"
+import (
+	"github.com/maid-zone/soundcloak/lib/sc"
+	"strconv"
+    "net/url"
+    "strings"
+)
 
 templ SearchUsers(p *sc.Paginated[sc.User]) {
-    for _, user := range p.Collection {
-        <h1>{user.Username}</h1>
-    }
+	<h1>Found { strconv.FormatInt(p.Total, 10) } users</h1>
+	for _, user := range p.Collection {
+		<h1><a href={ templ.URL("/" + user.Permalink) }>{ user.Username }</a></h1>
+	}
+
+    <a href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) }>more users</a>
 }
