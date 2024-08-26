@@ -54,11 +54,11 @@ func (m Media) SelectCompatible() *Transcoding {
 }
 
 type Track struct {
-	Artwork       string `json:"artwork_url"`
-	Comments      int    `json:"comment_count"`
-	CreatedAt     string `json:"created_at"`
-	Description   string `json:"description"`
-	Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
+	Artwork     string `json:"artwork_url"`
+	Comments    int    `json:"comment_count"`
+	CreatedAt   string `json:"created_at"`
+	Description string `json:"description"`
+	//Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
 	Genre         string `json:"genre"`
 	ID            int    `json:"id"`
 	Kind          string `json:"kind"` // should always be "track"!
@@ -89,6 +89,7 @@ type Playlist struct {
 	Description  string  `json:"description"`
 	Kind         string  `json:"kind"` // should always be "playlist"!
 	LastModified string  `json:"last_modified"`
+	Likes        int64   `json:"likes_count"`
 	ReleaseDate  string  `json:"release_date"`
 	TagList      string  `json:"tag_list"`
 	Title        string  `json:"title"`

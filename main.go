@@ -117,7 +117,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), nil).Render(context.Background(), c)
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), templates.PlaylistEmbed(playlist)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

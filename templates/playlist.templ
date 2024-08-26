@@ -2,6 +2,13 @@ package templates
 
 import "github.com/maid-zone/soundcloak/lib/sc"
 
+templ PlaylistEmbed(p sc.Playlist) {
+    <meta name="og:site_name" content={p.Author.Username + " ~ soundcloak"}>
+    <meta name="og:title" content={p.Title}>
+    <meta name="og:description" content={p.FormatDescription()}>
+    <meta name="og:image" content={p.Artwork}>
+}
+
 templ Playlist(p sc.Playlist) {
     <h1>{p.Title}</h1>
 }

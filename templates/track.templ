@@ -1,21 +1,26 @@
 package templates
 
-import "github.com/maid-zone/soundcloak/lib/sc"
+import (
+	"github.com/maid-zone/soundcloak/lib/sc"
+	"strconv"
+	"strings"
+)
 
 templ TrackEmbed(t sc.Track) {
-    <meta name="og:site_name" content={t.Author.Username + " ~ soundcloak"}>
-    <meta name="og:title" content={t.Title}>
-    <meta name="og:description" content={t.FormatDescription()}>
-    <meta name="og:image" content={t.Artwork}>
-    <script src="/js/hls.js/hls.light.js"></script>
+	<meta name="og:site_name" content={ t.Author.Username + " ~ soundcloak" }/>
+	<meta name="og:title" content={ t.Title }/>
+	<meta name="og:description" content={ t.FormatDescription() }/>
+	<meta name="og:image" content={ t.Artwork }/>
+	<script src="/js/hls.js/hls.light.js"></script>
 }
 
 templ Track(t sc.Track, stream string) {
-    <h1>{t.Title}</h1>
-
-    <audio id="track" data-stream={stream} controls></audio>
-
-    <script>
+	if t.Artwork != "" {
+		<img src={ t.Artwork }/>
+	}
+	<h1>{ t.Title }</h1>
+	<audio id="track" data-stream={ stream } controls></audio>
+	<script>
         var audio = document.getElementById('track');
         var audioSrc = audio.getAttribute('data-stream');
         if (Hls.isSupported()) {
@@ -28,4 +33,20 @@ templ Track(t sc.Track, stream string) {
             alert('hls not supported');
         }
     </script>
+	<p style="white-space: pre-wrap">{ t.Description }</p>
+	<div>
+		if t.Genre != "" {
+			<h2>Genre: { t.Genre }</h2>
+		}
+
+        if t.TagList != "" {
+            <h2>Tags: { strings.Join(sc.TagListParser(t.TagList), ",") }</h2>
+        }
+
+		<h2>{ strconv.FormatInt(t.Likes, 10) } likes</h2>
+		<h2>{ strconv.FormatInt(t.Played, 10) } playbacks</h2>
+		<br/>
+		<h2>Created: { t.CreatedAt }</h2>
+		<h2>Last modified: { t.LastModified }</h2>
+	</div>
 }

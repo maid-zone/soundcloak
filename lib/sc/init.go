@@ -212,6 +212,7 @@ func GetTrack(permalink string) (Track, error) {
 		return u, ErrKindNotCorrect
 	}
 
+	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
 	tracksCache[permalink] = cached[Track]{Value: u, Expires: time.Now().Add(cfg.TrackTTL)}
 
 	return u, nil
@@ -441,4 +442,21 @@ func (u User) FormatUsername() string {
 	}
 
 	return res
+}
+
+func (p Playlist) FormatDescription() string {
+	desc := p.Description
+	if p.Description != "" {
+		desc += "\n\n"
+	}
+
+	desc += strconv.FormatInt(int64(len(p.Tracks)), 10) + " tracks"
+	desc += "\n" + strconv.FormatInt(p.Likes, 10) + " ❤️"
+	desc += "\nCreated: " + p.CreatedAt
+	desc += "\nLast modified: " + p.LastModified
+	if len(p.TagList) != 0 {
+		desc += "\nTags: " + strings.Join(TagListParser(p.TagList), ", ")
+	}
+
+	return desc
 }
