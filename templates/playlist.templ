@@ -1,6 +1,10 @@
 package templates
 
-import "github.com/maid-zone/soundcloak/lib/sc"
+import (
+    "github.com/maid-zone/soundcloak/lib/sc"
+    "strings"
+    "strconv"
+)
 
 templ PlaylistEmbed(p sc.Playlist) {
     <meta name="og:site_name" content={p.Author.Username + " ~ soundcloak"}>
@@ -10,5 +14,30 @@ templ PlaylistEmbed(p sc.Playlist) {
 }
 
 templ Playlist(p sc.Playlist) {
+    if p.Artwork != "" {
+		<img src={ p.Artwork }/>
+	}
     <h1>{p.Title}</h1>
+    <p style="white-space: pre-wrap">{p.Description}</p>
+
+
+    <h1>{strconv.FormatInt(int64(len(p.Tracks)), 10)} tracks</h1>
+    <div>
+        for _, track := range p.Tracks {
+            if track.Title != "" {
+                <h2><a href={templ.URL("/" + track.Author.Permalink + "/" + track.Permalink)}>{track.Title}</a></h2>
+            }
+        }
+    </div>
+
+    <div>
+        if p.TagList != "" {
+            <h2>Tags: { strings.Join(sc.TagListParser(p.TagList), ",") }</h2>
+        }
+
+		<h2>{ strconv.FormatInt(p.Likes, 10) } likes</h2>
+		<br/>
+		<h2>Created: { p.CreatedAt }</h2>
+		<h2>Last modified: { p.LastModified }</h2>
+	</div>
 }

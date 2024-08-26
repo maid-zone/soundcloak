@@ -369,10 +369,15 @@ func GetPlaylist(permalink string) (Playlist, error) {
 	}
 
 	if u.Kind != "playlist" {
-		fmt.Println(u.Kind)
 		return u, ErrKindNotCorrect
 	}
 
+	err = u.GetMissingTracks()
+	if err != nil {
+		return u, err
+	}
+
+	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
 	playlistsCache[permalink] = cached[Playlist]{Value: u, Expires: time.Now().Add(cfg.PlaylistTTL)}
 
 	return u, nil
@@ -459,4 +464,67 @@ func (p Playlist) FormatDescription() string {
 	}
 
 	return desc
+}
+
+type missingtrack struct {
+	ID    int64
+	Index int
+}
+
+func (p *Playlist) GetMissingTracks() error {
+	cid, err := GetClientID()
+	if err != nil {
+		return err
+	}
+
+	missing := []missingtrack{}
+	for i, track := range p.Tracks {
+		if track.Title == "" {
+			missing = append(missing, missingtrack{ID: track.ID, Index: i})
+		}
+	}
+
+	var st string
+	for i, track := range missing {
+		st += strconv.FormatInt(track.ID, 10)
+		if i != len(missing)-1 {
+			st += ","
+		}
+	}
+
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	req.SetRequestURI("https://api-v2.soundcloud.com/tracks?ids=" + st + "&client_id=" + cid)
+	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	err = DoWithRetry(req, resp)
+	if err != nil {
+		return err
+	}
+
+	data, err := resp.BodyUncompressed()
+	if err != nil {
+		data = resp.Body()
+	}
+
+	var res []Track
+	err = cfg.JSON.Unmarshal(data, &res)
+	if err != nil {
+		return err
+	}
+
+	for _, oldTrack := range missing {
+		for _, newTrack := range res {
+			if newTrack.ID == oldTrack.ID {
+				p.Tracks[oldTrack.Index] = newTrack
+			}
+		}
+	}
+
+	return nil
 }
