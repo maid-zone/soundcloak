@@ -10,6 +10,7 @@ there is no image and audio proxy for now so beware
 2. [golang](https://go.dev) (1.21 or higher was tested, others might work too)
 3. [git](https://git-scm.com)
 
+## Setup:
 1. Clone this repository:
 ```sh
 git clone https://github.com/maid-zone/soundcloak
