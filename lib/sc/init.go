@@ -416,7 +416,9 @@ func (t Track) FormatDescription() string {
 	}
 
 	desc += strconv.FormatInt(t.Likes, 10) + " ❤️ | " + strconv.FormatInt(t.Played, 10) + " ▶️"
-	desc += "\nGenre: " + t.Genre
+	if t.Genre != "" {
+		desc += "\nGenre: " + t.Genre
+	}
 	desc += "\nCreated: " + t.CreatedAt
 	desc += "\nLast modified: " + t.LastModified
 	if len(t.TagList) != 0 {
