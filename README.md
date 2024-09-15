@@ -1,5 +1,5 @@
 # soundcloak
-wip opensource ui for soundcloud
+wip alternative frontend for soundcloud
 
 # [official public instance](https://sc.maid.zone)
 there is no image and audio proxy for now so beware
