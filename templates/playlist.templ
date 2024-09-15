@@ -22,7 +22,7 @@ templ Playlist(p sc.Playlist) {
     <p style="white-space: pre-wrap">{p.Description}</p>
 
 
-    <h1>{strconv.FormatInt(int64(len(p.Tracks)), 10)} tracks</h1>
+    <h1>{strconv.FormatInt(p.TrackCount, 10)} tracks</h1>
     <div>
         for _, track := range p.Tracks {
             if track.Title != "" {
