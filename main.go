@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -110,6 +111,18 @@ func main() {
 		if err != nil {
 			fmt.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 			return err
+		}
+
+		p := c.Query("pagination")
+		if p != "" {
+			tracks, next, err := sc.GetNextMissingTracks(p)
+			if err != nil {
+				fmt.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
+				return err
+			}
+
+			playlist.Tracks = tracks
+			playlist.MissingTracks = strings.Join(next, ",")
 		}
 
 		c.Set("Content-Type", "text/html")

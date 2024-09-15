@@ -45,7 +45,7 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 				</div>
 			}
 		</div>
-		<a href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) }>more tracks</a>
+		<a href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
 	} else {
 		<h1>no more tracks</h1>
 	}

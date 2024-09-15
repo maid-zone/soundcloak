@@ -13,5 +13,5 @@ templ SearchUsers(p *sc.Paginated[sc.User]) {
 		<h1><a href={ templ.URL("/" + user.Permalink) }>{ user.Username }</a></h1>
 	}
 
-    <a href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) }>more users</a>
+    <a href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
 }

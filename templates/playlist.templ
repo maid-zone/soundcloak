@@ -4,6 +4,7 @@ import (
     "github.com/maid-zone/soundcloak/lib/sc"
     "strings"
     "strconv"
+	"net/url"
 )
 
 templ PlaylistEmbed(p sc.Playlist) {
@@ -29,6 +30,9 @@ templ Playlist(p sc.Playlist) {
             }
         }
     </div>
+    if len(p.MissingTracks) != 0 {
+        <a href={templ.URL("?pagination="+url.QueryEscape(p.MissingTracks))} rel="noreferrer">more tracks</a>
+    }
 
     <div>
         if p.TagList != "" {

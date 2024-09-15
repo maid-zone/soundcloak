@@ -98,4 +98,6 @@ type Playlist struct {
 	Album   bool    `json:"is_album"`
 	Author  User    `json:"user"`
 	Tracks  []Track `json:"tracks"`
+
+	MissingTracks string `json:"-"`
 }

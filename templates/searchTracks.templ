@@ -13,5 +13,5 @@ templ SearchTracks(p *sc.Paginated[sc.Track]) {
         <h1><a href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>{ track.Title }</a></h1>
     }
 
-    <a href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) }>more tracks</a>
+    <a href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
 }

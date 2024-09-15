@@ -468,36 +468,21 @@ func (p Playlist) FormatDescription() string {
 	return desc
 }
 
-type missingtrack struct {
+type MissingTrack struct {
 	ID    int64
 	Index int
 }
 
-func (p *Playlist) GetMissingTracks() error {
+func GetTracks(ids string) ([]Track, error) {
 	cid, err := GetClientID()
 	if err != nil {
-		return err
-	}
-
-	missing := []missingtrack{}
-	for i, track := range p.Tracks {
-		if track.Title == "" {
-			missing = append(missing, missingtrack{ID: track.ID, Index: i})
-		}
-	}
-
-	var st string
-	for i, track := range missing {
-		st += strconv.FormatInt(track.ID, 10)
-		if i != len(missing)-1 {
-			st += ","
-		}
+		return nil, err
 	}
 
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://api-v2.soundcloud.com/tracks?ids=" + st + "&client_id=" + cid)
+	req.SetRequestURI("https://api-v2.soundcloud.com/tracks?ids=" + ids + "&client_id=" + cid)
 	req.Header.Set("User-Agent", cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
@@ -506,7 +491,7 @@ func (p *Playlist) GetMissingTracks() error {
 
 	err = DoWithRetry(req, resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data, err := resp.BodyUncompressed()
@@ -516,6 +501,49 @@ func (p *Playlist) GetMissingTracks() error {
 
 	var res []Track
 	err = cfg.JSON.Unmarshal(data, &res)
+	return res, err
+}
+
+func JoinMissingTracks(missing []MissingTrack) (st string) {
+	for i, track := range missing {
+		st += strconv.FormatInt(track.ID, 10)
+		if i != len(missing)-1 {
+			st += ","
+		}
+	}
+	return
+}
+
+func GetMissingTracks(missing []MissingTrack) (res []Track, next []MissingTrack, err error) {
+	if len(missing) > 50 {
+		next = missing[50:]
+		missing = missing[:50]
+	}
+
+	res, err = GetTracks(JoinMissingTracks(missing))
+	return
+}
+
+func GetNextMissingTracks(raw string) (res []Track, next []string, err error) {
+	missing := strings.Split(raw, ",")
+	if len(missing) > 50 {
+		next = missing[50:]
+		missing = missing[:50]
+	}
+
+	res, err = GetTracks(strings.Join(missing, ","))
+	return
+}
+
+func (p *Playlist) GetMissingTracks() error {
+	missing := []MissingTrack{}
+	for i, track := range p.Tracks {
+		if track.Title == "" {
+			missing = append(missing, MissingTrack{ID: track.ID, Index: i})
+		}
+	}
+
+	res, next, err := GetMissingTracks(missing)
 	if err != nil {
 		return err
 	}
@@ -527,6 +555,8 @@ func (p *Playlist) GetMissingTracks() error {
 			}
 		}
 	}
+
+	p.MissingTracks = JoinMissingTracks(next)
 
 	return nil
 }
