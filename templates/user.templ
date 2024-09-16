@@ -12,6 +12,7 @@ templ UserEmbed(u sc.User) {
 	<meta name="og:title" content={ u.FormatUsername() }/>
 	<meta name="og:description" content={ u.FormatDescription() }/>
 	<meta name="og:image" content={ u.Avatar }/>
+	<link rel="icon" type="image/x-icon" href={ u.Avatar }/>
 }
 
 templ User(u sc.User, p *sc.Paginated[sc.Track]) {
@@ -23,30 +24,33 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 		if u.FullName != "" {
 			<h2>{ u.FullName }</h2>
 		}
+		if u.Verified {
+			<p style="color: var(--accent)">Verified</p>
+		}
 	</div>
 	<p style="white-space: pre-wrap">{ u.Description }</p>
 	<div>
-		<h2>{ strconv.FormatInt(u.Followers, 10) } followers</h2>
-		<h2>{ strconv.FormatInt(u.Following, 10) } following</h2>
-		<h2>{ strconv.FormatInt(u.Tracks, 10) } tracks</h2>
-		<h2>{ strconv.FormatInt(u.Playlists, 10) } playlists</h2>
+		<p>{ strconv.FormatInt(u.Followers, 10) } followers</p>
+		<p>{ strconv.FormatInt(u.Following, 10) } following</p>
+		<p>{ strconv.FormatInt(u.Tracks, 10) } tracks</p>
+		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists</p>
 		<br/>
-		<h2>Created: { u.CreatedAt }</h2>
-		<h2>Last modified: { u.LastModified }</h2>
-		if u.Verified {
-			<h2>Verified</h2>
-		}
+		<p>Created: { u.CreatedAt }</p>
+		<p>Last modified: { u.LastModified }</p>
 	</div>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, track := range p.Collection {
-				<div>
-					<h1><a href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>{ track.Title }</a></h1>
-				</div>
+				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+					<img src={ track.Artwork }/>
+					<div class="meta">
+						<h3>{ track.Title }</h3>
+					</div>
+				</a>
 			}
 		</div>
 		<a href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
 	} else {
-		<h1>no more tracks</h1>
+		<span>no more tracks</span>
 	}
 }

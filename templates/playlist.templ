@@ -1,47 +1,61 @@
 package templates
 
 import (
-    "github.com/maid-zone/soundcloak/lib/sc"
-    "strings"
-    "strconv"
+	"github.com/maid-zone/soundcloak/lib/sc"
 	"net/url"
+	"strconv"
+	"strings"
 )
 
 templ PlaylistEmbed(p sc.Playlist) {
-    <meta name="og:site_name" content={p.Author.Username + " ~ soundcloak"}>
-    <meta name="og:title" content={p.Title}>
-    <meta name="og:description" content={p.FormatDescription()}>
-    <meta name="og:image" content={p.Artwork}>
+	<meta name="og:site_name" content={ p.Author.Username + " ~ soundcloak" }/>
+	<meta name="og:title" content={ p.Title }/>
+	<meta name="og:description" content={ p.FormatDescription() }/>
+	<meta name="og:image" content={ p.Artwork }/>
+	<link rel="icon" type="image/x-icon" href={ p.Artwork }/>
 }
 
 templ Playlist(p sc.Playlist) {
-    if p.Artwork != "" {
+	if p.Artwork != "" {
 		<img src={ p.Artwork }/>
 	}
-    <h1>{p.Title}</h1>
-    <p style="white-space: pre-wrap">{p.Description}</p>
-
-
-    <h1>{strconv.FormatInt(p.TrackCount, 10)} tracks</h1>
-    <div>
-        for _, track := range p.Tracks {
-            if track.Title != "" {
-                <h2><a href={templ.URL("/" + track.Author.Permalink + "/" + track.Permalink)}>{track.Title}</a></h2>
-            }
-        }
-    </div>
-    if len(p.MissingTracks) != 0 {
-        <a href={templ.URL("?pagination="+url.QueryEscape(p.MissingTracks))} rel="noreferrer">more tracks</a>
-    }
-
-    <div>
-        if p.TagList != "" {
-            <h2>Tags: { strings.Join(sc.TagListParser(p.TagList), ",") }</h2>
-        }
-
-		<h2>{ strconv.FormatInt(p.Likes, 10) } likes</h2>
+	<h1>{ p.Title }</h1>
+	<a class="listing" href={ templ.URL("/" + p.Author.Permalink) }>
+		<img src={ p.Author.Avatar }/>
+		<div class="meta">
+			<h3>{ p.Author.Username }</h3>
+			if p.Author.FullName != "" {
+				<span>{ p.Author.FullName }</span>
+			}
+		</div>
+	</a>
+	<p style="white-space: pre-wrap">{ p.Description }</p>
+	<span>{ strconv.FormatInt(p.TrackCount, 10) } tracks</span>
+	<br/>
+	<br/>
+	<div>
+		for _, track := range p.Tracks {
+			if track.Title != "" {
+				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+					<img src={ track.Artwork }/>
+					<div class="meta">
+						<h3>{ track.Title }</h3>
+						<span>{ track.Author.Username }</span>
+					</div>
+				</a>
+			}
+		}
+	</div>
+	if len(p.MissingTracks) != 0 {
+		<a href={ templ.URL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
+	}
+	<div>
+		if p.TagList != "" {
+			<p>Tags: { strings.Join(sc.TagListParser(p.TagList), ", ") }</p>
+		}
+		<p>{ strconv.FormatInt(p.Likes, 10) } likes</p>
 		<br/>
-		<h2>Created: { p.CreatedAt }</h2>
-		<h2>Last modified: { p.LastModified }</h2>
+		<p>Created: { p.CreatedAt }</p>
+		<p>Last modified: { p.LastModified }</p>
 	</div>
 }

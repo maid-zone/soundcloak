@@ -2,17 +2,27 @@ package templates
 
 import (
 	"github.com/maid-zone/soundcloak/lib/sc"
+	"net/url"
 	"strconv"
-    "net/url"
-    "strings"
+	"strings"
 )
 
 templ SearchPlaylists(p *sc.Paginated[sc.Playlist]) {
-    <h2>Found { strconv.FormatInt(p.Total, 10) } playlists</h2>
-
-    for _, playlist := range p.Collection {
-        <h3><a href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>{ playlist.Title }</a></h3>
-    }
-
-    <a href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
+	<span>Found { strconv.FormatInt(p.Total, 10) } playlists</span>
+	<br/>
+	<br/>
+	for _, playlist := range p.Collection {
+		<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+			if playlist.Artwork != "" {
+				<img src={ playlist.Artwork }/>
+			} else {
+				<img src="/placeholder.jpg"/>
+			}
+			<div class="meta">
+				<h3>{ playlist.Title }</h3>
+				<span>{ playlist.Author.Username }</span>
+			</div>
+		</a>
+	}
+	<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">More playlists</a>
 }

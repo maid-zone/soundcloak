@@ -7,17 +7,19 @@
     <link rel="stylesheet" href="global.css">
 </head>
 <body>
-    <h1>Soundcloak</h1>
+    <h1 id="sc">Soundcloak</h1>
     <form action="/search">
-        <input name="q" type="text">
+        <div style="display: flex; gap: .5rem;">
+        <input name="q" type="text" style="padding: .5rem .6rem; flex-grow: 1;">
         
         <select name="type">
             <option value="tracks">Tracks</option>
             <option value="users">Users</option>
             <option value="playlists">Playlists</option>
         </select>
+    </div>
 
-        <input type="submit" value="Search">
+        <input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;">
     </form>
 </body>
 </html>

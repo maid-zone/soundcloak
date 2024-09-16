@@ -2,16 +2,29 @@ package templates
 
 import (
 	"github.com/maid-zone/soundcloak/lib/sc"
+	"net/url"
 	"strconv"
-    "net/url"
-    "strings"
+	"strings"
 )
 
 templ SearchUsers(p *sc.Paginated[sc.User]) {
-	<h2>Found { strconv.FormatInt(p.Total, 10) } users</h2>
+	<span>Found { strconv.FormatInt(p.Total, 10) } users</span>
+	<br/>
+	<br/>
 	for _, user := range p.Collection {
-		<h3><a href={ templ.URL("/" + user.Permalink) }>{ user.Username }</a></h3>
+		<a class="listing" href={ templ.URL("/" + user.Permalink) }>
+			if user.Avatar != "" {
+				<img src={ user.Avatar }/>
+			} else {
+				<img src="/placeholder.jpg"/>
+			}
+			<div class="meta">
+				<h3>{ user.Username }</h3>
+				if user.FullName != "" {
+					<span>{ user.FullName }</span>
+				}
+			</div>
+		</a>
 	}
-
-    <a href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
+	<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">More users</a>
 }
