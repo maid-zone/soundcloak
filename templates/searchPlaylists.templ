@@ -8,10 +8,10 @@ import (
 )
 
 templ SearchPlaylists(p *sc.Paginated[sc.Playlist]) {
-    <h1>Found { strconv.FormatInt(p.Total, 10) } playlists</h1>
+    <h2>Found { strconv.FormatInt(p.Total, 10) } playlists</h2>
 
     for _, playlist := range p.Collection {
-        <h1><a href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>{ playlist.Title }</a></h1>
+        <h3><a href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>{ playlist.Title }</a></h3>
     }
 
     <a href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>

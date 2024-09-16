@@ -1,0 +1,63 @@
+@import url(normalize.css);
+
+@font-face {
+  font-family: "fixed";
+  src: url("https://assets.maid.zone/fixed.ttf");
+}
+
+:root {
+  /* github.com/material-ocean */
+  --accent: #ff4151;
+  --primary: #0f111a;
+  --secondary: #00010a;
+  --0: #3b4252;
+  --text: white;
+}
+
+* {
+  font-family: "fixed" !important;
+}
+
+body {
+  font-family: "fixed" !important;
+  background-color: var(--primary);
+  color: var(--text);
+  padding: 1.5rem;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: underline dashed;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+input {
+  background-color: var(--secondary);
+  color: var(--text);
+  border-color: var(--0);
+  border-style: solid;
+}
+
+input:focus {
+  border-color: var(--accent);
+  border-style: solid;
+  outline: none;
+}
+
+button {
+  background-color: var(--secondary);
+  color: var(--text);
+  border-color: var(--0);
+  border-style: solid;
+  cursor: pointer;
+}
+
+button:hover,
+button:focus {
+  border-color: var(--accent);
+  border-style: solid;
+  outline: none;
+}
