@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-templ SearchUsers(p *sc.Paginated[sc.User]) {
+templ SearchUsers(p *sc.Paginated[*sc.User]) {
 	<span>Found { strconv.FormatInt(p.Total, 10) } users</span>
 	<br/>
 	<br/>

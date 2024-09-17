@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "fixed";
-  src: url("https://assets.maid.zone/fixed.ttf");
+  src: url("/fixed.ttf");
 }
 
 :root {
@@ -143,4 +143,10 @@ details > summary:hover {
   border-style: solid;
   padding: 0.5rem;
   width: fit-content;
+}
+
+footer {
+  margin-top: 5rem;
+  display: flex;
+  justify-content: center;
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-templ SearchPlaylists(p *sc.Paginated[sc.Playlist]) {
+templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 	<span>Found { strconv.FormatInt(p.Total, 10) } playlists</span>
 	<br/>
 	<br/>

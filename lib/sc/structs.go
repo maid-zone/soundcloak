@@ -13,11 +13,9 @@ type User struct {
 	Permalink string `json:"permalink"`
 	Playlists int64  `json:"playlist_count"`
 	Tracks    int64  `json:"track_count"`
-	URN       string `json:"urn"`
+	ID        string `json:"urn"`
 	Username  string `json:"username"`
 	Verified  bool   `json:"verified"`
-
-	ID string `json:"-"`
 }
 
 type Protocol string
@@ -60,7 +58,6 @@ type Track struct {
 	Description string `json:"description"`
 	//Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
 	Genre         string `json:"genre"`
-	ID            int64  `json:"id"`
 	Kind          string `json:"kind"` // should always be "track"!
 	LastModified  string `json:"last_modified"`
 	Likes         int64  `json:"likes_count"`
@@ -68,6 +65,7 @@ type Track struct {
 	Played        int64  `json:"playback_count"`
 	TagList       string `json:"tag_list"`
 	Title         string `json:"title"`
+	ID            string `json:"urn"`
 	Media         Media  `json:"media"`
 	Authorization string `json:"track_authorization"`
 	Author        User   `json:"user"`

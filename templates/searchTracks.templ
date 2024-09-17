@@ -7,18 +7,14 @@ import (
 	"strings"
 )
 
-templ SearchTracks(p *sc.Paginated[sc.Track]) {
+templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 	<span>Found { strconv.FormatInt(p.Total, 10) } tracks</span>
 	<br/>
 	<br/>
 	for _, track := range p.Collection {
-		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>		
 			if track.Artwork != "" {
-				@templ.Raw("<img src='")
-				{ track.Artwork }
-				@templ.Raw("' style='view-transition-name:")
-				{ "track-" + strconv.FormatInt(track.ID, 10) }
-				@templ.Raw("'>")
+				<img src={ track.Artwork } class={ViewTransition("t" + track.ID)}>
 			} else {
 				<img src="/placeholder.jpg"/>
 			}

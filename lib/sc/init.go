@@ -189,9 +189,7 @@ func GetUser(permalink string) (User, error) {
 		return u, err
 	}
 
-	u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
-	ls := strings.Split(u.URN, ":")
-	u.ID = ls[len(ls)-1]
+	u.Fix()
 	usersCache[permalink] = cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
 
 	return u, err
@@ -212,7 +210,7 @@ func GetTrack(permalink string) (Track, error) {
 		return u, ErrKindNotCorrect
 	}
 
-	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
+	u.Fix()
 	tracksCache[permalink] = cached[Track]{Value: u, Expires: time.Now().Add(cfg.TrackTTL)}
 
 	return u, nil
@@ -259,6 +257,10 @@ func (u User) GetTracks(args string) (*Paginated[Track], error) {
 	err := p.Proceed()
 	if err != nil {
 		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix()
 	}
 
 	return &p, nil
@@ -312,46 +314,58 @@ func (t Track) GetStream() (string, error) {
 	return s.URL, nil
 }
 
-func SearchTracks(args string) (*Paginated[Track], error) {
+func SearchTracks(args string) (*Paginated[*Track], error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
 	}
 
-	p := Paginated[Track]{Next: "https://api-v2.soundcloud.com/search/tracks" + args + "&client_id=" + cid}
+	p := Paginated[*Track]{Next: "https://api-v2.soundcloud.com/search/tracks" + args + "&client_id=" + cid}
 	err = p.Proceed()
 	if err != nil {
 		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix()
 	}
 
 	return &p, nil
 }
 
-func SearchUsers(args string) (*Paginated[User], error) {
+func SearchUsers(args string) (*Paginated[*User], error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
 	}
 
-	p := Paginated[User]{Next: "https://api-v2.soundcloud.com/search/users" + args + "&client_id=" + cid}
+	p := Paginated[*User]{Next: "https://api-v2.soundcloud.com/search/users" + args + "&client_id=" + cid}
 	err = p.Proceed()
 	if err != nil {
 		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix()
 	}
 
 	return &p, nil
 }
 
-func SearchPlaylists(args string) (*Paginated[Playlist], error) {
+func SearchPlaylists(args string) (*Paginated[*Playlist], error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
 	}
 
-	p := Paginated[Playlist]{Next: "https://api-v2.soundcloud.com/search/playlists" + args + "&client_id=" + cid}
+	p := Paginated[*Playlist]{Next: "https://api-v2.soundcloud.com/search/playlists" + args + "&client_id=" + cid}
 	err = p.Proceed()
 	if err != nil {
 		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix(false)
 	}
 
 	return &p, nil
@@ -372,15 +386,32 @@ func GetPlaylist(permalink string) (Playlist, error) {
 		return u, ErrKindNotCorrect
 	}
 
-	err = u.GetMissingTracks()
+	err = u.Fix(true)
 	if err != nil {
 		return u, err
 	}
 
-	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
 	playlistsCache[permalink] = cached[Playlist]{Value: u, Expires: time.Now().Add(cfg.PlaylistTTL)}
 
 	return u, nil
+}
+
+func (u *Playlist) Fix(cached bool) error {
+	if cached {
+		for _, t := range u.Tracks {
+			if t.Title != "" {
+				t.Fix()
+			}
+		}
+
+		err := u.GetMissingTracks()
+		if err != nil {
+			return err
+		}
+	}
+
+	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
+	return nil
 }
 
 func TagListParser(taglist string) (res []string) {
@@ -469,7 +500,7 @@ func (p Playlist) FormatDescription() string {
 }
 
 type MissingTrack struct {
-	ID    int64
+	ID    string
 	Index int
 }
 
@@ -501,12 +532,15 @@ func GetTracks(ids string) ([]Track, error) {
 
 	var res []Track
 	err = cfg.JSON.Unmarshal(data, &res)
+	for _, t := range res {
+		t.Fix()
+	}
 	return res, err
 }
 
 func JoinMissingTracks(missing []MissingTrack) (st string) {
 	for i, track := range missing {
-		st += strconv.FormatInt(track.ID, 10)
+		st += track.ID
 		if i != len(missing)-1 {
 			st += ","
 		}
@@ -559,4 +593,16 @@ func (p *Playlist) GetMissingTracks() error {
 	p.MissingTracks = JoinMissingTracks(next)
 
 	return nil
+}
+
+func (u *Track) Fix() {
+	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
+	ls := strings.Split(u.ID, ":")
+	u.ID = ls[len(ls)-1]
+}
+
+func (u *User) Fix() {
+	u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
+	ls := strings.Split(u.ID, ":")
+	u.ID = ls[len(ls)-1]
 }
