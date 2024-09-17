@@ -14,7 +14,11 @@ templ SearchTracks(p *sc.Paginated[sc.Track]) {
 	for _, track := range p.Collection {
 		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 			if track.Artwork != "" {
-				<img src={ track.Artwork }/>
+				@templ.Raw("<img src='")
+				{ track.Artwork }
+				@templ.Raw("' style='view-transition-name:")
+				{ "track-" + strconv.FormatInt(track.ID, 10) }
+				@templ.Raw("'>")
 			} else {
 				<img src="/placeholder.jpg"/>
 			}

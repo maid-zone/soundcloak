@@ -17,7 +17,11 @@ templ TrackEmbed(t sc.Track) {
 
 templ Track(t sc.Track, stream string) {
 	if t.Artwork != "" {
-		<img src={ t.Artwork }/>
+		@templ.Raw("<img src='")
+		{ t.Artwork }
+		@templ.Raw("' style='view-transition-name:")
+		{ "track-" + strconv.FormatInt(t.ID, 10) }
+		@templ.Raw("'>")
 	}
 	<h1>{ t.Title }</h1>
 	<audio id="track" data-stream={ stream } controls></audio>
