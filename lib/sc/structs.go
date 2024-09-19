@@ -69,6 +69,8 @@ type Track struct {
 	Media         Media  `json:"media"`
 	Authorization string `json:"track_authorization"`
 	Author        User   `json:"user"`
+
+	IDint int64 `json:"id"`
 }
 
 type Paginated[T any] struct {
@@ -90,13 +92,13 @@ type Playlist struct {
 	Likes        int64  `json:"likes_count"`
 	Permalink    string `json:"permalink"`
 	//ReleaseDate  string  `json:"release_date"`
-	TagList    string  `json:"tag_list"`
-	Title      string  `json:"title"`
-	Type       string  `json:"set_type"`
-	Album      bool    `json:"is_album"`
-	Author     User    `json:"user"`
-	Tracks     []Track `json:"tracks"`
-	TrackCount int64   `json:"track_count"`
+	TagList    string   `json:"tag_list"`
+	Title      string   `json:"title"`
+	Type       string   `json:"set_type"`
+	Album      bool     `json:"is_album"`
+	Author     User     `json:"user"`
+	Tracks     []*Track `json:"tracks"`
+	TrackCount int64    `json:"track_count"`
 
 	MissingTracks string `json:"-"`
 }

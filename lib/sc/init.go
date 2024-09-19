@@ -399,9 +399,7 @@ func GetPlaylist(permalink string) (Playlist, error) {
 func (u *Playlist) Fix(cached bool) error {
 	if cached {
 		for _, t := range u.Tracks {
-			if t.Title != "" {
-				t.Fix()
-			}
+			t.Fix()
 		}
 
 		err := u.GetMissingTracks()
@@ -504,7 +502,7 @@ type MissingTrack struct {
 	Index int
 }
 
-func GetTracks(ids string) ([]Track, error) {
+func GetTracks(ids string) ([]*Track, error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
@@ -530,7 +528,7 @@ func GetTracks(ids string) ([]Track, error) {
 		data = resp.Body()
 	}
 
-	var res []Track
+	var res []*Track
 	err = cfg.JSON.Unmarshal(data, &res)
 	for _, t := range res {
 		t.Fix()
@@ -548,7 +546,7 @@ func JoinMissingTracks(missing []MissingTrack) (st string) {
 	return
 }
 
-func GetMissingTracks(missing []MissingTrack) (res []Track, next []MissingTrack, err error) {
+func GetMissingTracks(missing []MissingTrack) (res []*Track, next []MissingTrack, err error) {
 	if len(missing) > 50 {
 		next = missing[50:]
 		missing = missing[:50]
@@ -558,7 +556,7 @@ func GetMissingTracks(missing []MissingTrack) (res []Track, next []MissingTrack,
 	return
 }
 
-func GetNextMissingTracks(raw string) (res []Track, next []string, err error) {
+func GetNextMissingTracks(raw string) (res []*Track, next []string, err error) {
 	missing := strings.Split(raw, ",")
 	if len(missing) > 50 {
 		next = missing[50:]
@@ -573,6 +571,7 @@ func (p *Playlist) GetMissingTracks() error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
+			fmt.Println(track.ID)
 			missing = append(missing, MissingTrack{ID: track.ID, Index: i})
 		}
 	}
@@ -597,8 +596,13 @@ func (p *Playlist) GetMissingTracks() error {
 
 func (u *Track) Fix() {
 	u.Artwork = strings.Replace(u.Artwork, "-large.", "-t200x200.", 1)
-	ls := strings.Split(u.ID, ":")
-	u.ID = ls[len(ls)-1]
+	//fmt.Println(u.ID, u.IDint)
+	if u.ID == "" {
+		u.ID = strconv.FormatInt(u.IDint, 10)
+	} else {
+		ls := strings.Split(u.ID, ":")
+		u.ID = ls[len(ls)-1]
+	}
 }
 
 func (u *User) Fix() {
