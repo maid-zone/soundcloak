@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/earlydata"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/valyala/fasthttp"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/sc"
@@ -22,6 +23,9 @@ func main() {
 		Prefork:     cfg.Prefork,
 		JSONEncoder: cfg.JSON.Marshal,
 		JSONDecoder: cfg.JSON.Unmarshal,
+
+		EnableTrustedProxyCheck: cfg.TrustedProxyCheck,
+		TrustedProxies:          cfg.TrustedProxies,
 	})
 	app.Use(compress.New())
 	app.Use(recover.New())
@@ -66,6 +70,42 @@ func main() {
 		}
 
 		return c.SendStatus(404)
+	})
+
+	app.Get("/on/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		if id == "" {
+			return fiber.ErrNotFound
+		}
+
+		req := fasthttp.AcquireRequest()
+		defer fasthttp.ReleaseRequest(req)
+
+		req.Header.SetMethod("HEAD")
+		req.SetRequestURI("https://on.soundcloud.com/" + id)
+		req.Header.Set("User-Agent", cfg.UserAgent)
+
+		resp := fasthttp.AcquireResponse()
+		defer fasthttp.ReleaseResponse(resp)
+
+		err := fasthttp.Do(req, resp)
+		if err != nil {
+			return err
+		}
+
+		loc := resp.Header.Peek("location")
+		if len(loc) == 0 {
+			return fiber.ErrNotFound
+		}
+
+		//fmt.Println(c.Hostname(), c.Protocol(), c.IPs())
+
+		u, err := url.Parse(string(loc))
+		if err != nil {
+			return err
+		}
+
+		return c.Redirect(u.Path)
 	})
 
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {

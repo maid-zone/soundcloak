@@ -4,6 +4,13 @@ wip alternative frontend for soundcloud
 # [official public instance](https://sc.maid.zone)
 there is no image and audio proxy for now so beware
 
+# Already implemented
+- Searching for songs, users, playlists
+- Basic user overview (songs, metadata)
+- Basic song overview (author, metadata) & streaming (requires javascript if no [browser support for HLS](https://caniuse.com/http-live-streaming))
+- Basic playlist/set/album overview (songs list, author, metadata)
+- Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
+
 # Setting it up
 ## Prerequisites:
 1. [node.js + npm](https://nodejs.org) (any recent enough version should do, it's just used for getting hls.js builds)
@@ -56,3 +63,14 @@ templ generate && go build main.go
 ```
 
 This will run soundcloak on localhost, port 4664. (by default)
+
+# Built with
+## Backend
+- [Go programming language](https://github.com/golang/go)
+- [Fiber (v2)](https://github.com/gofiber/fiber/tree/v2)
+- [templ](https://github.com/a-h/templ)
+- [fasthttp](https://github.com/valyala/fasthttp)
+
+## Frontend
+- HTML, CSS and JavaScript
+- [hls.js](https://github.com/video-dev/hls.js)

@@ -20,7 +20,11 @@ templ Track(t sc.Track, stream string) {
 		<img src={t.Artwork} class={ViewTransition("t" + t.ID)}>
 	}
 	<h1>{ t.Title }</h1>
-	<audio id="track" data-stream={ stream } controls></audio>
+	<audio id="track" src={ stream } controls></audio>
+	<noscript>
+		<br>
+		JavaScript is disabled! Audio playback may not work without it enabled.
+	</noscript>	
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -51,15 +55,12 @@ templ Track(t sc.Track, stream string) {
 	}
 	<script>
 		var audio = document.getElementById('track');
-		var audioSrc = audio.getAttribute('data-stream');
 		if (Hls.isSupported()) {
 			var hls = new Hls();
-			hls.loadSource(audioSrc);
+			hls.loadSource(audio.src);
 			hls.attachMedia(audio);
-		} else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-			audio.src = audioSrc;
-		} else {
-			alert('hls not supported');
+		} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
+			alert('HLS is not supported! Audio playback will not work.');
 		}
 	</script>
 }

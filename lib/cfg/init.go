@@ -25,6 +25,9 @@ const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 // time-to-live for dns cache
 const DNSCacheTTL = 10 * time.Minute
 
+// // // some webserver configuration, put here to make it easier to configure what you need // // //
+// more info can be found here: https://docs.gofiber.io/api/fiber#config
+
 // run soundcloak on this address (localhost:4664 by default)
 const Addr = ":4664"
 
@@ -32,4 +35,12 @@ const Addr = ":4664"
 // each one will be a separate process, so they will have separate cache
 const Prefork = false
 
+// use X-Forwarded-* headers ONLY when ip is in TrustedProxies list
+// when disabled, the X-Forwarded-* headers will be blindly used
+const TrustedProxyCheck = false
+
+// ip or ip range of trusted proxies (check above)
+var TrustedProxies = []string{}
+
+// what JSON library should be used
 var JSON = jsoniter.ConfigFastest
