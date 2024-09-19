@@ -1,8 +1,7 @@
 # soundcloak
 wip alternative frontend for soundcloud
 
-# [official public instance](https://sc.maid.zone)
-there is no image and audio proxy for now so beware
+# [Instance list](https://maid.zone/soundcloak/instances.html)
 
 # Already implemented
 - Searching for songs, users, playlists
