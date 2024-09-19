@@ -7,7 +7,7 @@ there is no image and audio proxy for now so beware
 # Already implemented
 - Searching for songs, users, playlists
 - Basic user overview (songs, metadata)
-- Basic song overview (author, metadata) & streaming (requires javascript if no [browser support for HLS](https://caniuse.com/http-live-streaming))
+- Basic song overview (author, metadata) & streaming (requires javascript (which requires support for [Media Source Extensions](https://caniuse.com/mediasource)) if no [browser support for HLS](https://caniuse.com/http-live-streaming))
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 
