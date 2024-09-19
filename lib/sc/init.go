@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
@@ -36,8 +37,13 @@ var httpc = fasthttp.HostClient{
 }
 
 var usersCache = map[string]cached[User]{}
+var usersCacheLock = &sync.RWMutex{}
+
 var tracksCache = map[string]cached[Track]{}
+var tracksCacheLock = &sync.RWMutex{}
+
 var playlistsCache = map[string]cached[Playlist]{}
+var playlistsCacheLock = &sync.RWMutex{}
 
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
 var scriptsRegex = regexp.MustCompile(`(?m)^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`)
@@ -174,9 +180,13 @@ func Resolve(path string, out any) error {
 }
 
 func GetUser(permalink string) (User, error) {
+	usersCacheLock.RLock()
 	if cell, ok := usersCache[permalink]; ok && cell.Expires.After(time.Now()) {
+		usersCacheLock.RUnlock()
 		return cell.Value, nil
 	}
+
+	usersCacheLock.RUnlock()
 
 	var u User
 	err := Resolve(permalink, &u)
@@ -190,15 +200,21 @@ func GetUser(permalink string) (User, error) {
 	}
 
 	u.Fix()
+
+	usersCacheLock.Lock()
 	usersCache[permalink] = cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
+	usersCacheLock.Unlock()
 
 	return u, err
 }
 
 func GetTrack(permalink string) (Track, error) {
+	tracksCacheLock.RLock()
 	if cell, ok := tracksCache[permalink]; ok && cell.Expires.After(time.Now()) {
+		tracksCacheLock.RUnlock()
 		return cell.Value, nil
 	}
+	tracksCacheLock.RUnlock()
 
 	var u Track
 	err := Resolve(permalink, &u)
@@ -211,7 +227,10 @@ func GetTrack(permalink string) (Track, error) {
 	}
 
 	u.Fix()
+
+	tracksCacheLock.Lock()
 	tracksCache[permalink] = cached[Track]{Value: u, Expires: time.Now().Add(cfg.TrackTTL)}
+	tracksCacheLock.Unlock()
 
 	return u, nil
 }
@@ -372,9 +391,12 @@ func SearchPlaylists(args string) (*Paginated[*Playlist], error) {
 }
 
 func GetPlaylist(permalink string) (Playlist, error) {
+	playlistsCacheLock.RLock()
 	if cell, ok := playlistsCache[permalink]; ok && cell.Expires.After(time.Now()) {
+		playlistsCacheLock.RUnlock()
 		return cell.Value, nil
 	}
+	playlistsCacheLock.RUnlock()
 
 	var u Playlist
 	err := Resolve(permalink, &u)
@@ -391,7 +413,9 @@ func GetPlaylist(permalink string) (Playlist, error) {
 		return u, err
 	}
 
+	playlistsCacheLock.Lock()
 	playlistsCache[permalink] = cached[Playlist]{Value: u, Expires: time.Now().Add(cfg.PlaylistTTL)}
+	playlistsCacheLock.Unlock()
 
 	return u, nil
 }
@@ -609,4 +633,52 @@ func (u *User) Fix() {
 	u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
 	ls := strings.Split(u.ID, ":")
 	u.ID = ls[len(ls)-1]
+}
+
+// could probably make a generic function, whatever
+func init() {
+	go func() {
+		ticker := time.NewTicker(cfg.UserTTL)
+		for range ticker.C {
+			usersCacheLock.Lock()
+
+			for key, val := range usersCache {
+				if val.Expires.Before(time.Now()) {
+					delete(usersCache, key)
+				}
+			}
+
+			usersCacheLock.Unlock()
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(cfg.TrackTTL)
+		for range ticker.C {
+			tracksCacheLock.Lock()
+
+			for key, val := range tracksCache {
+				if val.Expires.Before(time.Now()) {
+					delete(tracksCache, key)
+				}
+			}
+
+			tracksCacheLock.Unlock()
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(cfg.PlaylistTTL)
+		for range ticker.C {
+			playlistsCacheLock.Lock()
+
+			for key, val := range playlistsCache {
+				if val.Expires.Before(time.Now()) {
+					delete(playlistsCache, key)
+				}
+			}
+
+			playlistsCacheLock.Unlock()
+		}
+	}()
 }
