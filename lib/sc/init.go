@@ -595,7 +595,7 @@ func (p *Playlist) GetMissingTracks() error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
-			fmt.Println(track.ID)
+			//fmt.Println(track.ID)
 			missing = append(missing, MissingTrack{ID: track.ID, Index: i})
 		}
 	}
