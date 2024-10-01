@@ -22,10 +22,6 @@ body {
   margin-inline: auto;
 }
 
-@view-transition {
-  navigation: auto;
-}
-
 #sc {
   color: var(--accent);
 }
@@ -149,4 +145,8 @@ footer {
   margin-top: 5rem;
   display: flex;
   justify-content: center;
+}
+
+@view-transition {
+  navigation: auto;
 }
