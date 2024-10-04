@@ -63,6 +63,11 @@ templ generate && go build main.go
 
 This will run soundcloak on localhost, port 4664. (by default)
 
+# Contributing
+Contributions are welcomed! You can contribute on:
+- [GitHub](https://github.com/maid-zone/soundcloak)
+- [Codeberg (mirror)](https://codeberg.org/maid-zone/soundcloak)
+
 # Built with
 ## Backend
 - [Go programming language](https://github.com/golang/go)
