@@ -108,6 +108,40 @@ func main() {
 		return c.Redirect(u.Path)
 	})
 
+	app.Get("/w/player", func(c *fiber.Ctx) error {
+		u := c.Query("url")
+		if u == "" {
+			return fiber.ErrNotFound
+		}
+
+		var (
+			track sc.Track
+			err   error
+		)
+		if strings.HasPrefix(u, "https://") {
+			if !strings.HasPrefix(u, "https://api.soundcloud.com/tracks/") {
+				return fiber.ErrUnsupportedMediaType
+			}
+
+			track, err = sc.GetTrackByID(u[34:]) // len("https://api.soundcloud.com/tracks/") == 34
+		} else {
+			track, err = sc.GetTrack(u)
+		}
+
+		if err != nil {
+			fmt.Printf("error getting %s: %s\n", u, err)
+			return err
+		}
+
+		stream, err := track.GetStream()
+		if err != nil {
+			fmt.Printf("error getting %s stream from %s: %s\n", track.Permalink, track.Author.Permalink, err)
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.TrackEmbed(track, stream).Render(context.Background(), c)
+	})
+
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
@@ -121,7 +155,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(track, stream), templates.TrackEmbed(track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(track, stream), templates.TrackHeader(track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {
@@ -142,7 +176,7 @@ func main() {
 		//fmt.Println("gettracks", time.Since(h))
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(usr.Username, templates.User(usr, p), templates.UserEmbed(usr)).Render(context.Background(), c)
+		return templates.Base(usr.Username, templates.User(usr, p), templates.UserHeader(usr)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
@@ -165,7 +199,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), templates.PlaylistEmbed(playlist)).Render(context.Background(), c)
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), templates.PlaylistHeader(playlist)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

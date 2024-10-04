@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-templ TrackEmbed(t sc.Track) {
+templ TrackHeader(t sc.Track) {
 	<meta name="og:site_name" content={ t.Author.Username + " ~ soundcloak" }/>
 	<meta name="og:title" content={ t.Title }/>
 	<meta name="og:description" content={ t.FormatDescription() }/>
@@ -15,16 +15,29 @@ templ TrackEmbed(t sc.Track) {
 	<script src="/js/hls.js/hls.light.js"></script>
 }
 
+templ TrackPlayer() {
+	<script>
+		var audio = document.getElementById('track');
+		if (Hls.isSupported()) {
+			var hls = new Hls();
+			hls.loadSource(audio.src);
+			hls.attachMedia(audio);
+		} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
+			alert('HLS is not supported! Audio playback will not work.');
+		}
+	</script>
+}
+
 templ Track(t sc.Track, stream string) {
 	if t.Artwork != "" {
-		<img src={t.Artwork} class={ViewTransition("t" + t.ID)}>
+		<img src={ t.Artwork } class={ ViewTransition("t" + t.ID) }/>
 	}
 	<h1>{ t.Title }</h1>
 	<audio id="track" src={ stream } controls></audio>
 	<noscript>
-		<br>
+		<br/>
 		JavaScript is disabled! Audio playback may not work without it enabled.
-	</noscript>	
+	</noscript>
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -53,14 +66,39 @@ templ Track(t sc.Track, stream string) {
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
-	<script>
-		var audio = document.getElementById('track');
-		if (Hls.isSupported()) {
-			var hls = new Hls();
-			hls.loadSource(audio.src);
-			hls.attachMedia(audio);
-		} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
-			alert('HLS is not supported! Audio playback will not work.');
-		}
-	</script>
+	@TrackPlayer()
+}
+
+templ TrackEmbed(t sc.Track, stream string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<link rel="stylesheet" href="/global.css"/>
+			<title>soundcloak</title>
+			<script src="/js/hls.js/hls.light.js"></script>
+		</head>
+		<body>
+			if t.Artwork != "" {
+				<img src={ t.Artwork }/>
+			}
+			<h1>{ t.Title }</h1>
+			<audio id="track" src={ stream } controls></audio>
+			<noscript>
+				<br/>
+				JavaScript is disabled! Audio playback may not work without it enabled.
+			</noscript>
+			<a class="listing" href={ templ.URL("/" + t.Author.Permalink) }>
+				<img src={ t.Author.Avatar }/>
+				<div class="meta">
+					<h3>{ t.Author.Username }</h3>
+					if t.Author.FullName != "" {
+						<span>{ t.Author.FullName }</span>
+					}
+				</div>
+			</a>
+			@TrackPlayer()
+		</body>
+	</html>
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-templ PlaylistEmbed(p sc.Playlist) {
+templ PlaylistHeader(p sc.Playlist) {
 	<meta name="og:site_name" content={ p.Author.Username + " ~ soundcloak" }/>
 	<meta name="og:title" content={ p.Title }/>
 	<meta name="og:description" content={ p.FormatDescription() }/>

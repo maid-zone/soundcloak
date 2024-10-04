@@ -235,3 +235,57 @@ func (t Track) FormatDescription() string {
 
 	return desc
 }
+
+func GetTrackByID(id string) (Track, error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return Track{}, err
+	}
+
+	tracksCacheLock.RLock()
+	for _, cell := range tracksCache {
+		if cell.Value.ID == id && cell.Expires.After(time.Now()) {
+			tracksCacheLock.RUnlock()
+			return cell.Value, nil
+		}
+	}
+	tracksCacheLock.RUnlock()
+
+	var t Track
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	req.SetRequestURI("https://" + api + "/tracks/" + id + "?client_id=" + cid)
+	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	err = DoWithRetry(req, resp)
+	if err != nil {
+		return t, err
+	}
+
+	data, err := resp.BodyUncompressed()
+	if err != nil {
+		data = resp.Body()
+	}
+
+	err = cfg.JSON.Unmarshal(data, &t)
+	if err != nil {
+		return t, err
+	}
+
+	if t.Kind != "track" {
+		return t, ErrKindNotCorrect
+	}
+
+	t.Fix()
+
+	tracksCacheLock.Lock()
+	tracksCache[t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
+	tracksCacheLock.Unlock()
+
+	return t, nil
+}
