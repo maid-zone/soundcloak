@@ -12,10 +12,13 @@ wip alternative frontend for soundcloud
 
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
+Feedback and feature requests are especially needed, since I (laptopcat) don't really know what to prioritize
 
 You can contribute on:
 - [GitHub](https://github.com/maid-zone/soundcloak)
 - [Codeberg (mirror)](https://codeberg.org/maid-zone/soundcloak)
+
+You can also [reach out to me privately](https://laptopc.at)
 
 # Setting it up
 ## Prerequisites:
