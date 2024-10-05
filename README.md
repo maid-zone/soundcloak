@@ -10,6 +10,13 @@ wip alternative frontend for soundcloud
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 
+# Contributing
+Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
+
+You can contribute on:
+- [GitHub](https://github.com/maid-zone/soundcloak)
+- [Codeberg (mirror)](https://codeberg.org/maid-zone/soundcloak)
+
 # Setting it up
 ## Prerequisites:
 1. [node.js + npm](https://nodejs.org) (any recent enough version should do, it's just used for getting hls.js builds)
@@ -62,11 +69,6 @@ templ generate && go build main.go
 ```
 
 This will run soundcloak on localhost, port 4664. (by default)
-
-# Contributing
-Contributions are welcomed! You can contribute on:
-- [GitHub](https://github.com/maid-zone/soundcloak)
-- [Codeberg (mirror)](https://codeberg.org/maid-zone/soundcloak)
 
 # Built with
 ## Backend

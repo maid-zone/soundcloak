@@ -7,7 +7,7 @@ import (
 )
 
 // time-to-live for clientid cache
-// larger number will improve performance (no need to recheck everytime) but might make soundcloak unusable after soundcloud updates the website
+// larger number will improve performance (no need to recheck everytime) but might make soundcloak briefly unusable for a larger amount of time if the client id is invalidated
 const ClientIDTTL = 30 * time.Minute
 
 // time-to-live for user profile cache
@@ -39,7 +39,7 @@ const Prefork = false
 // when disabled, the X-Forwarded-* headers will be blindly used
 const TrustedProxyCheck = false
 
-// ip or ip range of trusted proxies (check above)
+// list of ips or ip ranges of trusted proxies (check above)
 var TrustedProxies = []string{}
 
 // what JSON library should be used
