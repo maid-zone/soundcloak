@@ -54,3 +54,25 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 		<span>no more tracks</span>
 	}
 }
+
+templ SearchUsers(p *sc.Paginated[*sc.User]) {
+	<span>Found { strconv.FormatInt(p.Total, 10) } users</span>
+	<br/>
+	<br/>
+	for _, user := range p.Collection {
+		<a class="listing" href={ templ.URL("/" + user.Permalink) }>
+			if user.Avatar != "" {
+				<img src={ user.Avatar }/>
+			} else {
+				<img src="/placeholder.jpg"/>
+			}
+			<div class="meta">
+				<h3>{ user.Username }</h3>
+				if user.FullName != "" {
+					<span>{ user.FullName }</span>
+				}
+			</div>
+		</a>
+	}
+	<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">More users</a>
+}
