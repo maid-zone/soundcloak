@@ -11,7 +11,9 @@ wip alternative frontend for soundcloud
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 
 ## In the works
-- Track player embeds
+- Track player embeds (`https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/id` -> `https://sc.maid.zone/w/player/?url=https%3A//api.soundcloud.com/tracks/id`)
+
+The UI isn't really done yet. All parameters other than url are unsupported. You can also specify track by permalink instead of id (`https://sc.maid.zone/w/player/?url=username/track`)
 
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
