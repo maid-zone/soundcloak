@@ -37,7 +37,7 @@ const Prefork = false
 
 // use X-Forwarded-* headers ONLY when ip is in TrustedProxies list
 // when disabled, the X-Forwarded-* headers will be blindly used
-const TrustedProxyCheck = false
+const TrustedProxyCheck = true
 
 // list of ips or ip ranges of trusted proxies (check above)
 var TrustedProxies = []string{}
