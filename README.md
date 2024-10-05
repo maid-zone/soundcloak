@@ -50,15 +50,7 @@ npm i
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
-5. Download other required go modules:
-```sh
-go get
-```
-
-6. *Optional.* Edit config:
-You can change some values in `lib/cfg/init.go` if you want. Keep in mind that you need to rebuild the binary each time you want to update the config.
-
-7. Generate code from templates & build binary:
+5. Generate code from templates:
 
 *You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
 ```sh
@@ -66,10 +58,24 @@ export PATH=${PATH}:`go env GOPATH`/bin
 ```
 
 ```sh
-templ generate && go build main.go
+templ generate
 ```
 
-8. Run the binary:
+6. Download other required go modules:
+```sh
+go get
+```
+
+7. *Optional.* Edit config:
+You can change some values in `lib/cfg/init.go` if you want. Keep in mind that you need to rebuild the binary each time you want to update the config.
+
+8. Build binary:
+
+```sh
+go build main.go
+```
+
+9. Run the binary:
 ```sh
 ./main
 ```
