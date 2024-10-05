@@ -52,12 +52,12 @@ npm i
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
-5. Generate code from templates:
-
 *You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
 ```sh
 export PATH=${PATH}:`go env GOPATH`/bin
 ```
+
+5. Generate code from templates:
 
 ```sh
 templ generate
