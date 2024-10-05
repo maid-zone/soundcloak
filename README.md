@@ -10,6 +10,9 @@ wip alternative frontend for soundcloud
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 
+## In the works
+- Track player embeds
+
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
 Feedback and feature requests are especially needed, since I (laptopcat) don't really know what to prioritize
