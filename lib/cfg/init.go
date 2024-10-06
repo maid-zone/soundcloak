@@ -6,6 +6,11 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+// fully loads the track on page load
+// this option is here since the stream expires after some time (5 minutes? correct me if im wrong)
+// if the stream isn't fully loaded before it expires - you'll need to reload the page
+const FullyPreloadTrack = false
+
 // time-to-live for clientid cache
 // larger number will improve performance (no need to recheck everytime) but might make soundcloak briefly unusable for a larger amount of time if the client id is invalidated
 const ClientIDTTL = 30 * time.Minute

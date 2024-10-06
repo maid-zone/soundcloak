@@ -1,10 +1,11 @@
 package templates
 
 import (
+	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/sc"
+	"net/url"
 	"strconv"
 	"strings"
-	"net/url"
 )
 
 templ TrackHeader(t sc.Track) {
@@ -17,16 +18,30 @@ templ TrackHeader(t sc.Track) {
 }
 
 templ TrackPlayer() {
-	<script>
-		var audio = document.getElementById('track');
-		if (Hls.isSupported()) {
-			var hls = new Hls();
-			hls.loadSource(audio.src);
-			hls.attachMedia(audio);
-		} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
-			alert('HLS is not supported! Audio playback will not work.');
-		}
-	</script>
+	// there might be a better way to do this idk
+	if cfg.FullyPreloadTrack {
+		<script>
+			var audio = document.getElementById('track');
+			if (Hls.isSupported()) {
+				var hls = new Hls({maxBufferLength: Infinity});
+				hls.loadSource(audio.src);
+				hls.attachMedia(audio);
+			} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
+				alert('HLS is not supported! Audio playback will not work.');
+			}
+		</script>
+	} else {
+		<script>
+			var audio = document.getElementById('track');
+			if (Hls.isSupported()) {
+				var hls = new Hls();
+				hls.loadSource(audio.src);
+				hls.attachMedia(audio);
+			} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
+				alert('HLS is not supported! Audio playback will not work.');
+			}
+		</script>
+	}
 }
 
 templ Track(t sc.Track, stream string) {
@@ -109,9 +124,9 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 	<br/>
 	<br/>
 	for _, track := range p.Collection {
-		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>		
+		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 			if track.Artwork != "" {
-				<img src={ track.Artwork } class={ViewTransition("t" + track.ID)}>
+				<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
 			} else {
 				<img src="/placeholder.jpg"/>
 			}
