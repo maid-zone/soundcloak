@@ -29,6 +29,7 @@ type Track struct {
 	Genre         string `json:"genre"`
 	Kind          string `json:"kind"` // should always be "track"!
 	LastModified  string `json:"last_modified"`
+	License       string `json:"license"`
 	Likes         int64  `json:"likes_count"`
 	Permalink     string `json:"permalink"`
 	Played        int64  `json:"playback_count"`

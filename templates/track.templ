@@ -79,6 +79,9 @@ templ Track(t sc.Track, stream string) {
 	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
 	<p>Created: { t.CreatedAt }</p>
 	<p>Last modified: { t.LastModified }</p>
+	if t.License != "" {
+		<p>License: { t.License }</p>
+	}
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
