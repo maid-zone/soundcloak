@@ -123,18 +123,24 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 	<span>Found { strconv.FormatInt(p.Total, 10) } tracks</span>
 	<br/>
 	<br/>
-	for _, track := range p.Collection {
-		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
-			if track.Artwork != "" {
-				<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
-			} else {
-				<img src="/placeholder.jpg"/>
-			}
-			<div class="meta">
-				<h3>{ track.Title }</h3>
-				<span>{ track.Author.Username }</span>
-			</div>
-		</a>
+	if len(p.Collection) == 0 && p.Total != 0 {
+		<p>no more results</p>
+	} else {
+		for _, track := range p.Collection {
+			<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+				if track.Artwork != "" {
+					<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
+				} else {
+					<img src="/placeholder.jpg"/>
+				}
+				<div class="meta">
+					<h3>{ track.Title }</h3>
+					<span>{ track.Author.Username }</span>
+				</div>
+			</a>
+		}
 	}
-	<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">More tracks</a>
+	if p.Total != 0 && len(p.Collection) != 0 {
+		<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">More tracks</a>
+	}
 }

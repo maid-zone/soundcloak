@@ -64,18 +64,27 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 	<span>Found { strconv.FormatInt(p.Total, 10) } playlists</span>
 	<br/>
 	<br/>
-	for _, playlist := range p.Collection {
-		<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
-			if playlist.Artwork != "" {
-				<img src={ playlist.Artwork }/>
-			} else {
-				<img src="/placeholder.jpg"/>
-			}
-			<div class="meta">
-				<h3>{ playlist.Title }</h3>
-				<span>{ playlist.Author.Username }</span>
-			</div>
-		</a>
+	if len(p.Collection) == 0 {
+		if p.Total != 0 {
+			<p>no more results</p>
+		}
+	} else {
+		for _, playlist := range p.Collection {
+			<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+				if playlist.Artwork != "" {
+					<img src={ playlist.Artwork }/>
+				} else {
+					<img src="/placeholder.jpg"/>
+				}
+				<div class="meta">
+					<h3>{ playlist.Title }</h3>
+					<span>{ playlist.Author.Username }</span>
+				</div>
+			</a>
+		}
 	}
-	<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">More playlists</a>
+
+	if p.Total != 0 && len(p.Collection) != 0 {
+		<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">More playlists</a>
+	}
 }
