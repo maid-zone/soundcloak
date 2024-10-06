@@ -37,7 +37,11 @@ templ Playlist(p sc.Playlist) {
 		for _, track := range p.Tracks {
 			if track.Title != "" {
 				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
-					<img src={ track.Artwork }/>
+					if track.Artwork != "" {
+						<img src={ track.Artwork }/>
+					} else {
+						<img src="/placeholder.jpg">
+					}
 					<div class="meta">
 						<h3>{ track.Title }</h3>
 						<span>{ track.Author.Username }</span>
@@ -47,7 +51,7 @@ templ Playlist(p sc.Playlist) {
 		}
 	</div>
 	if len(p.MissingTracks) != 0 {
-		<a href={ templ.URL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
+		<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
 	}
 	<div>
 		if p.TagList != "" {
@@ -85,6 +89,6 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 	}
 
 	if p.Total != 0 && len(p.Collection) != 0 {
-		<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">More playlists</a>
+		<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
 	}
 }
