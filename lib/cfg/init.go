@@ -35,6 +35,11 @@ const Addr = ":4664"
 // each one will be a separate process, so they will have separate cache
 const Prefork = false
 
+// Enables TLS Early Data (0-RTT / zero round trip time)
+// This can reduce latency, but also makes requests replayable (not that much of a concern for soundcloak, since there are no authenticated operations)
+// There might be breakage when used together with TrustedProxyCheck and the proxy is untrusted
+const EarlyData = false
+
 // use X-Forwarded-* headers ONLY when ip is in TrustedProxies list
 // when disabled, the X-Forwarded-* headers will be blindly used
 const TrustedProxyCheck = true

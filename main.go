@@ -29,7 +29,9 @@ func main() {
 	})
 	app.Use(compress.New())
 	app.Use(recover.New())
-	app.Use(earlydata.New())
+	if cfg.EarlyData {
+		app.Use(earlydata.New())
+	}
 
 	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 3600})

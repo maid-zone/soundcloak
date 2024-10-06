@@ -147,6 +147,17 @@ footer {
   justify-content: center;
 }
 
+select {
+  background: var(--secondary);
+  border-color: var(--0);
+  border-style: solid;
+  color: var(--text);
+}
+
+select:focus {
+  border-color: var(--accent);
+}
+
 @view-transition {
   navigation: auto;
 }
