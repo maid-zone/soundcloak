@@ -182,6 +182,7 @@ func (p *Paginated[T]) Proceed() error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
+	oldNext := p.Next
 	req.SetRequestURI(p.Next + "&client_id=" + cid)
 	req.Header.Set("User-Agent", cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
@@ -203,7 +204,16 @@ func (p *Paginated[T]) Proceed() error {
 		data = resp.Body()
 	}
 
-	return cfg.JSON.Unmarshal(data, p)
+	err = cfg.JSON.Unmarshal(data, p)
+	if err != nil {
+		return err
+	}
+
+	if p.Next == oldNext { // prevent loops of nothingness
+		p.Next = ""
+	}
+
+	return nil
 }
 
 func TagListParser(taglist string) (res []string) {
