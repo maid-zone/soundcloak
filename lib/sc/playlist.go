@@ -161,6 +161,10 @@ func (p *Playlist) GetMissingTracks() error {
 		}
 	}
 
+	if len(missing) == 0 {
+		return nil
+	}
+
 	res, next, err := GetMissingTracks(missing)
 	if err != nil {
 		return err
