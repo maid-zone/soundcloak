@@ -17,7 +17,7 @@ templ PlaylistHeader(p sc.Playlist) {
 
 templ Playlist(p sc.Playlist) {
 	if p.Artwork != "" {
-		<img src={ p.Artwork }/>
+		<img src={ p.Artwork } width="300px"/>
 	}
 	<h1>{ p.Title }</h1>
 	<a class="listing" href={ templ.URL("/" + p.Author.Permalink) }>
@@ -43,7 +43,7 @@ templ Playlist(p sc.Playlist) {
 			if track.Title != "" {
 				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 					if track.Artwork != "" {
-						<img src={ track.Artwork }/>
+						<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
 					} else {
 						<img src="/placeholder.jpg">
 					}

@@ -18,7 +18,7 @@ templ UserHeader(u sc.User) {
 templ UserBase(u sc.User) {
 	<div>
 		if u.Avatar != "" {
-			<img src={ u.Avatar }/>
+			<img src={ u.Avatar } class={ ViewTransition("u" + u.ID) } width="300px"/>
 		}
 		<h1>{ u.Username }</h1>
 		if u.FullName != "" {
@@ -151,7 +151,7 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 		for _, user := range p.Collection {
 			<a class="listing" href={ templ.URL("/" + user.Permalink) }>
 				if user.Avatar != "" {
-					<img src={ user.Avatar }/>
+					<img src={ user.Avatar } class={ ViewTransition("u" + user.ID) }/>
 				} else {
 					<img src="/placeholder.jpg"/>
 				}
