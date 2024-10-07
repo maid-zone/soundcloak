@@ -5,7 +5,7 @@ wip alternative frontend for soundcloud
 
 # Already implemented
 - Searching for songs, users, playlists
-- Basic user overview (songs, metadata)
+- Basic user overview (songs, playlists, albums, metadata)
 - Basic song overview (author, metadata) & streaming (requires javascript (which requires support for [Media Source Extensions](https://caniuse.com/mediasource)) if no [browser support for HLS](https://caniuse.com/http-live-streaming))
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
