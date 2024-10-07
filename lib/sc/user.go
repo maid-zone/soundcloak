@@ -52,7 +52,7 @@ func GetUser(permalink string) (User, error) {
 		return u, err
 	}
 
-	u.Fix()
+	u.Fix(true)
 
 	usersCacheLock.Lock()
 	usersCache[permalink] = cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
@@ -74,7 +74,7 @@ func SearchUsers(args string) (*Paginated[*User], error) {
 	}
 
 	for _, u := range p.Collection {
-		u.Fix()
+		u.Fix(false)
 	}
 
 	return &p, nil
@@ -91,7 +91,7 @@ func (u User) GetTracks(args string) (*Paginated[Track], error) {
 	}
 
 	for _, u := range p.Collection {
-		u.Fix()
+		u.Fix(false)
 	}
 
 	return &p, nil
@@ -120,8 +120,12 @@ func (u User) FormatUsername() string {
 	return res
 }
 
-func (u *User) Fix() {
-	u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
+func (u *User) Fix(large bool) {
+	if large {
+		u.Avatar = strings.Replace(u.Avatar, "-large.", "-t500x500.", 1)
+	} else {
+		u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
+	}
 	ls := strings.Split(u.ID, ":")
 	u.ID = ls[len(ls)-1]
 }

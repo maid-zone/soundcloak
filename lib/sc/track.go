@@ -98,7 +98,7 @@ func GetTrack(permalink string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix()
+	t.Fix(true)
 
 	tracksCacheLock.Lock()
 	tracksCache[permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
@@ -120,7 +120,7 @@ func SearchTracks(args string) (*Paginated[*Track], error) {
 	}
 
 	for _, t := range p.Collection {
-		t.Fix()
+		t.Fix(false)
 	}
 
 	return &p, nil
@@ -155,7 +155,7 @@ func GetTracks(ids string) ([]*Track, error) {
 	var res []*Track
 	err = cfg.JSON.Unmarshal(data, &res)
 	for _, t := range res {
-		t.Fix()
+		t.Fix(false)
 	}
 	return res, err
 }
@@ -208,14 +208,20 @@ func (t Track) GetStream() (string, error) {
 	return s.URL, nil
 }
 
-func (t *Track) Fix() {
-	t.Artwork = strings.Replace(t.Artwork, "-large.", "-t200x200.", 1)
+func (t *Track) Fix(large bool) {
+	if large {
+		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t500x500.", 1)
+	} else {
+		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t200x200.", 1)
+	}
 	if t.ID == "" {
 		t.ID = strconv.FormatInt(t.IDint, 10)
 	} else {
 		ls := strings.Split(t.ID, ":")
 		t.ID = ls[len(ls)-1]
 	}
+
+	t.Author.Fix(false)
 }
 
 func (t Track) FormatDescription() string {
@@ -282,7 +288,7 @@ func GetTrackByID(id string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix()
+	t.Fix(true)
 
 	tracksCacheLock.Lock()
 	tracksCache[t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}

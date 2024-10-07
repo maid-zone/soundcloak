@@ -86,16 +86,21 @@ func SearchPlaylists(args string) (*Paginated[*Playlist], error) {
 func (p *Playlist) Fix(cached bool) error {
 	if cached {
 		for _, t := range p.Tracks {
-			t.Fix()
+			t.Fix(false)
 		}
 
 		err := p.GetMissingTracks()
 		if err != nil {
 			return err
 		}
+
+		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t500x500.", 1)
+	} else {
+		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
 	}
 
-	p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
+	p.Author.Fix(false)
+
 	return nil
 }
 
