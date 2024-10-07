@@ -28,12 +28,17 @@ templ UserBase(u sc.User) {
 			<p style="color: var(--accent)">Verified</p>
 		}
 	</div>
-	<p style="white-space: pre-wrap">{ u.Description }</p>
+	if u.Description != "" {
+		<details>
+			<summary>Toggle description</summary>
+			<p style="white-space: pre-wrap">{ u.Description }</p>
+		</details>
+	}
 	<div>
 		<p>{ strconv.FormatInt(u.Followers, 10) } followers</p>
 		<p>{ strconv.FormatInt(u.Following, 10) } following</p>
 		<p>{ strconv.FormatInt(u.Tracks, 10) } tracks</p>
-		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists</p>
+		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists & albums</p>
 		<br/>
 		<p>Created: { u.CreatedAt }</p>
 		<p>Last modified: { u.LastModified }</p>

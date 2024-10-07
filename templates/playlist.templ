@@ -29,8 +29,13 @@ templ Playlist(p sc.Playlist) {
 			}
 		</div>
 	</a>
-	<p style="white-space: pre-wrap">{ p.Description }</p>
-	<span>{ strconv.FormatInt(p.TrackCount, 10) } tracks</span>
+	if p.Description != "" {
+		<details>
+			<summary>Toggle description</summary>
+			<p style="white-space: pre-wrap">{ p.Description }</p>
+		</details>
+	}
+	<p>{ strconv.FormatInt(p.TrackCount, 10) } tracks</p>
 	<br/>
 	<br/>
 	<div>
