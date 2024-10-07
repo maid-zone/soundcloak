@@ -15,7 +15,7 @@ templ UserHeader(u sc.User) {
 	<link rel="icon" type="image/x-icon" href={ u.Avatar }/>
 }
 
-templ User(u sc.User, p *sc.Paginated[sc.Track]) {
+templ UserBase(u sc.User) {
 	<div>
 		if u.Avatar != "" {
 			<img src={ u.Avatar }/>
@@ -38,6 +38,17 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 		<p>Created: { u.CreatedAt }</p>
 		<p>Last modified: { u.LastModified }</p>
 	</div>
+}
+
+templ User(u sc.User, p *sc.Paginated[sc.Track]) {
+	@UserBase(u)
+	// kinda tedious but whatever, might make it more flexible in the future
+	<div class="btns">
+		<a class="btn active">songs</a>
+		<a class="btn" href={templ.URL("/"+u.Permalink+"/sets")}>playlists</a>
+		<a class="btn" href={templ.URL("/"+u.Permalink+"/albums")}>albums</a>
+	</div>
+	<br>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, track := range p.Collection {
@@ -53,9 +64,73 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 				</a>
 			}
 		</div>
-		<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+		if p.Next != "" {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+		}
 	} else {
 		<span>no more tracks</span>
+	}
+}
+
+templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
+	@UserBase(u)
+	<div class="btns">
+		<a class="btn" href={templ.URL("/"+u.Permalink)}>songs</a>
+		<a class="btn active">playlists</a>
+		<a class="btn" href={templ.URL("/"+u.Permalink+"/albums")}>albums</a>
+	</div>
+	<br>
+	if len(p.Collection) != 0 {
+		<div>
+			for _, playlist := range p.Collection {
+				<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+					if playlist.Artwork != "" {
+						<img src={ playlist.Artwork }/>
+					} else {
+						<img src="/placeholder.jpg"/>
+					}
+					<div class="meta">
+						<h3>{ playlist.Title }</h3>
+					</div>
+				</a>
+			}
+		</div>
+		if p.Next != "" {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists_without_albums")[1])) } rel="noreferrer">more playlists</a>
+		}
+	} else {
+		<span>no more playlists</span>
+	}
+}
+
+templ UserAlbums(u sc.User, p *sc.Paginated[sc.Playlist]) {
+	@UserBase(u)
+	<div class="btns">
+		<a class="btn" href={templ.URL("/"+u.Permalink)}>songs</a>
+		<a class="btn" href={templ.URL("/"+u.Permalink+"/sets")}>playlists</a>
+		<a class="btn active">albums</a>
+	</div>
+	<br>
+	if len(p.Collection) != 0 {
+		<div>
+			for _, playlist := range p.Collection {
+				<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+					if playlist.Artwork != "" {
+						<img src={ playlist.Artwork }/>
+					} else {
+						<img src="/placeholder.jpg"/>
+					}
+					<div class="meta">
+						<h3>{ playlist.Title }</h3>
+					</div>
+				</a>
+			}
+		</div>
+		if p.Next != "" {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/albums")[1])) } rel="noreferrer">more albums</a>
+		}
+	} else {
+		<span>no more albums</span>
 	}
 }
 
@@ -85,7 +160,7 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 		}
 	}
 
-	if p.Total != 0 && len(p.Collection) != 0 {
+	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
 		<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
 	}
 }

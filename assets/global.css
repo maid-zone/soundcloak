@@ -77,7 +77,8 @@ input:focus {
 }
 
 .btn:hover,
-.btn:focus {
+.btn:focus,
+.btn.active {
   border-color: var(--accent);
   border-style: solid;
   outline: none;
@@ -156,6 +157,11 @@ select {
 
 select:focus {
   border-color: var(--accent);
+}
+
+.btns {
+  display: flex;
+  gap: 1rem;
 }
 
 @view-transition {

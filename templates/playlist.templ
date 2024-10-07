@@ -88,7 +88,7 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 		}
 	}
 
-	if p.Total != 0 && len(p.Collection) != 0 {
+	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
 		<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
 	}
 }

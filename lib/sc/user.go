@@ -125,3 +125,37 @@ func (u *User) Fix() {
 	ls := strings.Split(u.ID, ":")
 	u.ID = ls[len(ls)-1]
 }
+
+func (u *User) GetPlaylists(args string) (*Paginated[Playlist], error) {
+	p := Paginated[Playlist]{
+		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
+	}
+
+	err := p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pl := range p.Collection {
+		pl.Fix(false)
+	}
+
+	return &p, nil
+}
+
+func (u *User) GetAlbums(args string) (*Paginated[Playlist], error) {
+	p := Paginated[Playlist]{
+		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
+	}
+
+	err := p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pl := range p.Collection {
+		pl.Fix(false)
+	}
+
+	return &p, nil
+}

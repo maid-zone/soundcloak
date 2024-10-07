@@ -144,6 +144,40 @@ func main() {
 		return templates.TrackEmbed(track, stream).Render(context.Background(), c)
 	})
 
+	app.Get("/:user/sets", func(c *fiber.Ctx) error {
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			fmt.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
+			return err
+		}
+
+		pl, err := user.GetPlaylists(c.Query("pagination", "?limit=20"))
+		if err != nil {
+			fmt.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserPlaylists(user, pl), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/albums", func(c *fiber.Ctx) error {
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			fmt.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
+			return err
+		}
+
+		pl, err := user.GetAlbums(c.Query("pagination", "?limit=20"))
+		if err != nil {
+			fmt.Printf("error getting %s albums: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserAlbums(user, pl), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
