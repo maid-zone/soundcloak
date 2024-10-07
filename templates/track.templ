@@ -46,7 +46,7 @@ templ TrackPlayer() {
 
 templ Track(t sc.Track, stream string) {
 	if t.Artwork != "" {
-		<img src={ t.Artwork } class={ ViewTransition("t" + t.ID) } width="300px"/>
+		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
 	<audio id="track" src={ stream } controls></audio>
@@ -132,7 +132,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 		for _, track := range p.Collection {
 			<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 				if track.Artwork != "" {
-					<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
+					<img src={ track.Artwork }/>
 				} else {
 					<img src="/placeholder.jpg"/>
 				}

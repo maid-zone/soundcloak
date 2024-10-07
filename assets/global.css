@@ -164,7 +164,3 @@ select:focus {
   display: flex;
   gap: 1rem;
 }
-
-@view-transition {
-  navigation: auto;
-}

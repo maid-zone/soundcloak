@@ -43,9 +43,9 @@ templ Playlist(p sc.Playlist) {
 			if track.Title != "" {
 				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 					if track.Artwork != "" {
-						<img src={ track.Artwork } class={ ViewTransition("t" + track.ID) }/>
+						<img src={ track.Artwork }/>
 					} else {
-						<img src="/placeholder.jpg">
+						<img src="/placeholder.jpg"/>
 					}
 					<div class="meta">
 						<h3>{ track.Title }</h3>
@@ -92,7 +92,6 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 			</a>
 		}
 	}
-
 	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
 		<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
 	}

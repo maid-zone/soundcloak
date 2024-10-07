@@ -18,7 +18,7 @@ templ UserHeader(u sc.User) {
 templ UserBase(u sc.User) {
 	<div>
 		if u.Avatar != "" {
-			<img src={ u.Avatar } class={ ViewTransition("u" + u.ID) } width="300px"/>
+			<img src={ u.Avatar } width="300px"/>
 		}
 		<h1>{ u.Username }</h1>
 		if u.FullName != "" {
@@ -50,10 +50,10 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 	// kinda tedious but whatever, might make it more flexible in the future
 	<div class="btns">
 		<a class="btn active">songs</a>
-		<a class="btn" href={templ.URL("/"+u.Permalink+"/sets")}>playlists</a>
-		<a class="btn" href={templ.URL("/"+u.Permalink+"/albums")}>albums</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 	</div>
-	<br>
+	<br/>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, track := range p.Collection {
@@ -61,7 +61,7 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 					if track.Artwork != "" {
 						<img src={ track.Artwork }/>
 					} else {
-						<img src="/placeholder.jpg">
+						<img src="/placeholder.jpg"/>
 					}
 					<div class="meta">
 						<h3>{ track.Title }</h3>
@@ -80,11 +80,11 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
-		<a class="btn" href={templ.URL("/"+u.Permalink)}>songs</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
 		<a class="btn active">playlists</a>
-		<a class="btn" href={templ.URL("/"+u.Permalink+"/albums")}>albums</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 	</div>
-	<br>
+	<br/>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, playlist := range p.Collection {
@@ -111,11 +111,11 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
 templ UserAlbums(u sc.User, p *sc.Paginated[sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
-		<a class="btn" href={templ.URL("/"+u.Permalink)}>songs</a>
-		<a class="btn" href={templ.URL("/"+u.Permalink+"/sets")}>playlists</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn active">albums</a>
 	</div>
-	<br>
+	<br/>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, playlist := range p.Collection {
@@ -151,7 +151,7 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 		for _, user := range p.Collection {
 			<a class="listing" href={ templ.URL("/" + user.Permalink) }>
 				if user.Avatar != "" {
-					<img src={ user.Avatar } class={ ViewTransition("u" + user.ID) }/>
+					<img src={ user.Avatar }/>
 				} else {
 					<img src="/placeholder.jpg"/>
 				}
@@ -164,7 +164,6 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 			</a>
 		}
 	}
-
 	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
 		<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
 	}
