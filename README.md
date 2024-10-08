@@ -69,6 +69,7 @@ go get
 ```
 
 7. *Optional.* Edit config:
+
 You can change some values in `lib/cfg/init.go` if you want. Keep in mind that you need to rebuild the binary each time you want to update the config.
 
 8. Build binary:
@@ -83,6 +84,47 @@ go build main.go
 ```
 
 This will run soundcloak on localhost, port 4664. (by default)
+
+# Maintenance-related stuffs
+## Updating
+1. Retrieve the latest code:
+
+```sh
+git fetch origin
+git pull
+```
+
+2. Remove compressed versions of files:
+The webserver is configured to locally cache compressed versions of files. They have `.fiber.gz` extension and can be found in `assets` folder and `node_modules/hls.js/dist`. If any static files have been changed, you should purge these files so the new versions can be served. Static files are also cached in user's browser, so you will need to clean your cache to get the new files (Ctrl + F5)
+
+For example, you can clean these files from `assets` folder like so:
+```sh
+cd assets
+rm *.fiber.gz
+```
+
+3. *Optional.* Edit config:
+
+Sometimes, new updates add new config values. You can change some values in `lib/cfg/init.go` if you want.
+
+
+4. Regenerate templates (if they changed):
+
+```sh
+templ generate
+```
+
+5. Build binary:
+```sh
+go build main.go
+```
+
+6. Run it:
+```sh
+./main
+```
+
+Congratulations! You have succesfully updated your soundcloak. (hopefully this guide works)
 
 # Built with
 ## Backend

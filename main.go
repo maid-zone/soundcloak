@@ -34,7 +34,7 @@ func main() {
 	}
 
 	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})
-	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 3600})
+	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 14400})
 
 	app.Get("/search", func(c *fiber.Ctx) error {
 		q := c.Query("q")
