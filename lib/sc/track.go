@@ -181,8 +181,6 @@ func GetArbitraryTrack(data string) (Track, error) {
 		}
 	}
 
-	fmt.Println(data)
-
 	if n == 1 {
 		return GetTrack(data)
 	}
