@@ -16,13 +16,22 @@ const FullyPreloadTrack = false
 const ClientIDTTL = 30 * time.Minute
 
 // time-to-live for user profile cache
-const UserTTL = 5 * time.Minute
+const UserTTL = 10 * time.Minute
+
+// delay between cleanup of user cache
+const UserCacheCleanDelay = UserTTL / 4
 
 // time-to-live for track cache
-const TrackTTL = 5 * time.Minute
+const TrackTTL = 10 * time.Minute
+
+// delay between cleanup of track cache
+const TrackCacheCleanDelay = TrackTTL / 4
 
 // time-to-live for playlist cache
-const PlaylistTTL = 5 * time.Minute
+const PlaylistTTL = 10 * time.Minute
+
+// delay between cleanup of playlist cache
+const PlaylistCacheCleanDelay = PlaylistTTL / 4
 
 // default fasthttp one was causing connections to be stuck? todo make it cycle browser useragents or just choose random at startup
 const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.3"

@@ -116,19 +116,7 @@ func main() {
 			return fiber.ErrNotFound
 		}
 
-		var (
-			track sc.Track
-			err   error
-		)
-		if strings.HasPrefix(u, "https://") {
-			if !strings.HasPrefix(u, "https://api.soundcloud.com/tracks/") {
-				return fiber.ErrUnsupportedMediaType
-			}
-
-			track, err = sc.GetTrackByID(u[34:]) // len("https://api.soundcloud.com/tracks/") == 34
-		} else {
-			track, err = sc.GetTrack(u)
-		}
+		track, err := sc.GetArbitraryTrack(u)
 
 		if err != nil {
 			fmt.Printf("error getting %s: %s\n", u, err)

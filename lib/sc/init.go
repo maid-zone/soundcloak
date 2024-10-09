@@ -245,7 +245,7 @@ func TagListParser(taglist string) (res []string) {
 // could probably make a generic function, whatever
 func init() {
 	go func() {
-		ticker := time.NewTicker(cfg.UserTTL)
+		ticker := time.NewTicker(cfg.UserCacheCleanDelay)
 		for range ticker.C {
 			usersCacheLock.Lock()
 
@@ -260,7 +260,7 @@ func init() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(cfg.TrackTTL)
+		ticker := time.NewTicker(cfg.TrackCacheCleanDelay)
 		for range ticker.C {
 			tracksCacheLock.Lock()
 
@@ -275,7 +275,7 @@ func init() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(cfg.PlaylistTTL)
+		ticker := time.NewTicker(cfg.PlaylistCacheCleanDelay)
 		for range ticker.C {
 			playlistsCacheLock.Lock()
 

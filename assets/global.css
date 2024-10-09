@@ -33,7 +33,7 @@ h4,
 h5,
 h6 {
   font-family: "fixed", monospace, system-ui;
-  font-weight: normal;
+  font-weight: normal !important;
 }
 
 /* header {

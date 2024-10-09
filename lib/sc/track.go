@@ -3,6 +3,7 @@ package sc
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -105,6 +106,89 @@ func GetTrack(permalink string) (Track, error) {
 	tracksCacheLock.Unlock()
 
 	return t, nil
+}
+
+// Currently supports:
+// http/https links:
+// - api.soundcloud.com/tracks/<id> (api-v2 subdomain also supported)
+// - soundcloud.com/<user>/<track>
+//
+// plain permalink/id:
+// - <user>/<track>
+// - <id>
+func GetArbitraryTrack(data string) (Track, error) {
+	if len(data) > 8 && (data[:8] == "https://" || data[:7] == "http://") {
+		u, err := url.Parse(data)
+		if err == nil {
+			if (u.Host == "api.soundcloud.com" || u.Host == "api-v2.soundcloud.com") && len(u.Path) > 8 && u.Path[:8] == "/tracks/" {
+				return GetTrackByID(u.Path[8:])
+			}
+
+			if u.Host == "soundcloud.com" {
+				if len(u.Path) < 4 {
+					return Track{}, ErrNoURL
+				}
+
+				u.Path = u.Path[1:]
+				if u.Path[len(u.Path)-1] == '/' {
+					u.Path = u.Path[:len(u.Path)-1]
+				}
+
+				var n uint = 0
+				for _, c := range u.Path {
+					if c == '/' {
+						n++
+					}
+				}
+
+				if n != 1 {
+					return Track{}, ErrKindNotCorrect
+				}
+
+				return GetTrack(u.Path)
+			}
+		}
+	}
+
+	valid := true
+	for _, n := range data {
+		if n < '0' || n > '9' {
+			valid = false
+			break
+		}
+	}
+
+	if valid {
+		return GetTrackByID(data)
+	}
+
+	// this should be at the end since it manipulates data
+	if len(data) < 4 {
+		return Track{}, ErrNoURL
+	}
+
+	if data[0] == '/' {
+		data = data[1:]
+	}
+
+	if data[len(data)-1] == '/' {
+		data = data[:len(data)-1]
+	}
+	var n uint = 0
+	for _, c := range data {
+		if c == '/' {
+			n++
+		}
+	}
+
+	fmt.Println(data)
+
+	if n == 1 {
+		return GetTrack(data)
+	}
+
+	// failed to find a data point
+	return Track{}, ErrKindNotCorrect
 }
 
 func SearchTracks(args string) (*Paginated[*Track], error) {
@@ -291,7 +375,7 @@ func GetTrackByID(id string) (Track, error) {
 	t.Fix(true)
 
 	tracksCacheLock.Lock()
-	tracksCache[t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
+	tracksCache[t.Author.Permalink+"/"+t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
 	tracksCacheLock.Unlock()
 
 	return t, nil
