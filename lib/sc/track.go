@@ -139,14 +139,16 @@ func GetArbitraryTrack(data string) (Track, error) {
 					if c == '/' {
 						n++
 					}
-				}
 
-				if n != 1 {
-					return Track{}, ErrKindNotCorrect
+					if n == 2 {
+						return Track{}, ErrKindNotCorrect
+					}
 				}
 
 				return GetTrack(u.Path)
 			}
+		} else {
+			return Track{}, err
 		}
 	}
 
