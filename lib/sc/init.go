@@ -14,10 +14,9 @@ import (
 )
 
 var clientIdCache struct {
-	ClientID       []byte
-	ClientIDString string
-	Version        []byte
-	NextCheck      time.Time
+	ClientID  string
+	Version   []byte
+	NextCheck time.Time
 }
 
 const api = "api-v2.soundcloud.com"
@@ -46,7 +45,7 @@ type cached[T any] struct {
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
 	if clientIdCache.NextCheck.After(time.Now()) {
-		return clientIdCache.ClientIDString, nil
+		return clientIdCache.ClientID, nil
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -69,15 +68,14 @@ func GetClientID() (string, error) {
 		data = resp.Body()
 	}
 
-	//fmt.Println(string(data), err)
-
 	res := verRegex.FindSubmatch(data)
 	if len(res) != 2 {
 		return "", ErrVersionNotFound
 	}
 
 	if bytes.Equal(res[1], clientIdCache.Version) {
-		return clientIdCache.ClientIDString, nil
+		clientIdCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+		return clientIdCache.ClientID, nil
 	}
 
 	ver := res[1]
@@ -109,11 +107,10 @@ func GetClientID() (string, error) {
 			continue
 		}
 
-		clientIdCache.ClientID = res[1]
-		clientIdCache.ClientIDString = string(res[1])
+		clientIdCache.ClientID = string(res[1])
 		clientIdCache.Version = ver
 		clientIdCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		return clientIdCache.ClientIDString, nil
+		return clientIdCache.ClientID, nil
 	}
 
 	return "", ErrIDNotFound
