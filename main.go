@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/url"
 	"strings"
@@ -43,7 +42,7 @@ func main() {
 		case "tracks":
 			p, err := sc.SearchTracks(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
-				fmt.Printf("error getting tracks for %s: %s\n", q, err)
+				log.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
 			}
 
@@ -53,7 +52,7 @@ func main() {
 		case "users":
 			p, err := sc.SearchUsers(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
-				fmt.Printf("error getting users for %s: %s\n", q, err)
+				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
 			}
 
@@ -63,7 +62,7 @@ func main() {
 		case "playlists":
 			p, err := sc.SearchPlaylists(c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
-				fmt.Printf("error getting users for %s: %s\n", q, err)
+				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
 			}
 
@@ -119,13 +118,13 @@ func main() {
 		track, err := sc.GetArbitraryTrack(u)
 
 		if err != nil {
-			fmt.Printf("error getting %s: %s\n", u, err)
+			log.Printf("error getting %s: %s\n", u, err)
 			return err
 		}
 
 		stream, err := track.GetStream()
 		if err != nil {
-			fmt.Printf("error getting %s stream from %s: %s\n", track.Permalink, track.Author.Permalink, err)
+			log.Printf("error getting %s stream from %s: %s\n", track.Permalink, track.Author.Permalink, err)
 		}
 
 		c.Set("Content-Type", "text/html")
@@ -135,13 +134,13 @@ func main() {
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {
 		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
-			fmt.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
+			log.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
 			return err
 		}
 
 		pl, err := user.GetPlaylists(c.Query("pagination", "?limit=20"))
 		if err != nil {
-			fmt.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
+			log.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
 			return err
 		}
 
@@ -152,13 +151,13 @@ func main() {
 	app.Get("/:user/albums", func(c *fiber.Ctx) error {
 		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
-			fmt.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
+			log.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
 			return err
 		}
 
 		pl, err := user.GetAlbums(c.Query("pagination", "?limit=20"))
 		if err != nil {
-			fmt.Printf("error getting %s albums: %s\n", c.Params("user"), err)
+			log.Printf("error getting %s albums: %s\n", c.Params("user"), err)
 			return err
 		}
 
@@ -169,13 +168,13 @@ func main() {
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
-			fmt.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
+			log.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
 		}
 
 		stream, err := track.GetStream()
 		if err != nil {
-			fmt.Printf("error getting %s stream from %s: %s\n", c.Params("track"), c.Params("user"), err)
+			log.Printf("error getting %s stream from %s: %s\n", c.Params("track"), c.Params("user"), err)
 		}
 
 		c.Set("Content-Type", "text/html")
@@ -186,7 +185,7 @@ func main() {
 		//h := time.Now()
 		usr, err := sc.GetUser(c.Params("user"))
 		if err != nil {
-			fmt.Printf("error getting %s: %s\n", c.Params("user"), err)
+			log.Printf("error getting %s: %s\n", c.Params("user"), err)
 			return err
 		}
 		//fmt.Println("getuser", time.Since(h))
@@ -194,7 +193,7 @@ func main() {
 		//h = time.Now()
 		p, err := usr.GetTracks(c.Query("pagination", "?limit=20"))
 		if err != nil {
-			fmt.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
+			log.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
 			return err
 		}
 		//fmt.Println("gettracks", time.Since(h))
@@ -206,7 +205,7 @@ func main() {
 	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
 		playlist, err := sc.GetPlaylist(c.Params("user") + "/sets/" + c.Params("playlist"))
 		if err != nil {
-			fmt.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
+			log.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 			return err
 		}
 
@@ -214,7 +213,7 @@ func main() {
 		if p != "" {
 			tracks, next, err := sc.GetNextMissingTracks(p)
 			if err != nil {
-				fmt.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
+				log.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 				return err
 			}
 

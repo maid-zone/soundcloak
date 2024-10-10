@@ -69,7 +69,7 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 				</a>
 			}
 		</div>
-		if p.Next != "" {
+		if p.Next != "" && len(p.Collection) != int(u.Tracks) {
 			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
 		}
 	} else {
@@ -100,7 +100,7 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
 				</a>
 			}
 		</div>
-		if p.Next != "" {
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists_without_albums")[1])) } rel="noreferrer">more playlists</a>
 		}
 	} else {
@@ -131,7 +131,7 @@ templ UserAlbums(u sc.User, p *sc.Paginated[sc.Playlist]) {
 				</a>
 			}
 		</div>
-		if p.Next != "" {
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/albums")[1])) } rel="noreferrer">more albums</a>
 		}
 	} else {
@@ -163,8 +163,8 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 				</div>
 			</a>
 		}
-	}
-	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
-		<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.URL("?type=users&pagination=" + url.QueryEscape(strings.Split(p.Next, "/users")[1])) } rel="noreferrer">more users</a>
+		}
 	}
 }

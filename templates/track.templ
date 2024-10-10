@@ -142,8 +142,8 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 				</div>
 			</a>
 		}
-	}
-	if p.Total != 0 && len(p.Collection) != 0 && p.Next != "" {
-		<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+		}
 	}
 }
