@@ -15,6 +15,10 @@ wip alternative frontend for soundcloud
 
 The UI isn't really done yet. All parameters other than url are unsupported. You can also specify track without the `soundcloud.com` part: `https://sc.maid.zone/w/player/?url=<id>` or `https://sc.maid.zone/w/player/?url=<user>/<track>`
 
+- Content proxying
+
+Image proxying is already implemented, track proxying is not done yet
+
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
 Feedback and feature requests are especially needed, since I (laptopcat) don't really know what to prioritize

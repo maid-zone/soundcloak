@@ -230,7 +230,7 @@ func GetTracks(ids string) ([]*Track, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(req, resp)
+	err = DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (t Track) GetStream() (string, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(req, resp)
+	err = DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return "", err
 	}
@@ -302,11 +302,16 @@ func (t *Track) Fix(large bool) {
 	} else {
 		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t200x200.", 1)
 	}
+
 	if t.ID == "" {
 		t.ID = strconv.FormatInt(t.IDint, 10)
 	} else {
 		ls := strings.Split(t.ID, ":")
 		t.ID = ls[len(ls)-1]
+	}
+
+	if cfg.ProxyImages && t.Artwork != "" {
+		t.Artwork = "/proxy/images?url=" + url.QueryEscape(t.Artwork)
 	}
 
 	t.Author.Fix(false)
@@ -357,7 +362,7 @@ func GetTrackByID(id string) (Track, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(req, resp)
+	err = DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return t, err
 	}

@@ -1,6 +1,7 @@
 package sc
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,8 +81,8 @@ func SearchUsers(args string) (*Paginated[*User], error) {
 	return &p, nil
 }
 
-func (u User) GetTracks(args string) (*Paginated[Track], error) {
-	p := Paginated[Track]{
+func (u User) GetTracks(args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{
 		Next: "https://" + api + "/users/" + u.ID + "/tracks" + args,
 	}
 
@@ -126,12 +127,17 @@ func (u *User) Fix(large bool) {
 	} else {
 		u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
 	}
+
+	if cfg.ProxyImages && u.Avatar != "" {
+		u.Avatar = "/proxy/images?url=" + url.QueryEscape(u.Avatar)
+	}
+
 	ls := strings.Split(u.ID, ":")
 	u.ID = ls[len(ls)-1]
 }
 
-func (u *User) GetPlaylists(args string) (*Paginated[Playlist], error) {
-	p := Paginated[Playlist]{
+func (u *User) GetPlaylists(args string) (*Paginated[*Playlist], error) {
+	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
 	}
 
@@ -147,8 +153,8 @@ func (u *User) GetPlaylists(args string) (*Paginated[Playlist], error) {
 	return &p, nil
 }
 
-func (u *User) GetAlbums(args string) (*Paginated[Playlist], error) {
-	p := Paginated[Playlist]{
+func (u *User) GetAlbums(args string) (*Paginated[*Playlist], error) {
+	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
 	}
 

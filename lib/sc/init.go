@@ -21,12 +21,12 @@ var clientIdCache struct {
 
 const api = "api-v2.soundcloud.com"
 
-var httpc = fasthttp.HostClient{
-	Addr:          api + ":443",
-	IsTLS:         true,
-	DialDualStack: true,
-	Dial:          (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	//MaxIdleConnDuration: 1<<63 - 1, //seems to cause some issues
+var httpc = &fasthttp.HostClient{
+	Addr:                api + ":443",
+	IsTLS:               true,
+	DialDualStack:       true,
+	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	MaxIdleConnDuration: 1<<63 - 1, //improves performance but seems to cause some issues, need more testing
 }
 
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
@@ -116,7 +116,7 @@ func GetClientID() (string, error) {
 	return "", ErrIDNotFound
 }
 
-func DoWithRetry(req *fasthttp.Request, resp *fasthttp.Response) (err error) {
+func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
 	for i := 0; i < 5; i++ {
 		err = httpc.Do(req, resp)
 		if err == nil {
@@ -147,7 +147,7 @@ func Resolve(path string, out any) error {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(req, resp)
+	err = DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (p *Paginated[T]) Proceed() error {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(req, resp)
+	err = DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return err
 	}

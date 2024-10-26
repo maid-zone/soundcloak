@@ -1,6 +1,7 @@
 package sc
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -97,6 +98,10 @@ func (p *Playlist) Fix(cached bool) error {
 		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t500x500.", 1)
 	} else {
 		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
+	}
+
+	if cfg.ProxyImages && p.Artwork != "" {
+		p.Artwork = "/proxy/images?url=" + url.QueryEscape(p.Artwork)
 	}
 
 	p.Author.Fix(false)

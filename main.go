@@ -13,6 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	proxyimages "github.com/maid-zone/soundcloak/lib/proxy_images"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/maid-zone/soundcloak/templates"
 )
@@ -26,11 +27,12 @@ func main() {
 		EnableTrustedProxyCheck: cfg.TrustedProxyCheck,
 		TrustedProxies:          cfg.TrustedProxies,
 	})
-	app.Use(compress.New())
+
 	app.Use(recover.New())
 	if cfg.EarlyData {
 		app.Use(earlydata.New())
 	}
+	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
 	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 14400})
@@ -130,6 +132,10 @@ func main() {
 		c.Set("Content-Type", "text/html")
 		return templates.TrackEmbed(track, stream).Render(context.Background(), c)
 	})
+
+	if cfg.ProxyImages {
+		proxyimages.Load(app)
+	}
 
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {
 		user, err := sc.GetUser(c.Params("user"))

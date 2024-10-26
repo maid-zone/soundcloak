@@ -11,6 +11,10 @@ import (
 // if the stream isn't fully loaded before it expires - you'll need to reload the page
 const FullyPreloadTrack = false
 
+// proxy images (user avatars, track/playlist covers)
+const ProxyImages = false
+const ImageCacheControl = "max-age=600; public" // 10 minutes by default, only used for proxied images
+
 // time-to-live for clientid cache
 // larger number will improve performance (no need to recheck everytime) but might make soundcloak briefly unusable for a larger amount of time if the client id is invalidated
 const ClientIDTTL = 30 * time.Minute

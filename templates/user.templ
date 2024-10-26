@@ -45,7 +45,7 @@ templ UserBase(u sc.User) {
 	</div>
 }
 
-templ User(u sc.User, p *sc.Paginated[sc.Track]) {
+templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 	@UserBase(u)
 	// kinda tedious but whatever, might make it more flexible in the future
 	<div class="btns">
@@ -77,7 +77,7 @@ templ User(u sc.User, p *sc.Paginated[sc.Track]) {
 	}
 }
 
-templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
+templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
@@ -108,7 +108,7 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[sc.Playlist]) {
 	}
 }
 
-templ UserAlbums(u sc.User, p *sc.Paginated[sc.Playlist]) {
+templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
