@@ -210,6 +210,14 @@ func (p *Paginated[T]) Proceed() error {
 		p.Next = ""
 	}
 
+	// in soundcloud api, pagination may not immediately return you something!
+	// loading users who haven't released anything recently may require you to do a bunch of requests for nothing :/
+	// maybe there could be a way to cache the last useless layer of pagination so soundcloak can start loading from there? might be a bit complicated, but would be great
+	if len(p.Collection) == 0 && p.Next != "" {
+		// this will make sure that we actually proceed to something useful and not emptiness
+		return p.Proceed()
+	}
+
 	return nil
 }
 
