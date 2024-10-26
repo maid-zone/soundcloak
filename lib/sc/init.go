@@ -123,7 +123,7 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 			return nil
 		}
 
-		if !os.IsTimeout(err) && err != fasthttp.ErrTimeout {
+		if !os.IsTimeout(err) && err != fasthttp.ErrTimeout && err != fasthttp.ErrConnectionClosed {
 			return
 		}
 	}

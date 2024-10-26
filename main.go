@@ -142,6 +142,28 @@ func main() {
 		proxystreams.Load(app)
 	}
 
+	if cfg.InstanceInfo {
+		type info struct {
+			ProxyImages       bool
+			ProxyStreams      bool
+			FullyPreloadTrack bool
+		}
+
+		data, err := cfg.JSON.Marshal(info{
+			ProxyImages:       cfg.ProxyImages,
+			ProxyStreams:      cfg.ProxyStreams,
+			FullyPreloadTrack: cfg.FullyPreloadTrack,
+		})
+		if err != nil {
+			log.Println("Failed to marshal instance info:", err)
+		}
+
+		app.Get("/_/info", func(c *fiber.Ctx) error {
+			c.Set("Content-Type", "application/json")
+			return c.Send(data)
+		})
+	}
+
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {
 		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
