@@ -4,3 +4,4 @@ package-lock.json
 *_templ.go
 fly.toml
 *.fiber.gz
+soundcloak.json
