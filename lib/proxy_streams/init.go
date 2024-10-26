@@ -98,7 +98,7 @@ func Load(r fiber.Router) {
 		}
 
 		var sp = bytes.Split(data, []byte("\n"))
-		for i, l := range bytes.Split(data, []byte("\n")) {
+		for i, l := range sp {
 			if len(l) == 0 || l[0] == '#' {
 				continue
 			}
