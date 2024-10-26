@@ -49,7 +49,7 @@ templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 	@UserBase(u)
 	// kinda tedious but whatever, might make it more flexible in the future
 	<div class="btns">
-		<a class="btn active">songs</a>
+		<a class="btn active">tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 	</div>
@@ -80,7 +80,7 @@ templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
-		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn active">playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 	</div>
@@ -111,7 +111,7 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(u)
 	<div class="btns">
-		<a class="btn" href={ templ.URL("/" + u.Permalink) }>songs</a>
+		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn active">albums</a>
 	</div>
