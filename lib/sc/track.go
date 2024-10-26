@@ -293,6 +293,10 @@ func (t Track) GetStream() (string, error) {
 		return "", ErrNoURL
 	}
 
+	if cfg.ProxyStreams {
+		return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
+	}
+
 	return s.URL, nil
 }
 
@@ -311,7 +315,7 @@ func (t *Track) Fix(large bool) {
 	}
 
 	if cfg.ProxyImages && t.Artwork != "" {
-		t.Artwork = "/proxy/images?url=" + url.QueryEscape(t.Artwork)
+		t.Artwork = "/_/proxy/images?url=" + url.QueryEscape(t.Artwork)
 	}
 
 	t.Author.Fix(false)

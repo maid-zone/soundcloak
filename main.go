@@ -14,6 +14,7 @@ import (
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	proxyimages "github.com/maid-zone/soundcloak/lib/proxy_images"
+	proxystreams "github.com/maid-zone/soundcloak/lib/proxy_streams"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/maid-zone/soundcloak/templates"
 )
@@ -135,6 +136,10 @@ func main() {
 
 	if cfg.ProxyImages {
 		proxyimages.Load(app)
+	}
+
+	if cfg.ProxyStreams {
+		proxystreams.Load(app)
 	}
 
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {

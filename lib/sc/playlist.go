@@ -101,7 +101,7 @@ func (p *Playlist) Fix(cached bool) error {
 	}
 
 	if cfg.ProxyImages && p.Artwork != "" {
-		p.Artwork = "/proxy/images?url=" + url.QueryEscape(p.Artwork)
+		p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
 	}
 
 	p.Author.Fix(false)

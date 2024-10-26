@@ -129,7 +129,7 @@ func (u *User) Fix(large bool) {
 	}
 
 	if cfg.ProxyImages && u.Avatar != "" {
-		u.Avatar = "/proxy/images?url=" + url.QueryEscape(u.Avatar)
+		u.Avatar = "/_/proxy/images?url=" + url.QueryEscape(u.Avatar)
 	}
 
 	ls := strings.Split(u.ID, ":")

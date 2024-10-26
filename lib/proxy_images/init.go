@@ -24,7 +24,7 @@ var httpc = &fasthttp.HostClient{
 }
 
 func Load(r fiber.Router) {
-	r.Get("/proxy/images", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/images", func(c *fiber.Ctx) error {
 		url := c.Query("url")
 		if url == "" {
 			return fiber.ErrBadRequest
@@ -59,8 +59,13 @@ func Load(r fiber.Router) {
 			return err
 		}
 
+		data, err := resp.BodyUncompressed()
+		if err != nil {
+			data = resp.Body()
+		}
+
 		c.Response().Header.SetBytesV("Content-Type", resp.Header.Peek("Content-Type"))
 		c.Set("Cache-Control", cfg.ImageCacheControl)
-		return c.Send(resp.Body())
+		return c.Send(data)
 	})
 }

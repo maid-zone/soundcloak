@@ -15,6 +15,9 @@ const FullyPreloadTrack = false
 const ProxyImages = false
 const ImageCacheControl = "max-age=600; public" // 10 minutes by default, only used for proxied images
 
+// proxy streams (hls playlist files and track parts)
+const ProxyStreams = false
+
 // time-to-live for clientid cache
 // larger number will improve performance (no need to recheck everytime) but might make soundcloak briefly unusable for a larger amount of time if the client id is invalidated
 const ClientIDTTL = 30 * time.Minute
