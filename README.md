@@ -9,15 +9,12 @@ wip alternative frontend for soundcloud
 - Basic song overview (author, metadata) & streaming (requires javascript (which requires support for [Media Source Extensions](https://caniuse.com/mediasource)) if no [browser support for HLS](https://caniuse.com/http-live-streaming))
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
+- Content proxying (images, audio)
 
 ## In the works
 - Track player embeds (`https://w.soundcloud.com/player/` -> `https://sc.maid.zone/w/player/`)
 
 The UI isn't really done yet. All parameters other than url are unsupported. You can also specify track without the `soundcloud.com` part: `https://sc.maid.zone/w/player/?url=<id>` or `https://sc.maid.zone/w/player/?url=<user>/<track>`
-
-- Content proxying
-
-Image proxying is already implemented, track proxying is not done yet
 
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
