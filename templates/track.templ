@@ -81,6 +81,7 @@ templ Track(t sc.Track, stream string) {
 	}
 	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
 	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
+	<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
 	<p>Created: { t.CreatedAt }</p>
 	<p>Last modified: { t.LastModified }</p>
 	if t.License != "" {

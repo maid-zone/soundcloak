@@ -34,6 +34,7 @@ type Track struct {
 	Likes         int64  `json:"likes_count"`
 	Permalink     string `json:"permalink"`
 	Played        int64  `json:"playback_count"`
+	Reposted      int64  `json:"reposts_count"`
 	TagList       string `json:"tag_list"`
 	Title         string `json:"title"`
 	ID            string `json:"urn"`
@@ -327,7 +328,7 @@ func (t Track) FormatDescription() string {
 		desc += "\n\n"
 	}
 
-	desc += strconv.FormatInt(t.Likes, 10) + " ❤️ | " + strconv.FormatInt(t.Played, 10) + " ▶️"
+	desc += strconv.FormatInt(t.Likes, 10) + " ❤️ | " + strconv.FormatInt(t.Played, 10) + " ▶️ | " + strconv.FormatInt(t.Reposted, 10) + " 🔁"
 	if t.Genre != "" {
 		desc += "\nGenre: " + t.Genre
 	}
