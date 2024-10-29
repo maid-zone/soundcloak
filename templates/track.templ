@@ -18,29 +18,10 @@ templ TrackHeader(t sc.Track) {
 }
 
 templ TrackPlayer() {
-	// there might be a better way to do this idk
 	if cfg.FullyPreloadTrack {
-		<script>
-			var audio = document.getElementById('track');
-			if (Hls.isSupported()) {
-				var hls = new Hls({maxBufferLength: Infinity});
-				hls.loadSource(audio.src);
-				hls.attachMedia(audio);
-			} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
-				alert('HLS is not supported! Audio playback will not work.');
-			}
-		</script>
+		<script async src="/player_preload.js"></script>
 	} else {
-		<script>
-			var audio = document.getElementById('track');
-			if (Hls.isSupported()) {
-				var hls = new Hls();
-				hls.loadSource(audio.src);
-				hls.attachMedia(audio);
-			} else if (!audio.canPlayType('application/vnd.apple.mpegurl')) {
-				alert('HLS is not supported! Audio playback will not work.');
-			}
-		</script>
+		<script async src="/player.js"></script>
 	}
 }
 
@@ -50,6 +31,7 @@ templ Track(t sc.Track, stream string) {
 	}
 	<h1>{ t.Title }</h1>
 	<audio id="track" src={ stream } controls></audio>
+	@TrackPlayer()
 	<noscript>
 		<br/>
 		JavaScript is disabled! Audio playback may not work without it enabled.
@@ -90,7 +72,6 @@ templ Track(t sc.Track, stream string) {
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
-	@TrackPlayer()
 }
 
 templ TrackEmbed(t sc.Track, stream string) {
@@ -109,6 +90,7 @@ templ TrackEmbed(t sc.Track, stream string) {
 			}
 			<h1>{ t.Title }</h1>
 			<audio id="track" src={ stream } controls></audio>
+			@TrackPlayer()
 			<noscript>
 				<br/>
 				JavaScript is disabled! Audio playback may not work without it enabled.
@@ -122,7 +104,6 @@ templ TrackEmbed(t sc.Track, stream string) {
 					}
 				</div>
 			</a>
-			@TrackPlayer()
 		</body>
 	</html>
 }
