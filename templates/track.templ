@@ -69,6 +69,10 @@ templ Track(t sc.Track, stream string) {
 			}
 		</div>
 	</a>
+	<div class="btns">
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
+	</div>
+	<br>
 	if t.Description != "" {
 		<details>
 			<summary>Toggle description</summary>

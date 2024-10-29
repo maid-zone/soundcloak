@@ -52,6 +52,7 @@ templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 		<a class="btn active">tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {
@@ -83,6 +84,7 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn active">playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {
@@ -114,6 +116,7 @@ templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn active">albums</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {

@@ -29,6 +29,10 @@ templ Playlist(p sc.Playlist) {
 			}
 		</div>
 	</a>
+	<div class="btns">
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + p.Author.Permalink + "/sets/" + p.Permalink) }>view on soundcloud</a>
+	</div>
+	<br>
 	if p.Description != "" {
 		<details>
 			<summary>Toggle description</summary>
