@@ -145,6 +145,7 @@ details > summary:hover {
 
 footer {
   margin-top: 5rem;
+  gap: 1rem;
   display: flex;
   justify-content: center;
 }

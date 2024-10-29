@@ -71,7 +71,7 @@ go get
 
 7. *Optional.* Edit config:
 
-You can change some values in `lib/cfg/init.go` if you want. Keep in mind that you need to rebuild the binary each time you want to update the config.
+You can make a `soundcloak.json` file in the folder with the binary if you want, or an environment variable `SOUNDCLOAK_CONFIG` with path to the config. Refer to `lib/cfg/init.go` for configuration values and their meaning.
 
 8. Build binary:
 
@@ -107,7 +107,7 @@ rm *.fiber.gz
 
 3. *Optional.* Edit config:
 
-Sometimes, new updates add new config values. You can change some values in `lib/cfg/init.go` if you want.
+Sometimes, new updates add new config values or change default ones. You can make a `soundcloak.json` file in the folder with the binary if you want, or an environment variable `SOUNDCLOAK_CONFIG` with path to the config. Refer to `lib/cfg/init.go` for configuration values and their meaning.
 
 
 4. Regenerate templates (if they changed):
