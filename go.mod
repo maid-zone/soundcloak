@@ -6,7 +6,7 @@ require (
 	github.com/a-h/templ v0.2.778
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/json-iterator/go v1.1.12
-	github.com/valyala/fasthttp v1.56.0
+	github.com/valyala/fasthttp v1.57.0
 )
 
 require (
