@@ -25,6 +25,22 @@ templ TrackPlayer() {
 	}
 }
 
+templ TrackItem(track *sc.Track) {
+	if track.Title != "" {
+		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+			if track.Artwork != "" {
+				<img src={ track.Artwork }/>
+			} else {
+				<img src="/placeholder.jpg"/>
+			}
+			<div class="meta">
+				<h3>{ track.Title }</h3>
+				<span>{ track.Author.Username }</span>
+			</div>
+		</a>
+	}
+}
+
 templ Track(t sc.Track, stream string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
@@ -42,19 +58,11 @@ templ Track(t sc.Track, stream string) {
 		<br/>
 		<br/>
 	}
-	<a class="listing" href={ templ.URL("/" + t.Author.Permalink) }>
-		<img src={ t.Author.Avatar }/>
-		<div class="meta">
-			<h3>{ t.Author.Username }</h3>
-			if t.Author.FullName != "" {
-				<span>{ t.Author.FullName }</span>
-			}
-		</div>
-	</a>
+	@UserItem(&t.Author)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
 	</div>
-	<br>
+	<br/>
 	if t.Description != "" {
 		<details>
 			<summary>Toggle description</summary>
@@ -95,15 +103,7 @@ templ TrackEmbed(t sc.Track, stream string) {
 				<br/>
 				JavaScript is disabled! Audio playback may not work without it enabled.
 			</noscript>
-			<a class="listing" href={ templ.URL("/" + t.Author.Permalink) }>
-				<img src={ t.Author.Avatar }/>
-				<div class="meta">
-					<h3>{ t.Author.Username }</h3>
-					if t.Author.FullName != "" {
-						<span>{ t.Author.FullName }</span>
-					}
-				</div>
-			</a>
+			@UserItem(&t.Author)
 		</body>
 	</html>
 }
@@ -116,17 +116,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 		<p>no more results</p>
 	} else {
 		for _, track := range p.Collection {
-			<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
-				if track.Artwork != "" {
-					<img src={ track.Artwork }/>
-				} else {
-					<img src="/placeholder.jpg"/>
-				}
-				<div class="meta">
-					<h3>{ track.Title }</h3>
-					<span>{ track.Author.Username }</span>
-				</div>
-			</a>
+			@TrackItem(track)
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>

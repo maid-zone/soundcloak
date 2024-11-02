@@ -111,6 +111,9 @@ input:focus {
   color: var(--accent);
 }
 
+.listing > .meta > p {
+  margin: 0;
+}
 
 details {
   border-color: var(--0);

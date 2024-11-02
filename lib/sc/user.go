@@ -33,6 +33,36 @@ type User struct {
 	Verified  bool   `json:"verified"`
 }
 
+type RepostType string
+
+const (
+	TrackRepost    RepostType = "track-repost"
+	PlaylistRepost RepostType = "playlist-repost"
+)
+
+// not worthy of its own file
+type Repost struct {
+	Type RepostType
+
+	Track    *Track    // type == track-report
+	Playlist *Playlist // type == playlist-repost
+}
+
+func (r *Repost) Fix() {
+	switch r.Type {
+	case TrackRepost:
+		if r.Track != nil {
+			r.Track.Fix(false)
+		}
+		return
+	case PlaylistRepost:
+		if r.Playlist != nil {
+			r.Playlist.Fix(false) // err always nil if cached == false
+		}
+		return
+	}
+}
+
 func GetUser(permalink string) (User, error) {
 	usersCacheLock.RLock()
 	if cell, ok := usersCache[permalink]; ok && cell.Expires.After(time.Now()) {
@@ -165,6 +195,23 @@ func (u *User) GetAlbums(args string) (*Paginated[*Playlist], error) {
 
 	for _, pl := range p.Collection {
 		pl.Fix(false)
+	}
+
+	return &p, nil
+}
+
+func (u *User) GetReposts(args string) (*Paginated[*Repost], error) {
+	p := Paginated[*Repost]{
+		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
+	}
+
+	err := p.Proceed()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range p.Collection {
+		r.Fix()
 	}
 
 	return &p, nil

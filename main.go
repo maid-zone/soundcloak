@@ -198,6 +198,23 @@ func main() {
 		return templates.Base(user.Username, templates.UserAlbums(user, pl), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
+	app.Get("/:user/reposts", func(c *fiber.Ctx) error {
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (reposts): %s\n", c.Params("user"), err)
+			return err
+		}
+
+		p, err := user.GetReposts(c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s reposts: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserReposts(user, p), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {

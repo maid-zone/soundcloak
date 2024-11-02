@@ -15,24 +15,31 @@ templ PlaylistHeader(p sc.Playlist) {
 	<link rel="icon" type="image/x-icon" href={ p.Artwork }/>
 }
 
+templ PlaylistItem(playlist *sc.Playlist) {
+	<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+		if playlist.Artwork != "" {
+			<img src={ playlist.Artwork }/>
+		} else {
+			<img src="/placeholder.jpg"/>
+		}
+		<div class="meta">
+			<h3>{ playlist.Title }</h3>
+			<span>{ playlist.Author.Username }</span>
+			<p>{ strconv.FormatInt(playlist.TrackCount, 10) } tracks</p>
+		</div>
+	</a>
+}
+
 templ Playlist(p sc.Playlist) {
 	if p.Artwork != "" {
 		<img src={ p.Artwork } width="300px"/>
 	}
 	<h1>{ p.Title }</h1>
-	<a class="listing" href={ templ.URL("/" + p.Author.Permalink) }>
-		<img src={ p.Author.Avatar }/>
-		<div class="meta">
-			<h3>{ p.Author.Username }</h3>
-			if p.Author.FullName != "" {
-				<span>{ p.Author.FullName }</span>
-			}
-		</div>
-	</a>
+	@UserItem(&p.Author)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + p.Author.Permalink + "/sets/" + p.Permalink) }>view on soundcloud</a>
 	</div>
-	<br>
+	<br/>
 	if p.Description != "" {
 		<details>
 			<summary>Toggle description</summary>
@@ -44,19 +51,7 @@ templ Playlist(p sc.Playlist) {
 	<br/>
 	<div>
 		for _, track := range p.Tracks {
-			if track.Title != "" {
-				<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
-					if track.Artwork != "" {
-						<img src={ track.Artwork }/>
-					} else {
-						<img src="/placeholder.jpg"/>
-					}
-					<div class="meta">
-						<h3>{ track.Title }</h3>
-						<span>{ track.Author.Username }</span>
-					</div>
-				</a>
-			}
+			@TrackItem(track)
 		}
 	</div>
 	if len(p.MissingTracks) != 0 {
@@ -83,17 +78,7 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 		}
 	} else {
 		for _, playlist := range p.Collection {
-			<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
-				if playlist.Artwork != "" {
-					<img src={ playlist.Artwork }/>
-				} else {
-					<img src="/placeholder.jpg"/>
-				}
-				<div class="meta">
-					<h3>{ playlist.Title }</h3>
-					<span>{ playlist.Author.Username }</span>
-				</div>
-			</a>
+			@PlaylistItem(playlist)
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>

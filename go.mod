@@ -3,7 +3,7 @@ module github.com/maid-zone/soundcloak
 go 1.21.3
 
 require (
-	github.com/a-h/templ v0.2.778
+	github.com/a-h/templ v0.2.793
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/json-iterator/go v1.1.12
 	github.com/valyala/fasthttp v1.57.0
