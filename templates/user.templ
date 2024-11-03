@@ -75,7 +75,7 @@ templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 	if len(p.Collection) != 0 {
 		<div>
 			for _, track := range p.Collection {
-				@TrackItem(track)
+				@TrackItem(track, false)
 			}
 		</div>
 		if p.Next != "" && len(p.Collection) != int(u.Tracks) {
@@ -99,7 +99,7 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	if len(p.Collection) != 0 {
 		<div>
 			for _, playlist := range p.Collection {
-				@PlaylistItem(playlist)
+				@PlaylistItem(playlist, false)
 			}
 		</div>
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
@@ -123,7 +123,7 @@ templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	if len(p.Collection) != 0 {
 		<div>
 			for _, playlist := range p.Collection {
-				@PlaylistItem(playlist)
+				@PlaylistItem(playlist, false)
 			}
 		</div>
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
@@ -148,9 +148,9 @@ templ UserReposts(u sc.User, p *sc.Paginated[*sc.Repost]) {
 		<div>
 			for _, repost := range p.Collection {
 				if repost.Type == sc.TrackRepost && repost.Track != nil {
-					@TrackItem(repost.Track)
+					@TrackItem(repost.Track, true)
 				} else if repost.Type == sc.PlaylistRepost && repost.Playlist != nil {
-					@PlaylistItem(repost.Playlist)
+					@PlaylistItem(repost.Playlist, true)
 				}
 			}
 		</div>

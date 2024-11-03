@@ -25,7 +25,7 @@ templ TrackPlayer() {
 	}
 }
 
-templ TrackItem(track *sc.Track) {
+templ TrackItem(track *sc.Track, showUsername bool) {
 	if track.Title != "" {
 		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
 			if track.Artwork != "" {
@@ -35,7 +35,9 @@ templ TrackItem(track *sc.Track) {
 			}
 			<div class="meta">
 				<h3>{ track.Title }</h3>
-				<span>{ track.Author.Username }</span>
+				if showUsername {
+					<span>{ track.Author.Username }</span>
+				}
 			</div>
 		</a>
 	}
@@ -116,7 +118,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 		<p>no more results</p>
 	} else {
 		for _, track := range p.Collection {
-			@TrackItem(track)
+			@TrackItem(track, true)
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
