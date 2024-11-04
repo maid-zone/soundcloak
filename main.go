@@ -149,18 +149,12 @@ func main() {
 			FullyPreloadTrack bool
 		}
 
-		data, err := cfg.JSON.Marshal(info{
-			ProxyImages:       cfg.ProxyImages,
-			ProxyStreams:      cfg.ProxyStreams,
-			FullyPreloadTrack: cfg.FullyPreloadTrack,
-		})
-		if err != nil {
-			log.Println("Failed to marshal instance info:", err)
-		}
-
 		app.Get("/_/info", func(c *fiber.Ctx) error {
-			c.Set("Content-Type", "application/json")
-			return c.Send(data)
+			return c.JSON(info{
+				ProxyImages:       cfg.ProxyImages,
+				ProxyStreams:      cfg.ProxyStreams,
+				FullyPreloadTrack: cfg.FullyPreloadTrack,
+			})
 		})
 	}
 

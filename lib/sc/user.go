@@ -158,6 +158,11 @@ func (u *User) Fix(large bool) {
 		u.Avatar = strings.Replace(u.Avatar, "-large.", "-t200x200.", 1)
 	}
 
+	// maybe hardcoding it isn't the best decision, but it should be ok
+	if u.Avatar == "https://a1.sndcdn.com/images/default_avatar_large.png" {
+		u.Avatar = ""
+	}
+
 	if cfg.ProxyImages && u.Avatar != "" {
 		u.Avatar = "/_/proxy/images?url=" + url.QueryEscape(u.Avatar)
 	}
