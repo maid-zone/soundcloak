@@ -17,11 +17,23 @@ templ TrackHeader(t sc.Track) {
 	<script src="/js/hls.js/hls.light.js"></script>
 }
 
-templ TrackPlayer() {
-	if cfg.FullyPreloadTrack {
-		<script async src="/player_preload.js"></script>
-	} else {
-		<script async src="/player.js"></script>
+templ TrackPlayer(stream string, displayErr string) {
+	if stream != "" {
+		<audio id="track" src={ stream } controls></audio>
+		if cfg.FullyPreloadTrack {
+			<script async src="/player_preload.js"></script>
+		} else {
+			<script async src="/player.js"></script>
+		}
+		<noscript>
+			<br/>
+			JavaScript is disabled! Audio playback may not work without it enabled.
+		</noscript>
+	}
+	if displayErr != "" {
+		<div>
+			<p style="white-space: pre-wrap;">{displayErr}</p>
+		</div>
 	}
 }
 
@@ -43,17 +55,12 @@ templ TrackItem(track *sc.Track, showUsername bool) {
 	}
 }
 
-templ Track(t sc.Track, stream string) {
+templ Track(t sc.Track, stream string, displayErr string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	<audio id="track" src={ stream } controls></audio>
-	@TrackPlayer()
-	<noscript>
-		<br/>
-		JavaScript is disabled! Audio playback may not work without it enabled.
-	</noscript>
+	@TrackPlayer(stream, displayErr)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -84,7 +91,7 @@ templ Track(t sc.Track, stream string) {
 	}
 }
 
-templ TrackEmbed(t sc.Track, stream string) {
+templ TrackEmbed(t sc.Track, stream string, displayErr string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -99,12 +106,7 @@ templ TrackEmbed(t sc.Track, stream string) {
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			<audio id="track" src={ stream } controls></audio>
-			@TrackPlayer()
-			<noscript>
-				<br/>
-				JavaScript is disabled! Audio playback may not work without it enabled.
-			</noscript>
+			@TrackPlayer(stream, displayErr)
 			@UserItem(&t.Author)
 		</body>
 	</html>

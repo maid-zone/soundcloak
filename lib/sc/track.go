@@ -27,23 +27,30 @@ type Track struct {
 	CreatedAt   string `json:"created_at"`
 	Description string `json:"description"`
 	//Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
-	Genre         string `json:"genre"`
-	Kind          string `json:"kind"` // should always be "track"!
-	LastModified  string `json:"last_modified"`
-	License       string `json:"license"`
-	Likes         int64  `json:"likes_count"`
-	Permalink     string `json:"permalink"`
-	Played        int64  `json:"playback_count"`
-	Reposted      int64  `json:"reposts_count"`
-	TagList       string `json:"tag_list"`
-	Title         string `json:"title"`
-	ID            string `json:"urn"`
-	Media         Media  `json:"media"`
-	Authorization string `json:"track_authorization"`
-	Author        User   `json:"user"`
+	Genre         string      `json:"genre"`
+	Kind          string      `json:"kind"` // should always be "track"!
+	LastModified  string      `json:"last_modified"`
+	License       string      `json:"license"`
+	Likes         int64       `json:"likes_count"`
+	Permalink     string      `json:"permalink"`
+	Played        int64       `json:"playback_count"`
+	Reposted      int64       `json:"reposts_count"`
+	TagList       string      `json:"tag_list"`
+	Title         string      `json:"title"`
+	ID            string      `json:"urn"`
+	Media         Media       `json:"media"`
+	Authorization string      `json:"track_authorization"`
+	Author        User        `json:"user"`
+	Policy        TrackPolicy `json:"policy"`
 
 	IDint int64 `json:"id"`
 }
+
+type TrackPolicy string
+
+const (
+	PolicyBlock TrackPolicy = "BLOCK"
+)
 
 type Protocol string
 
