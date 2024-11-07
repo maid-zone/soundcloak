@@ -15,6 +15,7 @@ import (
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	proxyimages "github.com/maid-zone/soundcloak/lib/proxy_images"
 	proxystreams "github.com/maid-zone/soundcloak/lib/proxy_streams"
+	"github.com/maid-zone/soundcloak/lib/restream"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/maid-zone/soundcloak/templates"
 )
@@ -152,6 +153,7 @@ func main() {
 			ProxyImages       bool
 			ProxyStreams      bool
 			FullyPreloadTrack bool
+			Restream          bool
 		}
 
 		app.Get("/_/info", func(c *fiber.Ctx) error {
@@ -159,8 +161,13 @@ func main() {
 				ProxyImages:       cfg.ProxyImages,
 				ProxyStreams:      cfg.ProxyStreams,
 				FullyPreloadTrack: cfg.FullyPreloadTrack,
+				Restream:          cfg.Restream,
 			})
 		})
+	}
+
+	if cfg.Restream {
+		restream.Load(app)
 	}
 
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {

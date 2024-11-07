@@ -6,7 +6,7 @@ wip alternative frontend for soundcloud
 # Already implemented
 - Searching for songs, users, playlists
 - Basic user overview (songs, playlists, albums, metadata)
-- Basic song overview (author, metadata) & streaming (requires javascript (which requires support for [Media Source Extensions](https://caniuse.com/mediasource)) if no [browser support for HLS](https://caniuse.com/http-live-streaming))
+- Basic song overview (author, metadata) & streaming (requires some JS if instance has `Restream` disabled)
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 - Content proxying (images, audio)
@@ -15,6 +15,14 @@ wip alternative frontend for soundcloud
 - Track player embeds (`https://w.soundcloud.com/player/` -> `https://sc.maid.zone/w/player/`)
 
 The UI isn't really done yet. All parameters other than url are unsupported. You can also specify track without the `soundcloud.com` part: `https://sc.maid.zone/w/player/?url=<id>` or `https://sc.maid.zone/w/player/?url=<user>/<track>`
+
+# Viewing instance settings
+If the instance isn't outdated and has `InstanceInfo` setting enabled, you can navigate to `<instance>/_/info` to view useful instance settings. ([sc.maid.zone/_/info](https://sc.maid.zone/_/info) for example)
+
+- ProxyImages: This instance proxies images
+- ProxyStreams: This instance proxies songs
+- FullyPreloadTrack: Fully loads the track instead of buffering a small part of it
+- Restream: This instance retrieves the HLS stream on the backend and restreams the file to you (doesn't require running JS)
 
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
@@ -43,10 +51,12 @@ git clone https://github.com/maid-zone/soundcloak
 cd soundcloak
 ```
 
-3. Download hls.js:
+3. *Optional.* Download hls.js:
 ```sh
 npm i
 ```
+
+You can skip this step if you are only going to run your instance with `Restream` enabled
 
 4. Download templ:
 ```sh
@@ -116,17 +126,29 @@ Sometimes, new updates add new config values or change default ones. You can mak
 templ generate
 ```
 
-5. Build binary:
+5. Get latest Go modules:
+```sh
+go get
+```
+
+6. *Optional.* Update hls.js:
+```sh
+npm i
+```
+
+You can skip this step if you are only going to run your instance with `Restream` enabled
+
+7. Build binary:
 ```sh
 go build main.go
 ```
 
-6. Run it:
+8. Run it:
 ```sh
 ./main
 ```
 
-Congratulations! You have succesfully updated your soundcloak. (hopefully this guide works)
+Congratulations! You have succesfully updated your soundcloak.
 
 # Built with
 ## Backend

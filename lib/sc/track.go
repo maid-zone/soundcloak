@@ -13,7 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// Functions/structures related to users
+// Functions/structures related to tracks
 
 var ErrIncompatibleStream = errors.New("incompatible stream")
 var ErrNoURL = errors.New("no url")
@@ -176,7 +176,7 @@ func GetArbitraryTrack(data string) (Track, error) {
 		return GetTrackByID(data)
 	}
 
-	// this should be at the end since it manipulates data
+	// this part should be at the end since it manipulates data
 	if len(data) < 4 {
 		return Track{}, ErrNoURL
 	}
@@ -257,14 +257,14 @@ func GetTracks(ids string) ([]*Track, error) {
 }
 
 func (t Track) GetStream() (string, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return "", err
-	}
-
 	tr := t.Media.SelectCompatible()
 	if tr == nil {
 		return "", ErrIncompatibleStream
+	}
+
+	cid, err := GetClientID()
+	if err != nil {
+		return "", err
 	}
 
 	req := fasthttp.AcquireRequest()

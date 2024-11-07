@@ -22,10 +22,16 @@ var FullyPreloadTrack = false
 
 // proxy images (user avatars, track/playlist covers)
 var ProxyImages = false
-var ImageCacheControl = "max-age=600; public" // 10 minutes by default, only used for proxied images
+var ImageCacheControl = "max-age=600; public" // browser-side 10 minutes cache by default, only used for proxied images
 
 // proxy streams (hls playlist files and track parts)
 var ProxyStreams = false
+
+// restream the HLS playlist as just a file, makes soundcloak usable with zero JS
+// If this setting is set to true, ProxyStreams and FullyPreloadTrack will be ignored (you could count this as a replacement for having both as true, also should be a bit more effective)
+// You can also easily download the songs this way (right click => save audio as..., the only downside is that there is no metadata)
+var Restream = false
+var RestreamCacheControl = "max-age=600; public" // browser-side 10 minutes cache by default, only used for restreamed songs
 
 // enable /_/info endpoint (shows if some settings are enabled/disabled)
 var InstanceInfo = true
@@ -102,6 +108,8 @@ func init() {
 		ProxyImages             *bool
 		ImageCacheControl       *string
 		ProxyStreams            *bool
+		Restream                *bool
+		RestreamCacheControl    *string
 		InstanceInfo            *bool
 		ClientIDTTL             *time.Duration
 		UserTTL                 *time.Duration
@@ -138,6 +146,12 @@ func init() {
 	}
 	if config.ProxyStreams != nil {
 		ProxyStreams = *config.ProxyStreams
+	}
+	if config.Restream != nil {
+		Restream = *config.Restream
+	}
+	if config.RestreamCacheControl != nil {
+		RestreamCacheControl = *config.RestreamCacheControl
 	}
 	if config.InstanceInfo != nil {
 		InstanceInfo = *config.InstanceInfo

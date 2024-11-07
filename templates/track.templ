@@ -14,25 +14,31 @@ templ TrackHeader(t sc.Track) {
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
-	<script src="/js/hls.js/hls.light.js"></script>
+	if !cfg.Restream {
+		<script src="/js/hls.js/hls.light.js"></script>
+	}
 }
 
 templ TrackPlayer(stream string, displayErr string) {
 	if stream != "" {
-		<audio id="track" src={ stream } controls></audio>
-		if cfg.FullyPreloadTrack {
-			<script async src="/player_preload.js"></script>
+		if cfg.Restream {
+			<audio src={ "/_/restream?playlist=" + url.QueryEscape(stream) } controls></audio>
 		} else {
-			<script async src="/player.js"></script>
+			<audio id="track" src={ stream } controls></audio>
+			if cfg.FullyPreloadTrack {
+				<script async src="/player_preload.js"></script>
+			} else {
+				<script async src="/player.js"></script>
+			}
+			<noscript>
+				<br/>
+				JavaScript is disabled! Audio playback may not work without it enabled.
+			</noscript>
 		}
-		<noscript>
-			<br/>
-			JavaScript is disabled! Audio playback may not work without it enabled.
-		</noscript>
 	}
 	if displayErr != "" {
 		<div>
-			<p style="white-space: pre-wrap;">{displayErr}</p>
+			<p style="white-space: pre-wrap;">{ displayErr }</p>
 		</div>
 	}
 }
@@ -99,7 +105,9 @@ templ TrackEmbed(t sc.Track, stream string, displayErr string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/global.css"/>
 			<title>soundcloak</title>
-			<script src="/js/hls.js/hls.light.js"></script>
+			if !cfg.Restream {
+				<script src="/js/hls.js/hls.light.js"></script>
+			}
 		</head>
 		<body>
 			if t.Artwork != "" {
