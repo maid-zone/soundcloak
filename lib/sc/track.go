@@ -301,7 +301,7 @@ func (t Track) GetStream() (string, error) {
 		return "", ErrNoURL
 	}
 
-	if cfg.ProxyStreams {
+	if cfg.ProxyStreams && !cfg.Restream {
 		return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
 	}
 
