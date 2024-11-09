@@ -256,12 +256,7 @@ func GetTracks(ids string) ([]*Track, error) {
 	return res, err
 }
 
-func (t Track) GetStream() (string, error) {
-	tr := t.Media.SelectCompatible()
-	if tr == nil {
-		return "", ErrIncompatibleStream
-	}
-
+func (tr Transcoding) GetStream(authorization string) (string, error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return "", err
@@ -270,7 +265,7 @@ func (t Track) GetStream() (string, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI(tr.URL + "?client_id=" + cid + "&track_authorization=" + t.Authorization)
+	req.SetRequestURI(tr.URL + "?client_id=" + cid + "&track_authorization=" + authorization)
 	req.Header.Set("User-Agent", cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 

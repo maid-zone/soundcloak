@@ -126,10 +126,16 @@ func main() {
 			return err
 		}
 		displayErr := ""
+		stream := ""
 
-		stream, err := track.GetStream()
+		tr := track.Media.SelectCompatible()
+		if tr == nil {
+			err = sc.ErrIncompatibleStream
+		} else if !cfg.Restream {
+			stream, err = tr.GetStream(track.Authorization)
+		}
+
 		if err != nil {
-			log.Printf("error getting %s stream from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			displayErr = "Failed to get track stream: " + err.Error()
 			if track.Policy == sc.PolicyBlock {
 				displayErr += "\nThis track may be blocked in the country where this instance is hosted."
@@ -228,10 +234,16 @@ func main() {
 			return err
 		}
 		displayErr := ""
+		stream := ""
 
-		stream, err := track.GetStream()
+		tr := track.Media.SelectCompatible()
+		if tr == nil {
+			err = sc.ErrIncompatibleStream
+		} else if !cfg.Restream {
+			stream, err = tr.GetStream(track.Authorization)
+		}
+
 		if err != nil {
-			log.Printf("error getting %s stream from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			displayErr = "Failed to get track stream: " + err.Error()
 			if track.Policy == sc.PolicyBlock {
 				displayErr += "\nThis track may be blocked in the country where this instance is hosted."

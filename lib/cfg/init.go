@@ -31,7 +31,7 @@ var ProxyStreams = false
 // If this setting is set to true, ProxyStreams and FullyPreloadTrack will be ignored (you could count this as a replacement for having both as true, also should be a bit more effective)
 // You can also easily download the songs this way (right click => save audio as..., the only downside is that there is no metadata)
 var Restream = false
-var RestreamCacheControl = "max-age=604800, public, immutable" // you shouldn't change this, it won't work the way you think it will (for now, maybe later i will fix it up)
+var RestreamCacheControl = "max-age=604800, public, immutable"
 
 // enable /_/info endpoint (shows if some settings are enabled/disabled)
 var InstanceInfo = true

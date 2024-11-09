@@ -19,11 +19,11 @@ templ TrackHeader(t sc.Track) {
 	}
 }
 
-templ TrackPlayer(stream string, displayErr string) {
-	if stream != "" {
+templ TrackPlayer(track sc.Track, stream string, displayErr string) {
+	if displayErr == "" {
 		if cfg.Restream {
-			<audio src={ "/_/restream?playlist=" + url.QueryEscape(stream) } controls></audio>
-		} else {
+			<audio src={ "/_/restream/" + track.Author.Permalink + "/" + track.Permalink } controls></audio>
+		} else if stream != "" {
 			<audio id="track" src={ stream } controls></audio>
 			if cfg.FullyPreloadTrack {
 				<script async src="/player_preload.js"></script>
@@ -35,8 +35,7 @@ templ TrackPlayer(stream string, displayErr string) {
 				JavaScript is disabled! Audio playback may not work without it enabled.
 			</noscript>
 		}
-	}
-	if displayErr != "" {
+	} else {
 		<div>
 			<p style="white-space: pre-wrap;">{ displayErr }</p>
 		</div>
@@ -66,7 +65,7 @@ templ Track(t sc.Track, stream string, displayErr string) {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(stream, displayErr)
+	@TrackPlayer(t, stream, displayErr)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -114,7 +113,7 @@ templ TrackEmbed(t sc.Track, stream string, displayErr string) {
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(stream, displayErr)
+			@TrackPlayer(t, stream, displayErr)
 			@UserItem(&t.Author)
 		</body>
 	</html>

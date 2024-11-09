@@ -3,10 +3,10 @@ package restream
 import (
 	"bytes"
 	"io"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
 
@@ -111,23 +111,20 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 }
 
 func Load(r fiber.Router) {
-	r.Get("/_/restream", func(c *fiber.Ctx) error {
-		// uncomment this to automatically get playlist of a track for easy testing
-		// t, err := sc.GetTrack("homelocked/por-mais-alguem-prod-homelocked")
-		// if err != nil {
-		// 	return err
-		// }
+	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
+		t, err := sc.GetTrack(c.Params("author") + "/" + c.Params("track"))
+		if err != nil {
+			return err
+		}
 
-		// u, err := t.GetStream()
-		// if err != nil {
-		// 	return err
-		// }
+		tr := t.Media.SelectCompatible()
+		if tr == nil {
+			return fiber.ErrExpectationFailed
+		}
 
-		// and comment this
-		u := c.Query("playlist")
-
-		if !strings.HasPrefix(u, "https://"+cdn+"/") {
-			return fiber.ErrBadRequest
+		u, err := tr.GetStream(t.Authorization)
+		if err != nil {
+			return err
 		}
 
 		c.Set("Content-Type", "audio/mpeg")
