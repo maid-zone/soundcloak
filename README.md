@@ -10,6 +10,7 @@ wip alternative frontend for soundcloud
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 - Content proxying (images, audio)
+- Users can change their preferences (should proxying be enabled, what method of playing the song should be used etc)
 
 ## In the works
 - Track player embeds (`https://w.soundcloud.com/player/` -> `https://sc.maid.zone/w/player/`)
@@ -19,10 +20,16 @@ The UI isn't really done yet. All parameters other than url are unsupported. You
 # Viewing instance settings
 If the instance isn't outdated and has `InstanceInfo` setting enabled, you can navigate to `<instance>/_/info` to view useful instance settings. ([sc.maid.zone/_/info](https://sc.maid.zone/_/info) for example)
 
-- ProxyImages: This instance proxies images
-- ProxyStreams: This instance proxies songs
-- FullyPreloadTrack: Fully loads the track instead of buffering a small part of it
-- Restream: This instance retrieves the HLS stream on the backend and restreams the file to you (doesn't require running JS)
+An easier way is to navigate to `<instance>/_/preferences`.
+
+If some features are disabled by the instance, they won't show up there.
+
+Available features:
+- Proxy images: Retrieve images through the instance, instead of going to soundcloud's servers for them
+- Player: In what way should the track be streamed. Can be Restream (does not require JS, better compatibility, can be a bit buggy client-side) or HLS (requires JS, more stable, less good compatibility (you'll be ok unless you are using a very outdated browser))
+- Player-specific settings: They will only show up if you have selected HLS player currently.
+- - Proxy streams: Retrieve song pieces through the instance, instead of going to soundcloud's servers for them
+- - Fully preload track: Fully loads the track when you load the page instead of buffering a small part of it
 
 # Contributing
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
@@ -51,12 +58,10 @@ git clone https://github.com/maid-zone/soundcloak
 cd soundcloak
 ```
 
-3. *Optional.* Download hls.js:
+3. Download hls.js:
 ```sh
 npm i
 ```
-
-You can skip this step if you are only going to run your instance with `Restream` enabled
 
 4. Download templ:
 ```sh
@@ -131,12 +136,10 @@ templ generate
 go get
 ```
 
-6. *Optional.* Update hls.js:
+6. Update hls.js:
 ```sh
 npm i
 ```
-
-You can skip this step if you are only going to run your instance with `Restream` enabled
 
 7. Build binary:
 ```sh

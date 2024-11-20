@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
 )
 
@@ -89,7 +90,7 @@ func (m Media) SelectCompatible() *Transcoding {
 	return nil
 }
 
-func GetTrack(permalink string) (Track, error) {
+func GetTrack(prefs cfg.Preferences, permalink string) (Track, error) {
 	tracksCacheLock.RLock()
 	if cell, ok := tracksCache[permalink]; ok && cell.Expires.After(time.Now()) {
 		tracksCacheLock.RUnlock()
@@ -107,7 +108,7 @@ func GetTrack(permalink string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix(true)
+	t.Fix(prefs, true)
 
 	tracksCacheLock.Lock()
 	tracksCache[permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
@@ -124,12 +125,12 @@ func GetTrack(permalink string) (Track, error) {
 // plain permalink/id:
 // - <user>/<track>
 // - <id>
-func GetArbitraryTrack(data string) (Track, error) {
+func GetArbitraryTrack(prefs cfg.Preferences, data string) (Track, error) {
 	if len(data) > 8 && (data[:8] == "https://" || data[:7] == "http://") {
 		u, err := url.Parse(data)
 		if err == nil {
 			if (u.Host == "api.soundcloud.com" || u.Host == "api-v2.soundcloud.com") && len(u.Path) > 8 && u.Path[:8] == "/tracks/" {
-				return GetTrackByID(u.Path[8:])
+				return GetTrackByID(prefs, u.Path[8:])
 			}
 
 			if u.Host == "soundcloud.com" {
@@ -157,7 +158,7 @@ func GetArbitraryTrack(data string) (Track, error) {
 					return Track{}, ErrKindNotCorrect
 				}
 
-				return GetTrack(u.Path)
+				return GetTrack(prefs, u.Path)
 			}
 		} else {
 			return Track{}, err
@@ -173,7 +174,7 @@ func GetArbitraryTrack(data string) (Track, error) {
 	}
 
 	if valid {
-		return GetTrackByID(data)
+		return GetTrackByID(prefs, data)
 	}
 
 	// this part should be at the end since it manipulates data
@@ -196,14 +197,14 @@ func GetArbitraryTrack(data string) (Track, error) {
 	}
 
 	if n == 1 {
-		return GetTrack(data)
+		return GetTrack(prefs, data)
 	}
 
 	// failed to find a data point
 	return Track{}, ErrKindNotCorrect
 }
 
-func SearchTracks(args string) (*Paginated[*Track], error) {
+func SearchTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
@@ -216,13 +217,13 @@ func SearchTracks(args string) (*Paginated[*Track], error) {
 	}
 
 	for _, t := range p.Collection {
-		t.Fix(false)
+		t.Fix(prefs, false)
 	}
 
 	return &p, nil
 }
 
-func GetTracks(ids string) ([]*Track, error) {
+func GetTracks(prefs cfg.Preferences, ids string) ([]*Track, error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
@@ -249,14 +250,14 @@ func GetTracks(ids string) ([]*Track, error) {
 	}
 
 	var res []*Track
-	err = cfg.JSON.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &res)
 	for _, t := range res {
-		t.Fix(false)
+		t.Fix(prefs, false)
 	}
 	return res, err
 }
 
-func (tr Transcoding) GetStream(authorization string) (string, error) {
+func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (string, error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return "", err
@@ -287,7 +288,7 @@ func (tr Transcoding) GetStream(authorization string) (string, error) {
 	}
 
 	var s Stream
-	err = cfg.JSON.Unmarshal(data, &s)
+	err = json.Unmarshal(data, &s)
 	if err != nil {
 		return "", err
 	}
@@ -296,14 +297,14 @@ func (tr Transcoding) GetStream(authorization string) (string, error) {
 		return "", ErrNoURL
 	}
 
-	if cfg.ProxyStreams && !cfg.Restream {
+	if cfg.ProxyStreams && *prefs.ProxyStreams && *prefs.Player == cfg.HLSPlayer {
 		return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
 	}
 
 	return s.URL, nil
 }
 
-func (t *Track) Fix(large bool) {
+func (t *Track) Fix(prefs cfg.Preferences, large bool) {
 	if large {
 		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t500x500.", 1)
 	} else {
@@ -317,11 +318,11 @@ func (t *Track) Fix(large bool) {
 		t.ID = ls[len(ls)-1]
 	}
 
-	if cfg.ProxyImages && t.Artwork != "" {
+	if cfg.ProxyImages && *prefs.ProxyImages && t.Artwork != "" {
 		t.Artwork = "/_/proxy/images?url=" + url.QueryEscape(t.Artwork)
 	}
 
-	t.Author.Fix(false)
+	t.Author.Fix(prefs, false)
 }
 
 func (t Track) FormatDescription() string {
@@ -343,7 +344,7 @@ func (t Track) FormatDescription() string {
 	return desc
 }
 
-func GetTrackByID(id string) (Track, error) {
+func GetTrackByID(prefs cfg.Preferences, id string) (Track, error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return Track{}, err
@@ -379,7 +380,7 @@ func GetTrackByID(id string) (Track, error) {
 		data = resp.Body()
 	}
 
-	err = cfg.JSON.Unmarshal(data, &t)
+	err = json.Unmarshal(data, &t)
 	if err != nil {
 		return t, err
 	}
@@ -388,7 +389,7 @@ func GetTrackByID(id string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix(true)
+	t.Fix(prefs, true)
 
 	tracksCacheLock.Lock()
 	tracksCache[t.Author.Permalink+"/"+t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}

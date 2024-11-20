@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/segmentio/encoding/json"
 )
 
 // You can now use a soundcloak.json file to configure!
@@ -13,12 +13,32 @@ import (
 // it's not needed to specify every key in your config, it will use the default values for keys you haven't specified
 // also, when specifying time, specify it in seconds (instead of nanoseconds as time.Duration)
 
+const (
+	// Downloads the HLS stream on the backend, and restreams it to frontend as a file. Requires no JS, but less stable client-side
+	RestreamPlayer string = "restream"
+	// Downloads the HLS stream on the frontend (proxying can be enabled). Requires JS, more stable client-side
+	HLSPlayer string = "hls"
+	// Disables the song player
+	NonePlayer string = "none"
+)
+
+type Preferences struct {
+	Player       *string
+	ProxyStreams *bool
+
+	// fully loads the track on page load
+	// this option is here since the stream expires after some time (5 minutes? correct me if im wrong)
+	// if the stream isn't fully loaded before it expires - you'll need to reload the page
+	FullyPreloadTrack *bool
+
+	ProxyImages *bool
+}
+
 // // config // //
 
-// fully loads the track on page load
-// this option is here since the stream expires after some time (5 minutes? correct me if im wrong)
-// if the stream isn't fully loaded before it expires - you'll need to reload the page
-var FullyPreloadTrack = false
+// Default preferences. You can override those preferences in the config file, otherwise they default to values depending on your config
+// (so, if you have ProxyStreams enabled - it will be enabled for the user by default and etc, or if you enabled Restream, the default player will be RestreamPlayer instead of HLSPlayer)
+var DefaultPreferences Preferences
 
 // proxy images (user avatars, track/playlist covers)
 var ProxyImages = false
@@ -88,9 +108,6 @@ var TrustedProxies = []string{}
 
 // // end of config // //
 
-// what JSON library should be used
-var JSON = jsoniter.ConfigFastest
-
 func init() {
 	filename := "soundcloak.json"
 	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env != "" {
@@ -104,7 +121,7 @@ func init() {
 	}
 
 	var config struct {
-		FullyPreloadTrack       *bool
+		DefaultPreferences      *Preferences
 		ProxyImages             *bool
 		ImageCacheControl       *string
 		ProxyStreams            *bool
@@ -127,7 +144,7 @@ func init() {
 		TrustedProxies          *[]string
 	}
 
-	err = JSON.Unmarshal(data, &config)
+	err = json.Unmarshal(data, &config)
 	if err != nil {
 		log.Printf("failed to parse config from %s: %s\n", filename, err)
 		return
@@ -135,9 +152,6 @@ func init() {
 
 	// tedious
 	// i've decided to fully override to make it easier to change default config later on
-	if config.FullyPreloadTrack != nil {
-		FullyPreloadTrack = *config.FullyPreloadTrack
-	}
 	if config.ProxyImages != nil {
 		ProxyImages = *config.ProxyImages
 	}
@@ -197,5 +211,58 @@ func init() {
 	}
 	if config.TrustedProxies != nil {
 		TrustedProxies = *config.TrustedProxies
+	}
+
+	// defaults are:
+	// Player: RestreamPlayer if Restream is enabled, otherwise - HLSPlayer
+	// ProxyStreams: same as ProxyStreams in your config (false by default)
+	// FullyPreloadTrack: false
+	// ProxyImages: same as ProxyImages in your config (false by default)
+	if config.DefaultPreferences != nil {
+		var f bool
+		if config.DefaultPreferences.Player != nil {
+			DefaultPreferences.Player = config.DefaultPreferences.Player
+		} else {
+			var p string
+			if Restream {
+				p = RestreamPlayer
+			} else {
+				p = HLSPlayer
+			}
+			DefaultPreferences.Player = &p
+		}
+
+		if config.DefaultPreferences.ProxyStreams != nil {
+			DefaultPreferences.ProxyStreams = config.DefaultPreferences.ProxyStreams
+		} else {
+			DefaultPreferences.ProxyStreams = &ProxyStreams
+		}
+
+		if config.DefaultPreferences.FullyPreloadTrack != nil {
+			DefaultPreferences.FullyPreloadTrack = config.DefaultPreferences.FullyPreloadTrack
+		} else {
+			DefaultPreferences.FullyPreloadTrack = &f
+		}
+
+		if config.DefaultPreferences.ProxyImages != nil {
+			DefaultPreferences.ProxyImages = config.DefaultPreferences.ProxyImages
+		} else {
+			DefaultPreferences.ProxyImages = &ProxyImages
+		}
+	} else {
+		var p string
+		if Restream {
+			p = RestreamPlayer
+		} else {
+			p = HLSPlayer
+		}
+		DefaultPreferences.Player = &p
+
+		DefaultPreferences.ProxyStreams = &ProxyStreams
+
+		var f bool
+		DefaultPreferences.FullyPreloadTrack = &f
+
+		DefaultPreferences.ProxyImages = &ProxyImages
 	}
 }

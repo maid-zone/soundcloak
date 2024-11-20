@@ -1,0 +1,76 @@
+package templates
+
+import "github.com/maid-zone/soundcloak/lib/cfg"
+
+templ checkbox(name string, checked bool) {
+	if checked {
+		<input name={ name } type="checkbox" autocomplete="off" checked/>
+	} else {
+		<input name={ name } type="checkbox" autocomplete="off"/>
+	}
+}
+
+type option struct {
+	value string
+	desc  string
+	disabled bool
+}
+
+// i hate this
+templ sel(name string, options []option, selected string) {
+	<select name={ name } autocomplete="off">
+		for _, opt := range options {
+			if opt.value == selected {
+				<option value={ opt.value } selected>{ opt.desc }</option>
+			} else {
+				if opt.disabled {
+					<option value={ opt.value } disabled>{ opt.desc }</option>
+				} else {
+					<option value={ opt.value }>{ opt.desc }</option>
+				}
+			}
+		}
+	</select>
+}
+
+templ Preferences(prefs cfg.Preferences) {
+	<h1>Preferences</h1>
+	<form method="post">
+		if cfg.ProxyImages {
+			<label>
+				Proxy images:
+				@checkbox("ProxyImages", *prefs.ProxyImages)
+			</label>
+			<br/>
+		}
+		<label>
+			Player:
+			@sel("Player", []option{
+				{"restream", "Restream Player", !cfg.Restream},
+				{"hls", "HLS Player (more stable, requires JS)", false},
+				{"none", "None", false},
+			}, *prefs.Player)
+		</label>
+		<br/>
+		if *prefs.Player == "hls" {
+			<h1>Player-specific preferences</h1>
+			if cfg.ProxyStreams {
+				<label>
+					Proxy song streams:
+					@checkbox("ProxyStreams", *prefs.ProxyStreams)
+				</label>
+				<br/>
+			}
+			<label>
+				Fully preload track:
+				@checkbox("FullyPreloadTrack", *prefs.FullyPreloadTrack)
+			</label>
+			<br/>
+		}
+		<input type="submit" value="Update" class="btn" style="margin-top: 1rem;"/>
+
+		<br>
+		<br>
+		<p>These preferences get saved in a cookie.</p>
+	</form>
+}

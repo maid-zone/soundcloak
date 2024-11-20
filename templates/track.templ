@@ -8,31 +8,39 @@ import (
 	"strings"
 )
 
-templ TrackHeader(t sc.Track) {
+templ TrackHeader(prefs cfg.Preferences, t sc.Track) {
 	<meta name="og:site_name" content={ t.Author.Username + " ~ soundcloak" }/>
 	<meta name="og:title" content={ t.Title }/>
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
-	if !cfg.Restream {
+	if *prefs.Player == cfg.HLSPlayer {
 		<script src="/js/hls.js/hls.light.js"></script>
 	}
 }
 
-templ TrackPlayer(track sc.Track, stream string, displayErr string) {
+templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string) {
+	if *prefs.Player == cfg.NonePlayer {
+		{{ return }}
+	}
+	
 	if displayErr == "" {
-		if cfg.Restream {
+		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
 			<audio src={ "/_/restream/" + track.Author.Permalink + "/" + track.Permalink } controls></audio>
 		} else if stream != "" {
 			<audio id="track" src={ stream } controls></audio>
-			if cfg.FullyPreloadTrack {
+			if *prefs.FullyPreloadTrack {
 				<script async src="/player_preload.js"></script>
 			} else {
 				<script async src="/player.js"></script>
 			}
 			<noscript>
 				<br/>
-				JavaScript is disabled! Audio playback may not work without it enabled.
+				JavaScript is disabled! Audio playback may not work without it enabled. 
+				if cfg.Restream {
+					<br>
+					<a href="/_/preferences">You can enable Restream player in the preferences. It works without JavaScript.</a>
+				}
 			</noscript>
 		}
 	} else {
@@ -60,12 +68,12 @@ templ TrackItem(track *sc.Track, showUsername bool) {
 	}
 }
 
-templ Track(t sc.Track, stream string, displayErr string) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(t, stream, displayErr)
+	@TrackPlayer(prefs, t, stream, displayErr)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -96,7 +104,7 @@ templ Track(t sc.Track, stream string, displayErr string) {
 	}
 }
 
-templ TrackEmbed(t sc.Track, stream string, displayErr string) {
+templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -104,7 +112,7 @@ templ TrackEmbed(t sc.Track, stream string, displayErr string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/global.css"/>
 			<title>soundcloak</title>
-			if !cfg.Restream {
+			if *prefs.Player == cfg.HLSPlayer {
 				<script src="/js/hls.js/hls.light.js"></script>
 			}
 		</head>
@@ -113,7 +121,7 @@ templ TrackEmbed(t sc.Track, stream string, displayErr string) {
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(t, stream, displayErr)
+			@TrackPlayer(prefs, t, stream, displayErr)
 			@UserItem(&t.Author)
 		</body>
 	</html>

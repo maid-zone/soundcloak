@@ -10,9 +10,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/earlydata"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/preferences"
 	proxyimages "github.com/maid-zone/soundcloak/lib/proxy_images"
 	proxystreams "github.com/maid-zone/soundcloak/lib/proxy_streams"
 	"github.com/maid-zone/soundcloak/lib/restream"
@@ -23,8 +25,8 @@ import (
 func main() {
 	app := fiber.New(fiber.Config{
 		Prefork:     cfg.Prefork,
-		JSONEncoder: cfg.JSON.Marshal,
-		JSONDecoder: cfg.JSON.Unmarshal,
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
 
 		EnableTrustedProxyCheck: cfg.TrustedProxyCheck,
 		TrustedProxies:          cfg.TrustedProxies,
@@ -40,11 +42,16 @@ func main() {
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 14400})
 
 	app.Get("/search", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
 		q := c.Query("q")
 		t := c.Query("type")
 		switch t {
 		case "tracks":
-			p, err := sc.SearchTracks(c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchTracks(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
@@ -54,7 +61,7 @@ func main() {
 			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(context.Background(), c)
 
 		case "users":
-			p, err := sc.SearchUsers(c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchUsers(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -64,7 +71,7 @@ func main() {
 			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(context.Background(), c)
 
 		case "playlists":
-			p, err := sc.SearchPlaylists(c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchPlaylists(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -119,7 +126,12 @@ func main() {
 			return fiber.ErrNotFound
 		}
 
-		track, err := sc.GetArbitraryTrack(u)
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetArbitraryTrack(prefs, u)
 
 		if err != nil {
 			log.Printf("error getting %s: %s\n", u, err)
@@ -128,13 +140,16 @@ func main() {
 		displayErr := ""
 		stream := ""
 
-		tr := track.Media.SelectCompatible()
-		if tr == nil {
-			err = sc.ErrIncompatibleStream
-		} else if !cfg.Restream {
-			stream, err = tr.GetStream(track.Authorization)
+		if *prefs.Player != cfg.NonePlayer {
+			tr := track.Media.SelectCompatible()
+			if tr == nil {
+				err = sc.ErrIncompatibleStream
+			} else if *prefs.Player == cfg.HLSPlayer {
+				stream, err = tr.GetStream(prefs, track.Authorization)
+			}
 		}
 
+		// error will already be nil, so this code won't run with NonePlayer anyways, no need to doublecheck or set err to nil
 		if err != nil {
 			displayErr = "Failed to get track stream: " + err.Error()
 			if track.Policy == sc.PolicyBlock {
@@ -143,7 +158,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.TrackEmbed(track, stream, displayErr).Render(context.Background(), c)
+		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(context.Background(), c)
 	})
 
 	if cfg.ProxyImages {
@@ -156,18 +171,18 @@ func main() {
 
 	if cfg.InstanceInfo {
 		type info struct {
-			ProxyImages       bool
-			ProxyStreams      bool
-			FullyPreloadTrack bool
-			Restream          bool
+			ProxyImages        bool
+			ProxyStreams       bool
+			Restream           bool
+			DefaultPreferences cfg.Preferences
 		}
 
 		app.Get("/_/info", func(c *fiber.Ctx) error {
 			return c.JSON(info{
-				ProxyImages:       cfg.ProxyImages,
-				ProxyStreams:      cfg.ProxyStreams,
-				FullyPreloadTrack: cfg.FullyPreloadTrack,
-				Restream:          cfg.Restream,
+				ProxyImages:        cfg.ProxyImages,
+				ProxyStreams:       cfg.ProxyStreams,
+				Restream:           cfg.Restream,
+				DefaultPreferences: cfg.DefaultPreferences,
 			})
 		})
 	}
@@ -176,14 +191,21 @@ func main() {
 		restream.Load(app)
 	}
 
+	preferences.Load(app)
+
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {
-		user, err := sc.GetUser(c.Params("user"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(prefs, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
 			return err
 		}
 
-		pl, err := user.GetPlaylists(c.Query("pagination", "?limit=20"))
+		pl, err := user.GetPlaylists(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
 			return err
@@ -194,13 +216,18 @@ func main() {
 	})
 
 	app.Get("/:user/albums", func(c *fiber.Ctx) error {
-		user, err := sc.GetUser(c.Params("user"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(prefs, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
 			return err
 		}
 
-		pl, err := user.GetAlbums(c.Query("pagination", "?limit=20"))
+		pl, err := user.GetAlbums(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s albums: %s\n", c.Params("user"), err)
 			return err
@@ -211,13 +238,18 @@ func main() {
 	})
 
 	app.Get("/:user/reposts", func(c *fiber.Ctx) error {
-		user, err := sc.GetUser(c.Params("user"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(prefs, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (reposts): %s\n", c.Params("user"), err)
 			return err
 		}
 
-		p, err := user.GetReposts(c.Query("pagination", "?limit=20"))
+		p, err := user.GetReposts(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s reposts: %s\n", c.Params("user"), err)
 			return err
@@ -228,7 +260,12 @@ func main() {
 	})
 
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
-		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetTrack(prefs, c.Params("user")+"/"+c.Params("track"))
 		if err != nil {
 			log.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
@@ -236,13 +273,16 @@ func main() {
 		displayErr := ""
 		stream := ""
 
-		tr := track.Media.SelectCompatible()
-		if tr == nil {
-			err = sc.ErrIncompatibleStream
-		} else if !cfg.Restream {
-			stream, err = tr.GetStream(track.Authorization)
+		if *prefs.Player != cfg.NonePlayer {
+			tr := track.Media.SelectCompatible()
+			if tr == nil {
+				err = sc.ErrIncompatibleStream
+			} else if *prefs.Player == cfg.HLSPlayer {
+				stream, err = tr.GetStream(prefs, track.Authorization)
+			}
 		}
 
+		// error will already be nil, so this code won't run with NonePlayer anyways, no need to doublecheck or set err to nil
 		if err != nil {
 			displayErr = "Failed to get track stream: " + err.Error()
 			if track.Policy == sc.PolicyBlock {
@@ -251,12 +291,17 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(track, stream, displayErr), templates.TrackHeader(track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
 		//h := time.Now()
-		usr, err := sc.GetUser(c.Params("user"))
+		usr, err := sc.GetUser(prefs, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s: %s\n", c.Params("user"), err)
 			return err
@@ -264,7 +309,7 @@ func main() {
 		//fmt.Println("getuser", time.Since(h))
 
 		//h = time.Now()
-		p, err := usr.GetTracks(c.Query("pagination", "?limit=20"))
+		p, err := usr.GetTracks(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
 			return err
@@ -276,7 +321,12 @@ func main() {
 	})
 
 	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
-		playlist, err := sc.GetPlaylist(c.Params("user") + "/sets/" + c.Params("playlist"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		playlist, err := sc.GetPlaylist(prefs, c.Params("user")+"/sets/"+c.Params("playlist"))
 		if err != nil {
 			log.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 			return err
@@ -284,7 +334,7 @@ func main() {
 
 		p := c.Query("pagination")
 		if p != "" {
-			tracks, next, err := sc.GetNextMissingTracks(p)
+			tracks, next, err := sc.GetNextMissingTracks(prefs, p)
 			if err != nil {
 				log.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 				return err

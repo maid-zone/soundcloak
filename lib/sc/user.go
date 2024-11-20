@@ -48,22 +48,22 @@ type Repost struct {
 	Playlist *Playlist // type == playlist-repost
 }
 
-func (r *Repost) Fix() {
+func (r *Repost) Fix(prefs cfg.Preferences) {
 	switch r.Type {
 	case TrackRepost:
 		if r.Track != nil {
-			r.Track.Fix(false)
+			r.Track.Fix(prefs, false)
 		}
 		return
 	case PlaylistRepost:
 		if r.Playlist != nil {
-			r.Playlist.Fix(false) // err always nil if cached == false
+			r.Playlist.Fix(prefs, false) // err always nil if cached == false
 		}
 		return
 	}
 }
 
-func GetUser(permalink string) (User, error) {
+func GetUser(prefs cfg.Preferences, permalink string) (User, error) {
 	usersCacheLock.RLock()
 	if cell, ok := usersCache[permalink]; ok && cell.Expires.After(time.Now()) {
 		usersCacheLock.RUnlock()
@@ -83,7 +83,7 @@ func GetUser(permalink string) (User, error) {
 		return u, err
 	}
 
-	u.Fix(true)
+	u.Fix(prefs, true)
 
 	usersCacheLock.Lock()
 	usersCache[permalink] = cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
@@ -92,7 +92,7 @@ func GetUser(permalink string) (User, error) {
 	return u, err
 }
 
-func SearchUsers(args string) (*Paginated[*User], error) {
+func SearchUsers(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	cid, err := GetClientID()
 	if err != nil {
 		return nil, err
@@ -105,13 +105,13 @@ func SearchUsers(args string) (*Paginated[*User], error) {
 	}
 
 	for _, u := range p.Collection {
-		u.Fix(false)
+		u.Fix(prefs, false)
 	}
 
 	return &p, nil
 }
 
-func (u User) GetTracks(args string) (*Paginated[*Track], error) {
+func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{
 		Next: "https://" + api + "/users/" + u.ID + "/tracks" + args,
 	}
@@ -122,7 +122,7 @@ func (u User) GetTracks(args string) (*Paginated[*Track], error) {
 	}
 
 	for _, u := range p.Collection {
-		u.Fix(false)
+		u.Fix(prefs, false)
 	}
 
 	return &p, nil
@@ -151,7 +151,7 @@ func (u User) FormatUsername() string {
 	return res
 }
 
-func (u *User) Fix(large bool) {
+func (u *User) Fix(prefs cfg.Preferences, large bool) {
 	if large {
 		u.Avatar = strings.Replace(u.Avatar, "-large.", "-t500x500.", 1)
 	} else {
@@ -163,7 +163,7 @@ func (u *User) Fix(large bool) {
 		u.Avatar = ""
 	}
 
-	if cfg.ProxyImages && u.Avatar != "" {
+	if cfg.ProxyImages && *prefs.ProxyImages && u.Avatar != "" {
 		u.Avatar = "/_/proxy/images?url=" + url.QueryEscape(u.Avatar)
 	}
 
@@ -171,7 +171,7 @@ func (u *User) Fix(large bool) {
 	u.ID = ls[len(ls)-1]
 }
 
-func (u *User) GetPlaylists(args string) (*Paginated[*Playlist], error) {
+func (u *User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
 	}
@@ -182,13 +182,13 @@ func (u *User) GetPlaylists(args string) (*Paginated[*Playlist], error) {
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false)
+		pl.Fix(prefs, false)
 	}
 
 	return &p, nil
 }
 
-func (u *User) GetAlbums(args string) (*Paginated[*Playlist], error) {
+func (u *User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
 	}
@@ -199,13 +199,13 @@ func (u *User) GetAlbums(args string) (*Paginated[*Playlist], error) {
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false)
+		pl.Fix(prefs, false)
 	}
 
 	return &p, nil
 }
 
-func (u *User) GetReposts(args string) (*Paginated[*Repost], error) {
+func (u *User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
 	p := Paginated[*Repost]{
 		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
 	}
@@ -216,7 +216,7 @@ func (u *User) GetReposts(args string) (*Paginated[*Repost], error) {
 	}
 
 	for _, r := range p.Collection {
-		r.Fix()
+		r.Fix(prefs)
 	}
 
 	return &p, nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/preferences"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
@@ -82,6 +83,8 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 	}
 
 	if r.index == len(r.parts) {
+		fasthttp.ReleaseRequest(r.req)
+		fasthttp.ReleaseResponse(r.resp)
 		err = io.EOF
 		return
 	}
@@ -112,7 +115,12 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 
 func Load(r fiber.Router) {
 	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
-		t, err := sc.GetTrack(c.Params("author") + "/" + c.Params("track"))
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		t, err := sc.GetTrack(prefs, c.Params("author")+"/"+c.Params("track"))
 		if err != nil {
 			return err
 		}
@@ -122,7 +130,7 @@ func Load(r fiber.Router) {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(t.Authorization)
+		u, err := tr.GetStream(prefs, t.Authorization)
 		if err != nil {
 			return err
 		}

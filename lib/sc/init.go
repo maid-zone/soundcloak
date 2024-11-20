@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
 )
 
@@ -161,7 +162,7 @@ func Resolve(path string, out any) error {
 		data = resp.Body()
 	}
 
-	return cfg.JSON.Unmarshal(data, out)
+	return json.Unmarshal(data, out)
 }
 
 type Paginated[T any] struct {
@@ -201,7 +202,7 @@ func (p *Paginated[T]) Proceed() error {
 		data = resp.Body()
 	}
 
-	err = cfg.JSON.Unmarshal(data, p)
+	err = json.Unmarshal(data, p)
 	if err != nil {
 		return err
 	}
