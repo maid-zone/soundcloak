@@ -99,7 +99,7 @@ func SearchUsers(prefs cfg.Preferences, args string) (*Paginated[*User], error) 
 	}
 
 	p := Paginated[*User]{Next: "https://" + api + "/search/users" + args + "&client_id=" + cid}
-	err = p.Proceed()
+	err = p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track],
 		Next: "https://" + api + "/users/" + u.ID + "/tracks" + args,
 	}
 
-	err := p.Proceed()
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (u *User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Pla
 		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
 	}
 
-	err := p.Proceed()
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (u *User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playli
 		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
 	}
 
-	err := p.Proceed()
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (u *User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repos
 		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
 	}
 
-	err := p.Proceed()
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}

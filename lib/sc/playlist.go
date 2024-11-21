@@ -72,7 +72,7 @@ func SearchPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist],
 	}
 
 	p := Paginated[*Playlist]{Next: "https://" + api + "/search/playlists" + args + "&client_id=" + cid}
-	err = p.Proceed()
+	err = p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}

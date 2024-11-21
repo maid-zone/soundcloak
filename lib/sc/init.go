@@ -171,7 +171,7 @@ type Paginated[T any] struct {
 	Next       string `json:"next_href"`
 }
 
-func (p *Paginated[T]) Proceed() error {
+func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
 	cid, err := GetClientID()
 	if err != nil {
 		return err
@@ -214,9 +214,11 @@ func (p *Paginated[T]) Proceed() error {
 	// in soundcloud api, pagination may not immediately return you something!
 	// loading users who haven't released anything recently may require you to do a bunch of requests for nothing :/
 	// maybe there could be a way to cache the last useless layer of pagination so soundcloak can start loading from there? might be a bit complicated, but would be great
-	if len(p.Collection) == 0 && p.Next != "" {
+
+	// another note: in featured tracks it seems to just be forever stuck after 2-3~ pages so i added a way to disable this behaviour
+	if shouldUnfold && len(p.Collection) == 0 && p.Next != "" {
 		// this will make sure that we actually proceed to something useful and not emptiness
-		return p.Proceed()
+		return p.Proceed(true)
 	}
 
 	return nil

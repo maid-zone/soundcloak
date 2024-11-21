@@ -1,0 +1,24 @@
+package templates
+
+// I made a separate templates file for this, since I'm planning on adding another "featured" feature later (soundcloud.com/discover)
+
+import (
+	"github.com/maid-zone/soundcloak/lib/sc"
+	"net/url"
+	"strings"
+)
+
+templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
+	<h1>Featured Tracks</h1>
+	<br/>
+	if len(p.Collection) == 0 {
+		<p>no more tracks</p>
+	} else {
+		for _, track := range p.Collection {
+			@TrackItem(track, true)
+		}
+		if p.Next != "" {
+			<a class="btn" href={ templ.URL("/_/featured?pagination=" + url.QueryEscape(strings.Split(p.Next, "/all-music")[1])) } rel="noreferrer">more tracks</a>
+		}
+	}
+}

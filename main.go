@@ -147,18 +147,33 @@ func main() {
 			} else if *prefs.Player == cfg.HLSPlayer {
 				stream, err = tr.GetStream(prefs, track.Authorization)
 			}
-		}
 
-		// error will already be nil, so this code won't run with NonePlayer anyways, no need to doublecheck or set err to nil
-		if err != nil {
-			displayErr = "Failed to get track stream: " + err.Error()
-			if track.Policy == sc.PolicyBlock {
-				displayErr += "\nThis track may be blocked in the country where this instance is hosted."
+			if err != nil {
+				displayErr = "Failed to get track stream: " + err.Error()
+				if track.Policy == sc.PolicyBlock {
+					displayErr += "\nThis track may be blocked in the country where this instance is hosted."
+				}
 			}
 		}
 
 		c.Set("Content-Type", "text/html")
 		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(context.Background(), c)
+	})
+
+	app.Get("/_/featured", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		tracks, err := sc.GetFeaturedTracks(prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting featured tracks: %s\n", err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(context.Background(), c)
 	})
 
 	if cfg.ProxyImages {
@@ -280,13 +295,12 @@ func main() {
 			} else if *prefs.Player == cfg.HLSPlayer {
 				stream, err = tr.GetStream(prefs, track.Authorization)
 			}
-		}
 
-		// error will already be nil, so this code won't run with NonePlayer anyways, no need to doublecheck or set err to nil
-		if err != nil {
-			displayErr = "Failed to get track stream: " + err.Error()
-			if track.Policy == sc.PolicyBlock {
-				displayErr += "\nThis track may be blocked in the country where this instance is hosted."
+			if err != nil {
+				displayErr = "Failed to get track stream: " + err.Error()
+				if track.Policy == sc.PolicyBlock {
+					displayErr += "\nThis track may be blocked in the country where this instance is hosted."
+				}
 			}
 		}
 
