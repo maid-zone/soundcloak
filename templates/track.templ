@@ -81,7 +81,8 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string)
 		<br/>
 	}
 	@UserItem(&t.Author)
-	<div class="btns">
+	//<div class="btns">
+	<div style="display: flex;">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>

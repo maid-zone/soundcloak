@@ -62,6 +62,7 @@ input:focus {
   cursor: pointer;
   padding: 0.5rem 0.75rem;
   display: block;
+  text-align: center;
 }
 
 .btn:hover,
@@ -135,7 +136,8 @@ details > summary:hover {
 footer {
   margin-top: 5rem;
   gap: 1rem;
-  display: flex;
+  display: grid;
+  grid-template: auto / auto auto;
   justify-content: center;
 }
 
@@ -151,6 +153,7 @@ select:focus {
 }
 
 .btns {
-  display: flex;
+  display: grid;
+  grid-template: auto / auto auto auto;
   gap: 1rem;
 }

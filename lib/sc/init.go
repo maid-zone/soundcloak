@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"syscall"
 	"time"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
@@ -124,7 +125,7 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 			return nil
 		}
 
-		if !os.IsTimeout(err) && err != fasthttp.ErrTimeout && err != fasthttp.ErrConnectionClosed {
+		if err != fasthttp.ErrTimeout && err != fasthttp.ErrConnectionClosed && !os.IsTimeout(err) && !errors.Is(err, syscall.EPIPE) { // EPIPE is "broken pipe" error
 			return
 		}
 	}
