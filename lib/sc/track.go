@@ -397,25 +397,3 @@ func GetTrackByID(prefs cfg.Preferences, id string) (Track, error) {
 
 	return t, nil
 }
-
-func GetFeaturedTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
-	p := Paginated[*Track]{Next: "https://" + api + "/featured_tracks/top/all-music" + args + "&client_id=" + cid}
-	// DO NOT UNFOLD
-	// dangerous
-	// seems to go in an infinite loop
-	err = p.Proceed(false)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, t := range p.Collection {
-		t.Fix(prefs, false)
-	}
-
-	return &p, nil
-}

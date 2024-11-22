@@ -38,7 +38,7 @@ templ Playlist(p sc.Playlist) {
 	}
 	<h1>{ p.Title }</h1>
 	@UserItem(&p.Author)
-	<div class="btns">
+	<div style="display: flex;">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + p.Author.Permalink + "/sets/" + p.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>

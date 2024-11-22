@@ -1,16 +1,14 @@
 package templates
 
-// I made a separate templates file for this, since I'm planning on adding another "featured" feature later (soundcloud.com/discover)
-
 import (
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"net/url"
 	"strings"
+	"strconv"
 )
 
 templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
 	<h1>Featured Tracks</h1>
-	<br/>
 	if len(p.Collection) == 0 {
 		<p>no more tracks</p>
 	} else {
@@ -20,5 +18,29 @@ templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
 		if p.Next != "" {
 			<a class="btn" href={ templ.URL("/_/featured?pagination=" + url.QueryEscape(strings.Split(p.Next, "/all-music")[1])) } rel="noreferrer">more tracks</a>
 		}
+	}
+}
+
+templ Discover(p *sc.Paginated[*sc.Selection]) {
+	<h1>Discover Playlists</h1> // also tracks apparently? haven't seen any
+	<span>Got { strconv.FormatInt(int64(len(p.Collection)), 10) } playlists</span>
+	if len(p.Collection) != 0 {
+		for _, selection := range p.Collection {
+			// skip so we don't just include the title and zero playlists with it
+			if len(selection.Items.Collection) == 0 {
+				{{ continue }} // raw go code my beloved
+			}
+
+			<h2>{selection.Title}</h2>
+			for _, pl := range selection.Items.Collection {
+				// We don't need the username
+				@PlaylistItem(pl, false)
+			}
+		}
+
+		// I don't think they have pagination for this endpoint, just leaving this here, in case they actually do
+		// if p.Next != "" {
+		// 	<a class="btn" href={ templ.URL("/discover?pagination=" + url.QueryEscape(strings.Split(p.Next, "/discover")[1])) } rel="noreferrer">more playlists</a>
+		// }
 	}
 }

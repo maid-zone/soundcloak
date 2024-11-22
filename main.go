@@ -176,6 +176,22 @@ func main() {
 		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(context.Background(), c)
 	})
 
+	app.Get("/discover", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		selections, err := sc.GetSelections(prefs) // There is no pagination
+		if err != nil {
+			log.Printf("error getting selections: %s\n", err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base("Discover", templates.Discover(selections), nil).Render(context.Background(), c)
+	})
+
 	if cfg.ProxyImages {
 		proxyimages.Load(app)
 	}
