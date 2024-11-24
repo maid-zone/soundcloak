@@ -157,3 +157,7 @@ select:focus {
   grid-template: auto / auto auto auto;
   gap: 1rem;
 }
+
+.link {
+  color: var(--accent);
+}

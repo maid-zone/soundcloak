@@ -243,7 +243,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserPlaylists(user, pl), templates.UserHeader(user)).Render(context.Background(), c)
+		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/albums", func(c *fiber.Ctx) error {
@@ -265,7 +265,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserAlbums(user, pl), templates.UserHeader(user)).Render(context.Background(), c)
+		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/reposts", func(c *fiber.Ctx) error {
@@ -287,7 +287,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserReposts(user, p), templates.UserHeader(user)).Render(context.Background(), c)
+		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
@@ -347,7 +347,7 @@ func main() {
 		//fmt.Println("gettracks", time.Since(h))
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(usr.Username, templates.User(usr, p), templates.UserHeader(usr)).Render(context.Background(), c)
+		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
@@ -375,7 +375,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(playlist), templates.PlaylistHeader(playlist)).Render(context.Background(), c)
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

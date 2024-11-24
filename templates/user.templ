@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"github.com/maid-zone/soundcloak/lib/cfg"
 )
 
 templ UserHeader(u sc.User) {
@@ -31,7 +32,7 @@ templ UserItem(user *sc.User) {
 	</a>
 }
 
-templ UserBase(u sc.User) {
+templ UserBase(prefs cfg.Preferences, u sc.User) {
 	<div>
 		if u.Avatar != "" {
 			<img src={ u.Avatar } width="300px"/>
@@ -45,10 +46,7 @@ templ UserBase(u sc.User) {
 		}
 	</div>
 	if u.Description != "" {
-		<details>
-			<summary>Toggle description</summary>
-			<p style="white-space: pre-wrap">{ u.Description }</p>
-		</details>
+		@Description(prefs, u.Description)
 	}
 	<div>
 		<p>{ strconv.FormatInt(u.Followers, 10) } followers</p>
@@ -61,15 +59,15 @@ templ UserBase(u sc.User) {
 	</div>
 }
 
-templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
-	@UserBase(u)
+templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
+	@UserBase(prefs, u)
 	// kinda tedious but whatever, might make it more flexible in the future
 	<div class="btns">
 		<a class="btn active">tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {
@@ -86,14 +84,14 @@ templ User(u sc.User, p *sc.Paginated[*sc.Track]) {
 	}
 }
 
-templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
-	@UserBase(u)
+templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
+	@UserBase(prefs, u)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn active">playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {
@@ -110,14 +108,14 @@ templ UserPlaylists(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	}
 }
 
-templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
-	@UserBase(u)
+templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
+	@UserBase(prefs, u)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn active">albums</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {
@@ -134,14 +132,14 @@ templ UserAlbums(u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	}
 }
 
-templ UserReposts(u sc.User, p *sc.Paginated[*sc.Repost]) {
-	@UserBase(u)
+templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost]) {
+	@UserBase(prefs, u)
 	<div class="btns">
 		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
 		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
 		<a class="btn active">reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
 	</div>
 	<br/>
 	if len(p.Collection) != 0 {

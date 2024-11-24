@@ -87,10 +87,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string)
 	</div>
 	<br/>
 	if t.Description != "" {
-		<details>
-			<summary>Toggle description</summary>
-			<p style="white-space: pre-wrap">{ t.Description }</p>
-		</details>
+		@Description(prefs, t.Description)
 	}
 	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
 	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>

@@ -119,13 +119,19 @@ func GetClientID() (string, error) {
 }
 
 func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		err = httpc.Do(req, resp)
 		if err == nil {
 			return nil
 		}
 
-		if err != fasthttp.ErrTimeout && err != fasthttp.ErrConnectionClosed && !os.IsTimeout(err) && !errors.Is(err, syscall.EPIPE) { // EPIPE is "broken pipe" error
+		if err != fasthttp.ErrTimeout &&
+			err != fasthttp.ErrDialTimeout &&
+			err != fasthttp.ErrTLSHandshakeTimeout &&
+			err != fasthttp.ErrConnectionClosed &&
+			!os.IsTimeout(err) &&
+			!errors.Is(err, syscall.EPIPE) && // EPIPE is "broken pipe" error
+			err.Error() != "timeout" {
 			return
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"github.com/maid-zone/soundcloak/lib/cfg"
 )
 
 templ PlaylistHeader(p sc.Playlist) {
@@ -32,7 +33,7 @@ templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 	</a>
 }
 
-templ Playlist(p sc.Playlist) {
+templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	if p.Artwork != "" {
 		<img src={ p.Artwork } width="300px"/>
 	}
@@ -43,10 +44,7 @@ templ Playlist(p sc.Playlist) {
 	</div>
 	<br/>
 	if p.Description != "" {
-		<details>
-			<summary>Toggle description</summary>
-			<p style="white-space: pre-wrap">{ p.Description }</p>
-		</details>
+		@Description(prefs, p.Description)
 	}
 	<p>{ strconv.FormatInt(p.TrackCount, 10) } tracks</p>
 	<br/>

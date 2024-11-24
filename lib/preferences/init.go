@@ -26,6 +26,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.ProxyImages == nil {
 		dst.ProxyImages = cfg.DefaultPreferences.ProxyImages
 	}
+
+	if dst.ParseDescriptions == nil {
+		dst.ParseDescriptions = cfg.DefaultPreferences.ParseDescriptions
+	}
 }
 
 func Get(c *fiber.Ctx) (cfg.Preferences, error) {
@@ -43,6 +47,7 @@ func Get(c *fiber.Ctx) (cfg.Preferences, error) {
 
 type PrefsForm struct {
 	ProxyImages       string
+	ParseDescriptions string
 	Player            string
 	ProxyStreams      string
 	FullyPreloadTrack string
@@ -95,6 +100,12 @@ func Load(r fiber.Router) {
 			} else if p.ProxyImages == "" {
 				old.ProxyImages = &f
 			}
+		}
+
+		if p.ParseDescriptions == "on" {
+			old.ParseDescriptions = &t
+		} else {
+			old.ParseDescriptions = &f
 		}
 		old.Player = &p.Player
 

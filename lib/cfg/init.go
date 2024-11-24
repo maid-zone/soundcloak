@@ -32,6 +32,9 @@ type Preferences struct {
 	FullyPreloadTrack *bool
 
 	ProxyImages *bool
+
+	// Highlight @username, https://example.com and email@example.com in text as clickable links
+	ParseDescriptions *bool
 }
 
 // // config // //
@@ -218,8 +221,10 @@ func init() {
 	// ProxyStreams: same as ProxyStreams in your config (false by default)
 	// FullyPreloadTrack: false
 	// ProxyImages: same as ProxyImages in your config (false by default)
+	// ParseDescriptions: true
 	if config.DefaultPreferences != nil {
 		var f bool
+		var t = true
 		if config.DefaultPreferences.Player != nil {
 			DefaultPreferences.Player = config.DefaultPreferences.Player
 		} else {
@@ -249,6 +254,12 @@ func init() {
 		} else {
 			DefaultPreferences.ProxyImages = &ProxyImages
 		}
+
+		if config.DefaultPreferences.ParseDescriptions != nil {
+			DefaultPreferences.ParseDescriptions = config.DefaultPreferences.ParseDescriptions
+		} else {
+			DefaultPreferences.ParseDescriptions = &t
+		}
 	} else {
 		var p string
 		if Restream {
@@ -261,8 +272,11 @@ func init() {
 		DefaultPreferences.ProxyStreams = &ProxyStreams
 
 		var f bool
+		var t = true
 		DefaultPreferences.FullyPreloadTrack = &f
 
 		DefaultPreferences.ProxyImages = &ProxyImages
+
+		DefaultPreferences.ParseDescriptions = &t
 	}
 }

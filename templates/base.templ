@@ -1,5 +1,10 @@
 package templates
 
+import (
+	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/textparsing"
+)
+
 templ Base(title string, content templ.Component, head templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -21,4 +26,17 @@ templ Base(title string, content templ.Component, head templ.Component) {
 			@content
 		</body>
 	</html>
+}
+
+templ Description(prefs cfg.Preferences, text string) {
+	<details>
+		<summary>Toggle description</summary>
+		<p style="white-space: pre-wrap;">
+			if *prefs.ParseDescriptions {
+				@templ.Raw(textparsing.Format(text))
+			} else {
+				{ text }
+			}
+		</p>
+	</details>
 }

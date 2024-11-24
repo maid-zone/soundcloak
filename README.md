@@ -5,11 +5,12 @@ wip alternative frontend for soundcloud
 
 # Already implemented
 - Searching for songs, users, playlists
-- Basic user overview (songs, playlists, albums, metadata)
+- Basic user overview (songs, playlists, albums, reposts, metadata)
 - Basic song overview (author, metadata) & streaming (requires some JS if instance has `Restream` disabled)
 - Basic playlist/set/album overview (songs list, author, metadata)
 - Resolving shortened links (`https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `https://sc.maid.zone/on/boiKDP46fayYDoVK9`)
 - Content proxying (images, audio)
+- View featured tracks, playlists
 - Users can change their preferences (should proxying be enabled, what method of playing the song should be used etc)
 
 ## In the works
@@ -25,6 +26,7 @@ An easier way is to navigate to `<instance>/_/preferences`.
 If some features are disabled by the instance, they won't show up there.
 
 Available features:
+- ParseDescriptions: Highlight `@username`, `https://example.com` and `email@example.com` in text as clickable links
 - Proxy images: Retrieve images through the instance, instead of going to soundcloud's servers for them
 - Player: In what way should the track be streamed. Can be Restream (does not require JS, better compatibility, can be a bit buggy client-side) or HLS (requires JS, more stable, less good compatibility (you'll be ok unless you are using a very outdated browser))
 - Player-specific settings: They will only show up if you have selected HLS player currently.
