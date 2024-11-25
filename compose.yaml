@@ -1,0 +1,13 @@
+services:
+  soundcloak:
+    container_name: soundcloak
+    restart: unless-stopped
+    build: .
+    ports:
+      - "127.0.0.1:4664:4664"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./soundcloak.json:/soundcloak.json
