@@ -12,8 +12,8 @@ import (
 
 // var urlre = regexp.MustCompile(`https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*`)
 // var emailre = regexp.MustCompile(`[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}`)
-// var usernamere = regexp.MustCompile(`@[a-z0-9\-]+`)
-var theregex = regexp.MustCompile(`@[a-z0-9\-]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`)
+// var usernamere = regexp.MustCompile(`@[a-zA-Z0-9\-]+`)
+var theregex = regexp.MustCompile(`@[a-zA-Z0-9\-]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`)
 
 func replacer(ent string) string {
 	if strings.HasPrefix(ent, "@") {

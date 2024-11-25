@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/lib/preferences"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
@@ -19,6 +18,19 @@ var httpc = &fasthttp.HostClient{
 	DialDualStack:       true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: 1<<63 - 1,
+}
+
+// Needed for restream to work even if prefs.Player != RestreamPlayer
+var stubPrefs = cfg.Preferences{}
+
+func init() {
+	p := cfg.RestreamPlayer
+
+	stubPrefs.Player = &p
+
+	f := false
+
+	stubPrefs.ProxyStreams = &f
 }
 
 type reader struct {
@@ -115,12 +127,7 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 
 func Load(r fiber.Router) {
 	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
-		prefs, err := preferences.Get(c)
-		if err != nil {
-			return err
-		}
-
-		t, err := sc.GetTrack(prefs, c.Params("author")+"/"+c.Params("track"))
+		t, err := sc.GetTrack(stubPrefs, c.Params("author")+"/"+c.Params("track"))
 		if err != nil {
 			return err
 		}
@@ -130,7 +137,7 @@ func Load(r fiber.Router) {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(prefs, t.Authorization)
+		u, err := tr.GetStream(stubPrefs, t.Authorization)
 		if err != nil {
 			return err
 		}

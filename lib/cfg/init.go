@@ -111,6 +111,26 @@ var TrustedProxies = []string{}
 
 // // end of config // //
 
+func defaultPreferences() {
+	var p string
+	if Restream {
+		p = RestreamPlayer
+	} else {
+		p = HLSPlayer
+	}
+	DefaultPreferences.Player = &p
+
+	DefaultPreferences.ProxyStreams = &ProxyStreams
+
+	var f bool
+	var t = true
+	DefaultPreferences.FullyPreloadTrack = &f
+
+	DefaultPreferences.ProxyImages = &ProxyImages
+
+	DefaultPreferences.ParseDescriptions = &t
+}
+
 func init() {
 	filename := "soundcloak.json"
 	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env != "" {
@@ -120,6 +140,7 @@ func init() {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("failed to load config from %s: %s\n", filename, err)
+		defaultPreferences()
 		return
 	}
 
@@ -150,6 +171,7 @@ func init() {
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		log.Printf("failed to parse config from %s: %s\n", filename, err)
+		defaultPreferences()
 		return
 	}
 
@@ -261,22 +283,6 @@ func init() {
 			DefaultPreferences.ParseDescriptions = &t
 		}
 	} else {
-		var p string
-		if Restream {
-			p = RestreamPlayer
-		} else {
-			p = HLSPlayer
-		}
-		DefaultPreferences.Player = &p
-
-		DefaultPreferences.ProxyStreams = &ProxyStreams
-
-		var f bool
-		var t = true
-		DefaultPreferences.FullyPreloadTrack = &f
-
-		DefaultPreferences.ProxyImages = &ProxyImages
-
-		DefaultPreferences.ParseDescriptions = &t
+		defaultPreferences()
 	}
 }

@@ -1,0 +1,29 @@
+{
+    // Some common settings
+    "ProxyImages": true,  // Proxy images (load images through the instance, instead of going to soundcloud's CDN)
+
+    "ProxyStreams": true, // Proxy streams (load track streams through the instance, instead of going to soundcloud's CDN)
+
+    "Restream": true,     // Enables Restream Player and endpoint. 
+                          // This player works without any JavaScript, but is a bit less stable from personal observations (when listening to a track on repeat specifically)
+
+    // Default preferences (look at the /_/preferences page)
+    "DefaultPreferences": {
+        "ProxyImages": false,  // This preference will be same as the config value ProxyImages by default, but you can override it
+
+        // The player is basically the method used to load and play the track
+        // It can be "hls", "restream" or "none"
+        "Player": "hls",       // The player is already hls by default, but if you enable Restream - it's going to be restream, this line overrides it to still be HLS
+
+        // These two preferences only work with HLS player. 
+        // RestreamPlayer already loads the track on the backend, and it also fully preloads it. This behaviour of RestreamPlayer cannot be disabled due to technical reasons.
+        "ProxyStreams": false, // This preference will be same as the config value ProxyStream by default
+        "FullyPreloadTrack": true // This fully loads the track instead of buffering a small part of it. False by default.
+    },
+
+    // Listening address and port. This is already the default, but doesn't hurt to include it here as well.
+    "Addr": "127.0.0.1:4664"
+
+    // Note: if you are going to make your own config, you should start from scratch, or remove the comments. Comments aren't allowed in JSON, but they are used here to explain some stuff.
+    // For all the possible configuration keys, refer to lib/cfg/init.go file.
+}
