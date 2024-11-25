@@ -109,6 +109,7 @@ This will run soundcloak on localhost, port 4664. (by default)
 
 <details>
 <summary>2. Docker image</summary>
+
 The docker image was made by [vlnst](https://github.com/vlnst)
 
 ## Prerequisites:
