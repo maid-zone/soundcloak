@@ -341,7 +341,8 @@ func init() {
 	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env == "FROM_ENV" {
 		err := fromEnv()
 		if err != nil {
-			panic(err)
+			log.Println("failed to load config from environment:", err)
+			defaultPreferences()
 		}
 
 		return
