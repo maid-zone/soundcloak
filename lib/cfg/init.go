@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -56,7 +57,7 @@ var ProxyStreams = false
 // If this setting is set to true, ProxyStreams and FullyPreloadTrack will be ignored (you could count this as a replacement for having both as true, also should be a bit more effective)
 // You can also easily download the songs this way (right click => save audio as..., the only downside is that there is no metadata)
 var Restream = false
-var RestreamCacheControl = "max-age=604800, public, immutable"
+var RestreamCacheControl = "max-age=3600, public, immutable"
 
 // enable /_/info endpoint (shows if some settings are enabled/disabled)
 var InstanceInfo = true
@@ -178,13 +179,22 @@ func boolean(in string) bool {
 	return strings.Trim(strings.ToLower(in), " ") == "true"
 }
 
+type wrappedError struct {
+	err   error
+	fault string
+}
+
+func (w wrappedError) Error() string {
+	return fmt.Sprintf("error loading %s: %s", w.fault, w.err)
+}
+
 func fromEnv() error {
 	env := os.Getenv("DEFAULT_PREFERENCES")
 	if env != "" {
 		var p Preferences
 		err := json.Unmarshal([]byte(env), &p)
 		if err != nil {
-			return err
+			return wrappedError{err, "DEFAULT_PREFERENCES"}
 		}
 
 		loadDefaultPreferences(p)
@@ -226,7 +236,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "CLIENT_ID_TTL"}
 		}
 
 		ClientIDTTL = time.Duration(num) * time.Second
@@ -236,7 +246,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "USER_TTL"}
 		}
 
 		UserTTL = time.Duration(num) * time.Second
@@ -246,7 +256,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "USER_CACHE_CLEAN_DELAY"}
 		}
 
 		UserCacheCleanDelay = time.Duration(num) * time.Second
@@ -256,7 +266,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "TRACK_TTL"}
 		}
 
 		TrackTTL = time.Duration(num) * time.Second
@@ -266,7 +276,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "TRACK_CACHE_CLEAN_DELAY"}
 		}
 
 		TrackCacheCleanDelay = time.Duration(num) * time.Second
@@ -276,7 +286,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "PLAYLIST_TTL"}
 		}
 
 		PlaylistTTL = time.Duration(num) * time.Second
@@ -286,7 +296,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "PLAYLIST_CACHE_CLEAN_DELAY"}
 		}
 
 		PlaylistCacheCleanDelay = time.Duration(num) * time.Second
@@ -301,7 +311,7 @@ func fromEnv() error {
 	if env != "" {
 		num, err := strconv.ParseInt(env, 10, 64)
 		if err != nil {
-			return err
+			return wrappedError{err, "DNS_CACHE_TTL"}
 		}
 
 		DNSCacheTTL = time.Duration(num) * time.Second
@@ -327,7 +337,7 @@ func fromEnv() error {
 		var p []string
 		err := json.Unmarshal([]byte(env), &p)
 		if err != nil {
-			return err
+			return wrappedError{err, "TRUSTED_PROXIES"}
 		}
 
 		TrustedProxies = p
@@ -341,8 +351,12 @@ func init() {
 	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env == "FROM_ENV" {
 		err := fromEnv()
 		if err != nil {
+			// So we only set default preferences if it fails to load that in
+			if err.(wrappedError).fault == "DEFAULT_PREFERENCES" {
+				defaultPreferences()
+			}
+
 			log.Println("failed to load config from environment:", err)
-			defaultPreferences()
 		}
 
 		return
