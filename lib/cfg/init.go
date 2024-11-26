@@ -3,6 +3,8 @@ package cfg
 import (
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/segmentio/encoding/json"
@@ -93,14 +95,9 @@ var DNSCacheTTL = 10 * time.Minute
 // run soundcloak on this address (localhost:4664 by default)
 var Addr = ":4664"
 
-// run multiple instances of soundcloud locally to be able to handle more requests
+// run multiple instances of soundcloak locally to be able to handle more requests
 // each one will be a separate process, so they will have separate cache
 var Prefork = false
-
-// Enables TLS Early Data (0-RTT / zero round trip time)
-// This can reduce latency, but also makes requests replayable (not that much of a concern for soundcloak, since there are no authenticated operations)
-// There might be breakage when used together with TrustedProxyCheck and the proxy is untrusted
-var EarlyData = false
 
 // use X-Forwarded-* headers ONLY when ip is in TrustedProxies list
 // when disabled, the X-Forwarded-* headers will be blindly used
@@ -111,6 +108,12 @@ var TrustedProxies = []string{}
 
 // // end of config // //
 
+// defaults are:
+// Player: RestreamPlayer if Restream is enabled, otherwise - HLSPlayer
+// ProxyStreams: same as ProxyStreams in your config (false by default)
+// FullyPreloadTrack: false
+// ProxyImages: same as ProxyImages in your config (false by default)
+// ParseDescriptions: true
 func defaultPreferences() {
 	var p string
 	if Restream {
@@ -131,9 +134,218 @@ func defaultPreferences() {
 	DefaultPreferences.ParseDescriptions = &t
 }
 
+func loadDefaultPreferences(loaded Preferences) {
+	var f bool
+	var t = true
+	if loaded.Player != nil {
+		DefaultPreferences.Player = loaded.Player
+	} else {
+		var p string
+		if Restream {
+			p = RestreamPlayer
+		} else {
+			p = HLSPlayer
+		}
+		DefaultPreferences.Player = &p
+	}
+
+	if loaded.ProxyStreams != nil {
+		DefaultPreferences.ProxyStreams = loaded.ProxyStreams
+	} else {
+		DefaultPreferences.ProxyStreams = &ProxyStreams
+	}
+
+	if loaded.FullyPreloadTrack != nil {
+		DefaultPreferences.FullyPreloadTrack = loaded.FullyPreloadTrack
+	} else {
+		DefaultPreferences.FullyPreloadTrack = &f
+	}
+
+	if loaded.ProxyImages != nil {
+		DefaultPreferences.ProxyImages = loaded.ProxyImages
+	} else {
+		DefaultPreferences.ProxyImages = &ProxyImages
+	}
+
+	if loaded.ParseDescriptions != nil {
+		DefaultPreferences.ParseDescriptions = loaded.ParseDescriptions
+	} else {
+		DefaultPreferences.ParseDescriptions = &t
+	}
+}
+
+func boolean(in string) bool {
+	return strings.Trim(strings.ToLower(in), " ") == "true"
+}
+
+func fromEnv() error {
+	env := os.Getenv("DEFAULT_PREFERENCES")
+	if env != "" {
+		var p Preferences
+		err := json.Unmarshal([]byte(env), &p)
+		if err != nil {
+			return err
+		}
+
+		loadDefaultPreferences(p)
+	} else {
+		defaultPreferences()
+	}
+
+	env = os.Getenv("PROXY_IMAGES")
+	if env != "" {
+		ProxyImages = boolean(env)
+	}
+
+	env = os.Getenv("IMAGE_CACHE_CONTROL")
+	if env != "" {
+		ImageCacheControl = env
+	}
+
+	env = os.Getenv("PROXY_STREAMS")
+	if env != "" {
+		ProxyStreams = boolean(env)
+	}
+
+	env = os.Getenv("RESTREAM")
+	if env != "" {
+		Restream = boolean(env)
+	}
+
+	env = os.Getenv("RESTREAM_CACHE_CONTROL")
+	if env != "" {
+		RestreamCacheControl = env
+	}
+
+	env = os.Getenv("INSTANCE_INFO")
+	if env != "" {
+		InstanceInfo = boolean(env)
+	}
+
+	env = os.Getenv("CLIENT_ID_TTL")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		ClientIDTTL = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("USER_TTL")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		UserTTL = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("USER_CACHE_CLEAN_DELAY")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		UserCacheCleanDelay = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("TRACK_TTL")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		TrackTTL = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("TRACK_CACHE_CLEAN_DELAY")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		TrackCacheCleanDelay = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("PLAYLIST_TTL")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		PlaylistTTL = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("PLAYLIST_CACHE_CLEAN_DELAY")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		PlaylistCacheCleanDelay = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("USER_AGENT")
+	if env != "" {
+		UserAgent = env
+	}
+
+	env = os.Getenv("DNS_CACHE_TTL")
+	if env != "" {
+		num, err := strconv.ParseInt(env, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		DNSCacheTTL = time.Duration(num) * time.Second
+	}
+
+	env = os.Getenv("ADDR")
+	if env != "" {
+		Addr = env
+	}
+
+	env = os.Getenv("PREFORK")
+	if env != "" {
+		Prefork = boolean(env)
+	}
+
+	env = os.Getenv("TRUSTED_PROXY_CHECK")
+	if env != "" {
+		TrustedProxyCheck = boolean(env)
+	}
+
+	env = os.Getenv("TRUSTED_PROXIES")
+	if env != "" {
+		var p []string
+		err := json.Unmarshal([]byte(env), &p)
+		if err != nil {
+			return err
+		}
+
+		TrustedProxies = p
+	}
+
+	return nil
+}
+
 func init() {
 	filename := "soundcloak.json"
-	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env != "" {
+	if env := os.Getenv("SOUNDCLOAK_CONFIG"); env == "FROM_ENV" {
+		err := fromEnv()
+		if err != nil {
+			panic(err)
+		}
+
+		return
+	} else {
 		filename = env
 	}
 
@@ -163,7 +375,6 @@ func init() {
 		DNSCacheTTL             *time.Duration
 		Addr                    *string
 		Prefork                 *bool
-		EarlyData               *bool
 		TrustedProxyCheck       *bool
 		TrustedProxies          *[]string
 	}
@@ -228,9 +439,6 @@ func init() {
 	if config.Prefork != nil {
 		Prefork = *config.Prefork
 	}
-	if config.EarlyData != nil {
-		EarlyData = *config.EarlyData
-	}
 	if config.TrustedProxyCheck != nil {
 		TrustedProxyCheck = *config.TrustedProxyCheck
 	}
@@ -238,50 +446,8 @@ func init() {
 		TrustedProxies = *config.TrustedProxies
 	}
 
-	// defaults are:
-	// Player: RestreamPlayer if Restream is enabled, otherwise - HLSPlayer
-	// ProxyStreams: same as ProxyStreams in your config (false by default)
-	// FullyPreloadTrack: false
-	// ProxyImages: same as ProxyImages in your config (false by default)
-	// ParseDescriptions: true
 	if config.DefaultPreferences != nil {
-		var f bool
-		var t = true
-		if config.DefaultPreferences.Player != nil {
-			DefaultPreferences.Player = config.DefaultPreferences.Player
-		} else {
-			var p string
-			if Restream {
-				p = RestreamPlayer
-			} else {
-				p = HLSPlayer
-			}
-			DefaultPreferences.Player = &p
-		}
-
-		if config.DefaultPreferences.ProxyStreams != nil {
-			DefaultPreferences.ProxyStreams = config.DefaultPreferences.ProxyStreams
-		} else {
-			DefaultPreferences.ProxyStreams = &ProxyStreams
-		}
-
-		if config.DefaultPreferences.FullyPreloadTrack != nil {
-			DefaultPreferences.FullyPreloadTrack = config.DefaultPreferences.FullyPreloadTrack
-		} else {
-			DefaultPreferences.FullyPreloadTrack = &f
-		}
-
-		if config.DefaultPreferences.ProxyImages != nil {
-			DefaultPreferences.ProxyImages = config.DefaultPreferences.ProxyImages
-		} else {
-			DefaultPreferences.ProxyImages = &ProxyImages
-		}
-
-		if config.DefaultPreferences.ParseDescriptions != nil {
-			DefaultPreferences.ParseDescriptions = config.DefaultPreferences.ParseDescriptions
-		} else {
-			DefaultPreferences.ParseDescriptions = &t
-		}
+		loadDefaultPreferences(*config.DefaultPreferences)
 	} else {
 		defaultPreferences()
 	}

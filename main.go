@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/earlydata"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
@@ -33,9 +32,6 @@ func main() {
 	})
 
 	app.Use(recover.New())
-	if cfg.EarlyData {
-		app.Use(earlydata.New())
-	}
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
 	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})                              // 1hour
