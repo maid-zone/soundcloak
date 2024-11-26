@@ -31,6 +31,7 @@ func init() {
 	f := false
 
 	stubPrefs.ProxyStreams = &f
+	stubPrefs.ProxyImages = &f
 }
 
 type reader struct {
