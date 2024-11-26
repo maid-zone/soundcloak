@@ -21,7 +21,7 @@ FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /build/assets /assets
 COPY --from=build /build/app /app
-COPY --from=node /hls.js/node_modules /node_modules
+COPY --from=node /hls.js/node_modules/hls.js/dist/hls.light.min.js /node_modules/hls.js/dist/hls.light.min.js
 
 EXPOSE 4664
 

@@ -38,8 +38,8 @@ func main() {
 	}
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
-	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})
-	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 14400})
+	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})                              // 1hour
+	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
 	app.Get("/search", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
