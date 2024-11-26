@@ -360,7 +360,7 @@ func init() {
 		}
 
 		return
-	} else {
+	} else if env != "" {
 		filename = env
 	}
 
