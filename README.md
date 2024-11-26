@@ -107,7 +107,7 @@ go get
 
 7. *Optional.* Edit config:
 
-You can make a `soundcloak.json` file in the folder with the binary if you want, or an environment variable `SOUNDCLOAK_CONFIG` with path to the config. Refer to `lib/cfg/init.go` for configuration values and their meaning.
+Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
 
 8. Build binary:
 
@@ -159,7 +159,7 @@ Make adjustments as needed.
 
 4. *Optional.* Edit config:
 
-You can make a `soundcloak.json` file in the folder if you want. Refer to `soundcloak.json.example` and `lib/cfg/init.go` for configuration values and their meaning.
+Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
 
 5. Run the container
 
@@ -238,7 +238,7 @@ rm *.fiber.gz
 
 3. *Optional.* Edit config:
 
-Sometimes, new updates add new config values or change default ones. You can make a `soundcloak.json` file in the folder with the binary if you want, or an environment variable `SOUNDCLOAK_CONFIG` with path to the config. Refer to `soundcloak.json.example` and `lib/cfg/init.go` for configuration values and their meaning.
+Sometimes, new updates add new config values or change default ones. Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
 
 4. Regenerate templates (if they changed):
 
