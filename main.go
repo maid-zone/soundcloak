@@ -37,6 +37,26 @@ func main() {
 	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})                              // 1hour
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
+	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
+	const debug = false
+	if debug {
+		app.Get("/_/cachedump/tracks", func(c *fiber.Ctx) error {
+			return c.JSON(sc.TracksCache)
+		})
+
+		app.Get("/_/cachedump/playlists", func(c *fiber.Ctx) error {
+			return c.JSON(sc.PlaylistsCache)
+		})
+
+		app.Get("/_/cachedump/users", func(c *fiber.Ctx) error {
+			return c.JSON(sc.UsersCache)
+		})
+
+		app.Get("/_/cachedump/clientId", func(c *fiber.Ctx) error {
+			return c.JSON(sc.ClientIDCache)
+		})
+	}
+
 	app.Get("/search", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
@@ -127,12 +147,13 @@ func main() {
 			return err
 		}
 
-		track, err := sc.GetArbitraryTrack(prefs, u)
-
+		track, err := sc.GetArbitraryTrack(u)
 		if err != nil {
 			log.Printf("error getting %s: %s\n", u, err)
 			return err
 		}
+		track.Postfix(prefs)
+
 		displayErr := ""
 		stream := ""
 
@@ -226,11 +247,12 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(prefs, c.Params("user"))
+		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
 			return err
 		}
+		user.Postfix(prefs)
 
 		pl, err := user.GetPlaylists(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
@@ -248,11 +270,12 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(prefs, c.Params("user"))
+		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
 			return err
 		}
+		user.Postfix(prefs)
 
 		pl, err := user.GetAlbums(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
@@ -270,11 +293,12 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(prefs, c.Params("user"))
+		user, err := sc.GetUser(c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (reposts): %s\n", c.Params("user"), err)
 			return err
 		}
+		user.Postfix(prefs)
 
 		p, err := user.GetReposts(prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
@@ -292,11 +316,13 @@ func main() {
 			return err
 		}
 
-		track, err := sc.GetTrack(prefs, c.Params("user")+"/"+c.Params("track"))
+		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
 			log.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
 		}
+		track.Postfix(prefs)
+
 		displayErr := ""
 		stream := ""
 
@@ -327,11 +353,12 @@ func main() {
 		}
 
 		//h := time.Now()
-		usr, err := sc.GetUser(prefs, c.Params("user"))
+		usr, err := sc.GetUser(c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s: %s\n", c.Params("user"), err)
 			return err
 		}
+		usr.Postfix(prefs)
 		//fmt.Println("getuser", time.Since(h))
 
 		//h = time.Now()
@@ -352,18 +379,25 @@ func main() {
 			return err
 		}
 
-		playlist, err := sc.GetPlaylist(prefs, c.Params("user")+"/sets/"+c.Params("playlist"))
+		playlist, err := sc.GetPlaylist(c.Params("user") + "/sets/" + c.Params("playlist"))
 		if err != nil {
 			log.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 			return err
 		}
+		// Don't ask why
+		playlist.Tracks = playlist.Postfix(prefs)
 
 		p := c.Query("pagination")
 		if p != "" {
-			tracks, next, err := sc.GetNextMissingTracks(prefs, p)
+			tracks, next, err := sc.GetNextMissingTracks(p)
 			if err != nil {
 				log.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 				return err
+			}
+
+			for i, track := range tracks {
+				track.Postfix(prefs)
+				tracks[i] = track
 			}
 
 			playlist.Tracks = tracks

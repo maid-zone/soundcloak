@@ -10,7 +10,7 @@ import (
 	"github.com/maid-zone/soundcloak/lib/cfg"
 )
 
-var playlistsCache = map[string]cached[Playlist]{}
+var PlaylistsCache = map[string]cached[Playlist]{}
 var playlistsCacheLock = &sync.RWMutex{}
 
 // Functions/structures related to playlists
@@ -24,20 +24,20 @@ type Playlist struct {
 	Likes        int64  `json:"likes_count"`
 	Permalink    string `json:"permalink"`
 	//ReleaseDate  string  `json:"release_date"`
-	TagList    string   `json:"tag_list"`
-	Title      string   `json:"title"`
-	Type       string   `json:"set_type"`
-	Album      bool     `json:"is_album"`
-	Author     User     `json:"user"`
-	Tracks     []*Track `json:"tracks"`
-	TrackCount int64    `json:"track_count"`
+	TagList    string  `json:"tag_list"`
+	Title      string  `json:"title"`
+	Type       string  `json:"set_type"`
+	Album      bool    `json:"is_album"`
+	Author     User    `json:"user"`
+	Tracks     []Track `json:"tracks"`
+	TrackCount int64   `json:"track_count"`
 
 	MissingTracks string `json:"-"`
 }
 
-func GetPlaylist(prefs cfg.Preferences, permalink string) (Playlist, error) {
+func GetPlaylist(permalink string) (Playlist, error) {
 	playlistsCacheLock.RLock()
-	if cell, ok := playlistsCache[permalink]; ok && cell.Expires.After(time.Now()) {
+	if cell, ok := PlaylistsCache[permalink]; ok && cell.Expires.After(time.Now()) {
 		playlistsCacheLock.RUnlock()
 		return cell.Value, nil
 	}
@@ -53,13 +53,13 @@ func GetPlaylist(prefs cfg.Preferences, permalink string) (Playlist, error) {
 		return p, ErrKindNotCorrect
 	}
 
-	err = p.Fix(prefs, true)
+	err = p.Fix(true)
 	if err != nil {
 		return p, err
 	}
 
 	playlistsCacheLock.Lock()
-	playlistsCache[permalink] = cached[Playlist]{Value: p, Expires: time.Now().Add(cfg.PlaylistTTL)}
+	PlaylistsCache[permalink] = cached[Playlist]{Value: p, Expires: time.Now().Add(cfg.PlaylistTTL)}
 	playlistsCacheLock.Unlock()
 
 	return p, nil
@@ -78,19 +78,21 @@ func SearchPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist],
 	}
 
 	for _, p := range p.Collection {
-		p.Fix(prefs, false)
+		p.Fix(false)
+		p.Postfix(prefs)
 	}
 
 	return &p, nil
 }
 
-func (p *Playlist) Fix(prefs cfg.Preferences, cached bool) error {
+func (p *Playlist) Fix(cached bool) error {
 	if cached {
-		for _, t := range p.Tracks {
-			t.Fix(prefs, false)
+		for i, t := range p.Tracks {
+			t.Fix(false)
+			p.Tracks[i] = t
 		}
 
-		err := p.GetMissingTracks(prefs)
+		err := p.GetMissingTracks()
 		if err != nil {
 			return err
 		}
@@ -100,13 +102,23 @@ func (p *Playlist) Fix(prefs cfg.Preferences, cached bool) error {
 		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
 	}
 
+	p.Author.Fix(false)
+
+	return nil
+}
+
+func (p *Playlist) Postfix(prefs cfg.Preferences) []Track {
 	if cfg.ProxyImages && *prefs.ProxyImages && p.Artwork != "" {
 		p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
 	}
 
-	p.Author.Fix(prefs, false)
-
-	return nil
+	p.Author.Postfix(prefs)
+	var fixed = make([]Track, len(p.Tracks))
+	for i, t := range p.Tracks {
+		t.Postfix(prefs)
+		fixed[i] = t
+	}
+	return fixed
 }
 
 func (p Playlist) FormatDescription() string {
@@ -141,28 +153,28 @@ func JoinMissingTracks(missing []MissingTrack) (st string) {
 	return
 }
 
-func GetMissingTracks(prefs cfg.Preferences, missing []MissingTrack) (res []*Track, next []MissingTrack, err error) {
+func GetMissingTracks(missing []MissingTrack) (res []Track, next []MissingTrack, err error) {
 	if len(missing) > 50 {
 		next = missing[50:]
 		missing = missing[:50]
 	}
 
-	res, err = GetTracks(prefs, JoinMissingTracks(missing))
+	res, err = GetTracks(JoinMissingTracks(missing))
 	return
 }
 
-func GetNextMissingTracks(prefs cfg.Preferences, raw string) (res []*Track, next []string, err error) {
+func GetNextMissingTracks(raw string) (res []Track, next []string, err error) {
 	missing := strings.Split(raw, ",")
 	if len(missing) > 50 {
 		next = missing[50:]
 		missing = missing[:50]
 	}
 
-	res, err = GetTracks(prefs, strings.Join(missing, ","))
+	res, err = GetTracks(strings.Join(missing, ","))
 	return
 }
 
-func (p *Playlist) GetMissingTracks(prefs cfg.Preferences) error {
+func (p *Playlist) GetMissingTracks() error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
@@ -174,7 +186,7 @@ func (p *Playlist) GetMissingTracks(prefs cfg.Preferences) error {
 		return nil
 	}
 
-	res, next, err := GetMissingTracks(prefs, missing)
+	res, next, err := GetMissingTracks(missing)
 	if err != nil {
 		return err
 	}

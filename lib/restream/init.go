@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/bogem/id3v2/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/sc"
@@ -126,9 +127,18 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 	return
 }
 
+type collector struct {
+	data []byte
+}
+
+func (c *collector) Write(data []byte) (n int, err error) {
+	c.data = append(c.data, data...)
+	return len(data), nil
+}
+
 func Load(r fiber.Router) {
 	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
-		t, err := sc.GetTrack(stubPrefs, c.Params("author")+"/"+c.Params("track"))
+		t, err := sc.GetTrack(c.Params("author") + "/" + c.Params("track"))
 		if err != nil {
 			return err
 		}
@@ -149,6 +159,30 @@ func Load(r fiber.Router) {
 		r := reader{}
 		if err := r.Setup(u); err != nil {
 			return err
+		}
+
+		if c.Query("metadata") == "true" {
+			tag := id3v2.NewEmptyTag()
+
+			tag.SetArtist(t.Author.Username)
+			if t.Genre != "" {
+				tag.SetGenre(t.Genre)
+			}
+
+			tag.SetTitle(t.Title)
+
+			if t.Artwork != "" {
+				data, mime, err := t.DownloadImage()
+				if err != nil {
+					return err
+				}
+
+				tag.AddAttachedPicture(id3v2.PictureFrame{MimeType: mime, Picture: data, PictureType: id3v2.PTFrontCover, Encoding: id3v2.EncodingUTF8})
+			}
+
+			var c collector
+			tag.WriteTo(&c)
+			r.leftover = c.data
 		}
 
 		return c.SendStream(&r)

@@ -11,18 +11,6 @@ import (
 
 var sndcdn = []byte(".sndcdn.com")
 
-// seems soundcloud has 4 of these (i1, i2, i3, i4)
-// they point to the same ip from my observations, and they all serve the same files
-const cdn = "i1.sndcdn.com"
-
-var httpc = &fasthttp.HostClient{
-	Addr:                cdn + ":443",
-	IsTLS:               true,
-	DialDualStack:       true,
-	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	MaxIdleConnDuration: 1<<63 - 1,
-}
-
 func Load(r fiber.Router) {
 	r.Get("/_/proxy/images", func(c *fiber.Ctx) error {
 		url := c.Query("url")
@@ -42,7 +30,7 @@ func Load(r fiber.Router) {
 			return fiber.ErrBadRequest
 		}
 
-		parsed.SetHost(cdn)
+		parsed.SetHost(cfg.ImageCDN)
 
 		req := fasthttp.AcquireRequest()
 		defer fasthttp.ReleaseRequest(req)
@@ -54,7 +42,7 @@ func Load(r fiber.Router) {
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
 
-		err = sc.DoWithRetry(httpc, req, resp)
+		err = sc.DoWithRetry(sc.ImageClient, req, resp)
 		if err != nil {
 			return err
 		}

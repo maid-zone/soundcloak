@@ -467,3 +467,7 @@ func init() {
 		defaultPreferences()
 	}
 }
+
+// seems soundcloud has 4 of these (i1, i2, i3, i4)
+// they point to the same ip from my observations, and they all serve the same files
+const ImageCDN = "i1.sndcdn.com"

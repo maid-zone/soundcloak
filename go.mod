@@ -4,6 +4,7 @@ go 1.21.3
 
 require (
 	github.com/a-h/templ v0.2.793
+	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/segmentio/encoding v0.4.0
 	github.com/valyala/fasthttp v1.57.0
@@ -21,4 +22,5 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 )

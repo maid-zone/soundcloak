@@ -82,8 +82,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string)
 	}
 	@UserItem(&t.Author)
 	//<div class="btns">
-	<div style="display: flex;">
+	<div style="display: flex; gap: 1rem">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
+		if cfg.Restream {
+			<a class="btn" href={ templ.URL("/_/restream/" + t.Author.Permalink + "/" + t.Permalink+"?metadata=true") } download={t.Author.Username + " - " + t.Title + ".mp3"}>download</a>
+		}
 	</div>
 	<br/>
 	if t.Description != "" {

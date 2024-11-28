@@ -51,7 +51,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	<br/>
 	<div>
 		for _, track := range p.Tracks {
-			@TrackItem(track, true)
+			@TrackItem(&track, true)
 		}
 	</div>
 	if len(p.MissingTracks) != 0 {

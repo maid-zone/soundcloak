@@ -15,11 +15,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var clientIdCache struct {
+type clientIdCache struct {
 	ClientID  string
 	Version   []byte
 	NextCheck time.Time
 }
+
+var ClientIDCache clientIdCache
 
 const api = "api-v2.soundcloud.com"
 
@@ -28,7 +30,15 @@ var httpc = &fasthttp.HostClient{
 	IsTLS:               true,
 	DialDualStack:       true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	MaxIdleConnDuration: 1<<63 - 1, //improves performance but seems to cause some issues, need more testing
+	MaxIdleConnDuration: 1<<63 - 1,
+}
+
+var ImageClient = &fasthttp.HostClient{
+	Addr:                cfg.ImageCDN + ":443",
+	IsTLS:               true,
+	DialDualStack:       true,
+	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	MaxIdleConnDuration: 1<<63 - 1,
 }
 
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
@@ -46,15 +56,15 @@ type cached[T any] struct {
 
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
-	if clientIdCache.NextCheck.After(time.Now()) {
-		return clientIdCache.ClientID, nil
+	if ClientIDCache.NextCheck.After(time.Now()) {
+		return ClientIDCache.ClientID, nil
 	}
 
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI("https://soundcloud.com/h") // 404 page
-	req.Header.Set("User-Agent", cfg.UserAgent)   // the connection is stuck with fasthttp useragent lol, maybe randomly select from a list of browser useragents in the future? low priority for now
+	req.Header.Set("User-Agent", cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -75,9 +85,9 @@ func GetClientID() (string, error) {
 		return "", ErrVersionNotFound
 	}
 
-	if bytes.Equal(res[1], clientIdCache.Version) {
-		clientIdCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		return clientIdCache.ClientID, nil
+	if bytes.Equal(res[1], ClientIDCache.Version) {
+		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+		return ClientIDCache.ClientID, nil
 	}
 
 	ver := res[1]
@@ -109,15 +119,16 @@ func GetClientID() (string, error) {
 			continue
 		}
 
-		clientIdCache.ClientID = string(res[1])
-		clientIdCache.Version = ver
-		clientIdCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		return clientIdCache.ClientID, nil
+		ClientIDCache.ClientID = string(res[1])
+		ClientIDCache.Version = ver
+		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+		return ClientIDCache.ClientID, nil
 	}
 
 	return "", ErrIDNotFound
 }
 
+// Since the http client is setup to always keep connections idle (great for speed, no need to open a new one everytime), those connections may be closed by soundcloud after some time of inactivity, this ensures that we retry those requests that fail due to the connection closing/timing out
 func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
 	for i := 0; i < 10; i++ {
 		err = httpc.Do(req, resp)
@@ -264,9 +275,9 @@ func init() {
 		for range ticker.C {
 			usersCacheLock.Lock()
 
-			for key, val := range usersCache {
+			for key, val := range UsersCache {
 				if val.Expires.Before(time.Now()) {
-					delete(usersCache, key)
+					delete(UsersCache, key)
 				}
 			}
 
@@ -279,9 +290,9 @@ func init() {
 		for range ticker.C {
 			tracksCacheLock.Lock()
 
-			for key, val := range tracksCache {
+			for key, val := range TracksCache {
 				if val.Expires.Before(time.Now()) {
-					delete(tracksCache, key)
+					delete(TracksCache, key)
 				}
 			}
 
@@ -294,9 +305,9 @@ func init() {
 		for range ticker.C {
 			playlistsCacheLock.Lock()
 
-			for key, val := range playlistsCache {
+			for key, val := range PlaylistsCache {
 				if val.Expires.Before(time.Now()) {
-					delete(playlistsCache, key)
+					delete(PlaylistsCache, key)
 				}
 			}
 
