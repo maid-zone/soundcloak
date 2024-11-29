@@ -79,7 +79,7 @@ func SearchPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist],
 
 	for _, p := range p.Collection {
 		p.Fix(false)
-		p.Postfix(prefs)
+		p.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -107,18 +107,22 @@ func (p *Playlist) Fix(cached bool) error {
 	return nil
 }
 
-func (p *Playlist) Postfix(prefs cfg.Preferences) []Track {
+func (p *Playlist) Postfix(prefs cfg.Preferences, fixTracks bool) []Track {
 	if cfg.ProxyImages && *prefs.ProxyImages && p.Artwork != "" {
 		p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
 	}
 
 	p.Author.Postfix(prefs)
-	var fixed = make([]Track, len(p.Tracks))
-	for i, t := range p.Tracks {
-		t.Postfix(prefs)
-		fixed[i] = t
+	if fixTracks {
+		var fixed = make([]Track, len(p.Tracks))
+		for i, t := range p.Tracks {
+			t.Postfix(prefs)
+			fixed[i] = t
+		}
+		return fixed
 	}
-	return fixed
+
+	return nil
 }
 
 func (p Playlist) FormatDescription() string {

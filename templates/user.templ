@@ -1,11 +1,11 @@
 package templates
 
 import (
+	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
 	"strings"
-	"github.com/maid-zone/soundcloak/lib/cfg"
 )
 
 templ UserHeader(u sc.User) {
@@ -59,16 +59,33 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 	</div>
 }
 
+type btn struct {
+	text     string
+	href     string
+	external bool
+}
+
+templ UserButtons(current string, user string) {
+	<div class="btns"> //       this part is the tedious one now, because formatting breaks if i space the list out with newlines
+		for _, b := range [6]btn{{"tracks", "", false},{"playlists", "/sets",false},{"albums", "/albums", false},{"reposts","/reposts", false},{"likes", "/likes", false},{"view on soundcloud", "https://soundcloud.com/"+user, true}} {
+			if b.text == current {
+				<a class="btn active">{b.text}</a>
+			} else {
+				if b.external {
+					<a class="btn" href={ templ.URL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
+				} else {
+					<a class="btn" href={ templ.URL("/" + user + b.href) }>{ b.text }</a>
+				}
+			}
+		}
+	</div>
+}
+
 templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 	@UserBase(prefs, u)
 	// kinda tedious but whatever, might make it more flexible in the future
-	<div class="btns">
-		<a class="btn active">tracks</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
-	</div>
+	// ^ outdated, no longer tedious but whatever
+	@UserButtons("tracks", u.Permalink)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -86,13 +103,7 @@ templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 
 templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(prefs, u)
-	<div class="btns">
-		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
-		<a class="btn active">playlists</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
-	</div>
+	@UserButtons("playlists", u.Permalink)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -110,13 +121,7 @@ templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playli
 
 templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(prefs, u)
-	<div class="btns">
-		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
-		<a class="btn active">albums</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/reposts") }>reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
-	</div>
+	@UserButtons("albums", u.Permalink)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -134,13 +139,7 @@ templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]
 
 templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost]) {
 	@UserBase(prefs, u)
-	<div class="btns">
-		<a class="btn" href={ templ.URL("/" + u.Permalink) }>tracks</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/sets") }>playlists</a>
-		<a class="btn" href={ templ.URL("/" + u.Permalink + "/albums") }>albums</a>
-		<a class="btn active">reposts</a>
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + u.Permalink) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">view on soundcloud</a>
-	</div>
+	@UserButtons("reposts", u.Permalink)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -157,6 +156,28 @@ templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost])
 		}
 	} else {
 		<span>no more reposts</span>
+	}
+}
+
+templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
+	@UserBase(prefs, u)
+	@UserButtons("likes", u.Permalink)
+	<br/>
+	if len(p.Collection) != 0 {
+		<div>
+			for _, like := range p.Collection {
+				if like.Track != nil {
+					@TrackItem(like.Track, true)
+				} else if like.Playlist != nil {
+					@PlaylistItem(like.Playlist, true)
+				}
+			}
+		</div>
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/likes")[1])) } rel="noreferrer">more likes</a>
+		}
+	} else {
+		<span>no more likes</span>
 	}
 }
 

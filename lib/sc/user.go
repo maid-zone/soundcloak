@@ -48,7 +48,7 @@ type Repost struct {
 	Playlist *Playlist // type == playlist-repost
 }
 
-func (r *Repost) Fix(prefs cfg.Preferences) {
+func (r Repost) Fix(prefs cfg.Preferences) {
 	switch r.Type {
 	case TrackRepost:
 		if r.Track != nil {
@@ -59,12 +59,27 @@ func (r *Repost) Fix(prefs cfg.Preferences) {
 	case PlaylistRepost:
 		if r.Playlist != nil {
 			r.Playlist.Fix(false) // err always nil if cached == false
-			r.Playlist.Postfix(prefs)
+			r.Playlist.Postfix(prefs, false)
 		}
 		return
 	}
 }
 
+// same thing
+type Like struct {
+	Track    *Track
+	Playlist *Playlist
+}
+
+func (l Like) Fix(prefs cfg.Preferences) {
+	if l.Track != nil {
+		l.Track.Fix(false)
+		l.Track.Postfix(prefs)
+	} else if l.Playlist != nil {
+		l.Playlist.Fix(false)
+		l.Playlist.Postfix(prefs, false)
+	}
+}
 func GetUser(permalink string) (User, error) {
 	usersCacheLock.RLock()
 	if cell, ok := UsersCache[permalink]; ok && cell.Expires.After(time.Now()) {
@@ -189,7 +204,7 @@ func (u *User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Pla
 
 	for _, pl := range p.Collection {
 		pl.Fix(false)
-		pl.Postfix(prefs)
+		pl.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -207,7 +222,7 @@ func (u *User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playli
 
 	for _, pl := range p.Collection {
 		pl.Fix(false)
-		pl.Postfix(prefs)
+		pl.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -225,6 +240,23 @@ func (u *User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repos
 
 	for _, r := range p.Collection {
 		r.Fix(prefs)
+	}
+
+	return &p, nil
+}
+
+func (u *User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
+	p := Paginated[*Like]{
+		Next: "https://" + api + "/users/" + u.ID + "/likes" + args,
+	}
+
+	err := p.Proceed(true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, l := range p.Collection {
+		l.Fix(prefs)
 	}
 
 	return &p, nil

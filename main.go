@@ -310,6 +310,29 @@ func main() {
 		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
+	app.Get("/:user/likes", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (likes): %s\n", c.Params("user"), err)
+			return err
+		}
+		user.Postfix(prefs)
+
+		p, err := user.GetLikes(prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s likes: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
@@ -385,7 +408,7 @@ func main() {
 			return err
 		}
 		// Don't ask why
-		playlist.Tracks = playlist.Postfix(prefs)
+		playlist.Tracks = playlist.Postfix(prefs, true)
 
 		p := c.Query("pagination")
 		if p != "" {

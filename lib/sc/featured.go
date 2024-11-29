@@ -56,6 +56,6 @@ func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
 func (s *Selection) Fix(prefs cfg.Preferences) {
 	for _, p := range s.Items.Collection {
 		p.Fix(false)
-		p.Postfix(prefs)
+		p.Postfix(prefs, false)
 	}
 }
