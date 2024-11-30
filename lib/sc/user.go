@@ -1,6 +1,7 @@
 package sc
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -8,6 +9,9 @@ import (
 	"time"
 
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/textparsing"
+	"github.com/segmentio/encoding/json"
+	"github.com/valyala/fasthttp"
 )
 
 // Functions/structures related to users
@@ -31,6 +35,13 @@ type User struct {
 	ID        string `json:"urn"`
 	Username  string `json:"username"`
 	Verified  bool   `json:"verified"`
+
+	WebProfiles []Link
+}
+
+type Link struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
 }
 
 type RepostType string
@@ -52,14 +63,14 @@ func (r Repost) Fix(prefs cfg.Preferences) {
 	switch r.Type {
 	case TrackRepost:
 		if r.Track != nil {
-			r.Track.Fix(false)
-			r.Track.Postfix(prefs)
+			r.Track.Fix(false, false)
+			r.Track.Postfix(prefs, false)
 		}
 		return
 	case PlaylistRepost:
 		if r.Playlist != nil {
-			r.Playlist.Fix(false) // err always nil if cached == false
-			r.Playlist.Postfix(prefs, false)
+			r.Playlist.Fix(false, false) // err always nil if cached == false
+			r.Playlist.Postfix(prefs, false, false)
 		}
 		return
 	}
@@ -73,11 +84,11 @@ type Like struct {
 
 func (l Like) Fix(prefs cfg.Preferences) {
 	if l.Track != nil {
-		l.Track.Fix(false)
-		l.Track.Postfix(prefs)
+		l.Track.Fix(false, false)
+		l.Track.Postfix(prefs, false)
 	} else if l.Playlist != nil {
-		l.Playlist.Fix(false)
-		l.Playlist.Postfix(prefs, false)
+		l.Playlist.Fix(false, false)
+		l.Playlist.Postfix(prefs, false, false)
 	}
 }
 func GetUser(permalink string) (User, error) {
@@ -100,6 +111,12 @@ func GetUser(permalink string) (User, error) {
 		return u, err
 	}
 
+	if cfg.GetWebProfiles {
+		err = u.GetWebProfiles()
+		if err != nil {
+			return u, err
+		}
+	}
 	u.Fix(true)
 
 	usersCacheLock.Lock()
@@ -140,8 +157,8 @@ func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track],
 	}
 
 	for _, t := range p.Collection {
-		t.Fix(false)
-		t.Postfix(prefs)
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -184,6 +201,25 @@ func (u *User) Fix(large bool) {
 
 	ls := strings.Split(u.ID, ":")
 	u.ID = ls[len(ls)-1]
+
+	for i, l := range u.WebProfiles {
+		if textparsing.IsEmail(l.URL) {
+			l.URL = "mailto:" + l.URL
+			u.WebProfiles[i] = l
+		} else {
+			parsed, err := url.Parse(l.URL)
+			if err == nil {
+				if parsed.Host == "soundcloud.com" || strings.HasSuffix(parsed.Host, ".soundcloud.com") {
+					l.URL = "/" + strings.Join(strings.Split(l.URL, "/")[3:], "/")
+					if parsed.Host == "on.soundcloud.com" {
+						l.URL = "/on" + l.URL
+					}
+
+					u.WebProfiles[i] = l
+				}
+			}
+		}
+	}
 }
 
 func (u *User) Postfix(prefs cfg.Preferences) {
@@ -192,7 +228,7 @@ func (u *User) Postfix(prefs cfg.Preferences) {
 	}
 }
 
-func (u *User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
 	}
@@ -203,14 +239,14 @@ func (u *User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Pla
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false)
-		pl.Postfix(prefs, false)
+		pl.Fix(false, false)
+		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u *User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
 	}
@@ -221,14 +257,14 @@ func (u *User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playli
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false)
-		pl.Postfix(prefs, false)
+		pl.Fix(false, false)
+		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u *User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
+func (u User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
 	p := Paginated[*Repost]{
 		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
 	}
@@ -245,7 +281,7 @@ func (u *User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repos
 	return &p, nil
 }
 
-func (u *User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
+func (u User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
 	p := Paginated[*Like]{
 		Next: "https://" + api + "/users/" + u.ID + "/likes" + args,
 	}
@@ -260,4 +296,37 @@ func (u *User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], 
 	}
 
 	return &p, nil
+}
+
+func (u *User) GetWebProfiles() error {
+	cid, err := GetClientID()
+	if err != nil {
+		return err
+	}
+
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	req.SetRequestURI("https://" + api + "/users/" + u.ID + "/web-profiles?client_id=" + cid)
+	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	err = DoWithRetry(httpc, req, resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("getwebprofiles: got status code %d", resp.StatusCode())
+	}
+
+	data, err := resp.BodyUncompressed()
+	if err != nil {
+		data = resp.Body()
+	}
+
+	return json.Unmarshal(data, &u.WebProfiles)
 }

@@ -42,6 +42,9 @@ type Preferences struct {
 
 // // config // //
 
+// Retrieve links users set in their profile (social media, website, etc)
+var GetWebProfiles = true
+
 // Default preferences. You can override those preferences in the config file, otherwise they default to values depending on your config
 // (so, if you have ProxyStreams enabled - it will be enabled for the user by default and etc, or if you enabled Restream, the default player will be RestreamPlayer instead of HLSPlayer)
 var DefaultPreferences Preferences
@@ -189,7 +192,12 @@ func (w wrappedError) Error() string {
 }
 
 func fromEnv() error {
-	env := os.Getenv("DEFAULT_PREFERENCES")
+	env := os.Getenv("GET_WEB_PROFILES")
+	if env != "" {
+		GetWebProfiles = boolean(env)
+	}
+
+	env = os.Getenv("DEFAULT_PREFERENCES")
 	if env != "" {
 		var p Preferences
 		err := json.Unmarshal([]byte(env), &p)
@@ -372,6 +380,7 @@ func init() {
 	}
 
 	var config struct {
+		GetWebProfiles          *bool
 		DefaultPreferences      *Preferences
 		ProxyImages             *bool
 		ImageCacheControl       *string
@@ -403,6 +412,9 @@ func init() {
 
 	// tedious
 	// i've decided to fully override to make it easier to change default config later on
+	if config.GetWebProfiles != nil {
+		GetWebProfiles = *config.GetWebProfiles
+	}
 	if config.ProxyImages != nil {
 		ProxyImages = *config.ProxyImages
 	}

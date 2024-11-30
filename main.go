@@ -152,7 +152,7 @@ func main() {
 			log.Printf("error getting %s: %s\n", u, err)
 			return err
 		}
-		track.Postfix(prefs)
+		track.Postfix(prefs, true)
 
 		displayErr := ""
 		stream := ""
@@ -344,7 +344,7 @@ func main() {
 			log.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
 		}
-		track.Postfix(prefs)
+		track.Postfix(prefs, true)
 
 		displayErr := ""
 		stream := ""
@@ -408,7 +408,7 @@ func main() {
 			return err
 		}
 		// Don't ask why
-		playlist.Tracks = playlist.Postfix(prefs, true)
+		playlist.Tracks = playlist.Postfix(prefs, true, true)
 
 		p := c.Query("pagination")
 		if p != "" {
@@ -419,7 +419,7 @@ func main() {
 			}
 
 			for i, track := range tracks {
-				track.Postfix(prefs)
+				track.Postfix(prefs, false)
 				tracks[i] = track
 			}
 

@@ -160,4 +160,9 @@ select:focus {
 
 .link {
   color: var(--accent);
+  text-decoration: underline dashed;
+}
+
+.link:hover {
+  text-decoration: underline;
 }

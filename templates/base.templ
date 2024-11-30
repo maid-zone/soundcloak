@@ -28,15 +28,22 @@ templ Base(title string, content templ.Component, head templ.Component) {
 	</html>
 }
 
-templ Description(prefs cfg.Preferences, text string) {
-	<details>
-		<summary>Toggle description</summary>
-		<p style="white-space: pre-wrap;">
-			if *prefs.ParseDescriptions {
-				@templ.Raw(textparsing.Format(text))
-			} else {
-				{ text }
-			}
-		</p>
-	</details>
+templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
+	if text != "" || injected != nil {
+		<details>
+			<summary>Toggle description</summary>
+			<p style="white-space: pre-wrap;">
+				if text != "" {
+					if *prefs.ParseDescriptions {
+						@templ.Raw(textparsing.Format(text))
+					} else {
+						{ text }
+					}
+				}
+				if injected != nil {
+					@injected
+				}
+			</p>
+		</details>
+	}
 }

@@ -26,8 +26,8 @@ func GetFeaturedTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], 
 	}
 
 	for _, t := range p.Collection {
-		t.Fix(false)
-		t.Postfix(prefs)
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -55,7 +55,7 @@ func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
 
 func (s *Selection) Fix(prefs cfg.Preferences) {
 	for _, p := range s.Items.Collection {
-		p.Fix(false)
-		p.Postfix(prefs, false)
+		p.Fix(false, false)
+		p.Postfix(prefs, false, false)
 	}
 }

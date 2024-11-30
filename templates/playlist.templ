@@ -1,11 +1,11 @@
 package templates
 
 import (
+	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
 	"strings"
-	"github.com/maid-zone/soundcloak/lib/cfg"
 )
 
 templ PlaylistHeader(p sc.Playlist) {
@@ -43,9 +43,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + p.Author.Permalink + "/sets/" + p.Permalink) }>view on soundcloud</a>
 	</div>
 	<br/>
-	if p.Description != "" {
-		@Description(prefs, p.Description)
-	}
+	@Description(prefs, p.Description, nil)
 	<p>{ strconv.FormatInt(p.TrackCount, 10) } tracks</p>
 	<br/>
 	<br/>

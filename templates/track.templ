@@ -23,7 +23,6 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 	if *prefs.Player == cfg.NonePlayer {
 		{{ return }}
 	}
-	
 	if displayErr == "" {
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
 			<audio src={ "/_/restream/" + track.Author.Permalink + "/" + track.Permalink } controls></audio>
@@ -38,7 +37,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				<br/>
 				JavaScript is disabled! Audio playback may not work without it enabled. 
 				if cfg.Restream {
-					<br>
+					<br/>
 					<a class="link" href="/_/preferences">You can enable Restream player in the preferences. It works without JavaScript.</a>
 				}
 			</noscript>
@@ -85,13 +84,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string)
 	<div style="display: flex; gap: 1rem">
 		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
 		if cfg.Restream {
-			<a class="btn" href={ templ.URL("/_/restream/" + t.Author.Permalink + "/" + t.Permalink+"?metadata=true") } download={t.Author.Username + " - " + t.Title + ".mp3"}>download</a>
+			<a class="btn" href={ templ.URL("/_/restream/" + t.Author.Permalink + "/" + t.Permalink + "?metadata=true") } download={ t.Author.Username + " - " + t.Title + ".mp3" }>download</a>
 		}
 	</div>
 	<br/>
-	if t.Description != "" {
-		@Description(prefs, t.Description)
-	}
+	@Description(prefs, t.Description, nil)
 	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
 	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
 	<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>

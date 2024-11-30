@@ -53,7 +53,7 @@ func GetPlaylist(permalink string) (Playlist, error) {
 		return p, ErrKindNotCorrect
 	}
 
-	err = p.Fix(true)
+	err = p.Fix(true, true)
 	if err != nil {
 		return p, err
 	}
@@ -78,23 +78,23 @@ func SearchPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist],
 	}
 
 	for _, p := range p.Collection {
-		p.Fix(false)
-		p.Postfix(prefs, false)
+		p.Fix(false, false)
+		p.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (p *Playlist) Fix(cached bool) error {
+func (p *Playlist) Fix(cached bool, fixAuthor bool) error {
 	if cached {
-		for i, t := range p.Tracks {
-			t.Fix(false)
-			p.Tracks[i] = t
-		}
-
 		err := p.GetMissingTracks()
 		if err != nil {
 			return err
+		}
+
+		for i, t := range p.Tracks {
+			t.Fix(false, false)
+			p.Tracks[i] = t
 		}
 
 		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t500x500.", 1)
@@ -102,21 +102,26 @@ func (p *Playlist) Fix(cached bool) error {
 		p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
 	}
 
-	p.Author.Fix(false)
+	if fixAuthor {
+		p.Author.Fix(false)
+	}
 
 	return nil
 }
 
-func (p *Playlist) Postfix(prefs cfg.Preferences, fixTracks bool) []Track {
+func (p *Playlist) Postfix(prefs cfg.Preferences, fixTracks bool, fixAuthor bool) []Track {
 	if cfg.ProxyImages && *prefs.ProxyImages && p.Artwork != "" {
 		p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
 	}
 
-	p.Author.Postfix(prefs)
+	if fixAuthor {
+		p.Author.Postfix(prefs)
+	}
+
 	if fixTracks {
 		var fixed = make([]Track, len(p.Tracks))
 		for i, t := range p.Tracks {
-			t.Postfix(prefs)
+			t.Postfix(prefs, false)
 			fixed[i] = t
 		}
 		return fixed

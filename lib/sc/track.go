@@ -108,7 +108,7 @@ func GetTrack(permalink string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix(true)
+	t.Fix(true, true)
 
 	tracksCacheLock.Lock()
 	TracksCache[permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}
@@ -217,8 +217,8 @@ func SearchTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error
 	}
 
 	for _, t := range p.Collection {
-		t.Fix(false)
-		t.Postfix(prefs)
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
 	}
 
 	return &p, nil
@@ -253,7 +253,7 @@ func GetTracks(ids string) ([]Track, error) {
 	var res []Track
 	err = json.Unmarshal(data, &res)
 	for i, t := range res {
-		t.Fix(false)
+		t.Fix(false, false)
 		res[i] = t
 	}
 	return res, err
@@ -306,7 +306,7 @@ func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (st
 	return s.URL, nil
 }
 
-func (t *Track) Fix(large bool) {
+func (t *Track) Fix(large bool, fixAuthor bool) {
 	if large {
 		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t500x500.", 1)
 	} else {
@@ -320,14 +320,19 @@ func (t *Track) Fix(large bool) {
 		t.ID = ls[len(ls)-1]
 	}
 
-	t.Author.Fix(false)
+	if fixAuthor {
+		t.Author.Fix(false)
+	}
 }
 
-func (t *Track) Postfix(prefs cfg.Preferences) {
+func (t *Track) Postfix(prefs cfg.Preferences, fixAuthor bool) {
 	if cfg.ProxyImages && *prefs.ProxyImages && t.Artwork != "" {
 		t.Artwork = "/_/proxy/images?url=" + url.QueryEscape(t.Artwork)
 	}
-	t.Author.Postfix(prefs)
+
+	if fixAuthor {
+		t.Author.Postfix(prefs)
+	}
 }
 
 func (t Track) FormatDescription() string {
@@ -394,7 +399,7 @@ func GetTrackByID(id string) (Track, error) {
 		return t, ErrKindNotCorrect
 	}
 
-	t.Fix(true)
+	t.Fix(true, true)
 
 	tracksCacheLock.Lock()
 	TracksCache[t.Author.Permalink+"/"+t.Permalink] = cached[Track]{Value: t, Expires: time.Now().Add(cfg.TrackTTL)}

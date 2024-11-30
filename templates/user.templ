@@ -32,6 +32,18 @@ templ UserItem(user *sc.User) {
 	</a>
 }
 
+templ UserLinks(links []sc.Link) {
+	for _, link := range links {
+		if len(link.URL) > 0 {
+			if link.URL[0] == '/' {
+				<p><a class="link" href={ templ.URL(link.URL) }>- { link.Title }</a></p>
+			} else {
+				<p><a class="link" href={ templ.URL(link.URL) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">- { link.Title }</a></p>
+			}
+		}
+	}
+}
+
 templ UserBase(prefs cfg.Preferences, u sc.User) {
 	<div>
 		if u.Avatar != "" {
@@ -45,8 +57,10 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 			<p style="color: var(--accent)">Verified</p>
 		}
 	</div>
-	if u.Description != "" {
-		@Description(prefs, u.Description)
+	if len(u.WebProfiles) != 0 {
+		@Description(prefs, u.Description, UserLinks(u.WebProfiles))
+	} else {
+		@Description(prefs, u.Description, nil)
 	}
 	<div>
 		<p>{ strconv.FormatInt(u.Followers, 10) } followers</p>
@@ -66,10 +80,11 @@ type btn struct {
 }
 
 templ UserButtons(current string, user string) {
-	<div class="btns"> //       this part is the tedious one now, because formatting breaks if i space the list out with newlines
+	<div class="btns">
+		//       this part is the tedious one now, because formatting breaks if i space the list out with newlines
 		for _, b := range [6]btn{{"tracks", "", false},{"playlists", "/sets",false},{"albums", "/albums", false},{"reposts","/reposts", false},{"likes", "/likes", false},{"view on soundcloud", "https://soundcloud.com/"+user, true}} {
 			if b.text == current {
-				<a class="btn active">{b.text}</a>
+				<a class="btn active">{ b.text }</a>
 			} else {
 				if b.external {
 					<a class="btn" href={ templ.URL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
