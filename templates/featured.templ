@@ -13,7 +13,7 @@ templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
 		<p>no more tracks</p>
 	} else {
 		for _, track := range p.Collection {
-			@TrackItem(track, true)
+			@TrackItem(track, true, "")
 		}
 		if p.Next != "" {
 			<a class="btn" href={ templ.URL("/_/featured?pagination=" + url.QueryEscape(strings.Split(p.Next, "/all-music")[1])) } rel="noreferrer">more tracks</a>

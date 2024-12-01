@@ -19,15 +19,23 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track) {
 	}
 }
 
-templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string) {
+func next(t *sc.Track, p *sc.Playlist) string {
+	return t.Href() + "?autoplay=true&playlist=" + p.Href()[1:]
+}
+
+templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string) {
 	if *prefs.Player == cfg.NonePlayer {
 		{{ return }}
 	}
 	if displayErr == "" {
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
-			<audio src={ "/_/restream/" + track.Author.Permalink + "/" + track.Permalink } controls></audio>
+			<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
 		} else if stream != "" {
-			<audio id="track" src={ stream } controls></audio>
+			if nextTrack != nil {
+				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={next(nextTrack, playlist)} volume={volume}></audio>
+			} else {
+				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
+			}
 			if *prefs.FullyPreloadTrack {
 				<script async src="/player_preload.js"></script>
 			} else {
@@ -49,9 +57,12 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 	}
 }
 
-templ TrackItem(track *sc.Track, showUsername bool) {
+templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	if track.Title != "" {
-		<a class="listing" href={ templ.URL("/" + track.Author.Permalink + "/" + track.Permalink) }>
+		{{ if overrideHref == "" {
+			overrideHref = track.Href()
+		} }}
+		<a class="listing" href={ templ.URL(overrideHref) }>
 			if track.Artwork != "" {
 				<img src={ track.Artwork }/>
 			} else {
@@ -67,24 +78,36 @@ templ TrackItem(track *sc.Track, showUsername bool) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(prefs, t, stream, displayErr)
+	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
 		<br/>
 		<br/>
 	}
+	if playlist != nil {
+		<details style="margin-bottom: 1rem;">
+			<summary>Playback info</summary>
+
+			<h2>In playlist:</h2>
+			@PlaylistItem(playlist, true)
+
+			<h2>Next track:</h2>
+			@TrackItem(nextTrack, true, next(nextTrack, playlist) + "&volume=" + volume)
+
+			<a href={templ.URL(t.Href())} class="link">Stop playlist playback</a>
+		</details>
+	}
 	@UserItem(&t.Author)
-	//<div class="btns">
 	<div style="display: flex; gap: 1rem">
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + t.Author.Permalink + "/" + t.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
 		if cfg.Restream {
-			<a class="btn" href={ templ.URL("/_/restream/" + t.Author.Permalink + "/" + t.Permalink + "?metadata=true") } download={ t.Author.Username + " - " + t.Title + ".mp3" }>download</a>
+			<a class="btn" href={ templ.URL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Author.Username + " - " + t.Title + ".mp3" }>download</a>
 		}
 	</div>
 	<br/>
@@ -119,7 +142,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(prefs, t, stream, displayErr)
+			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "")
 			@UserItem(&t.Author)
 		</body>
 	</html>
@@ -133,7 +156,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 		<p>no more results</p>
 	} else {
 		for _, track := range p.Collection {
-			@TrackItem(track, true)
+			@TrackItem(track, true, "")
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
 			<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>

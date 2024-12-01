@@ -433,3 +433,7 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 
 	return data, string(resp.Header.Peek("Content-Type")), nil
 }
+
+func (t Track) Href() string {
+	return "/" + t.Author.Permalink + "/" + t.Permalink
+}

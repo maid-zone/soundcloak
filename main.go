@@ -34,7 +34,7 @@ func main() {
 	app.Use(recover.New())
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
-	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 3600})                              // 1hour
+	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 7200})                              // 2 hours
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
 	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
@@ -222,6 +222,7 @@ func main() {
 			ProxyImages        bool
 			ProxyStreams       bool
 			Restream           bool
+			GetWebProfiles     bool
 			DefaultPreferences cfg.Preferences
 		}
 
@@ -230,6 +231,7 @@ func main() {
 				ProxyImages:        cfg.ProxyImages,
 				ProxyStreams:       cfg.ProxyStreams,
 				Restream:           cfg.Restream,
+				GetWebProfiles:     cfg.GetWebProfiles,
 				DefaultPreferences: cfg.DefaultPreferences,
 			})
 		})
@@ -365,8 +367,35 @@ func main() {
 			}
 		}
 
+		var playlist *sc.Playlist
+		var nextTrack *sc.Track
+		if pl := c.Query("playlist"); pl != "" {
+			p, err := sc.GetPlaylist(pl)
+
+			if err != nil {
+				log.Printf("error getting %s playlist (track): %s\n", pl, err)
+				return err
+			}
+
+			nextIndex := -1
+			for i, t := range p.Tracks {
+				if t.ID == track.ID {
+					nextIndex = i + 1
+				}
+			}
+
+			if nextIndex != -1 {
+				if nextIndex == len(p.Tracks) {
+					nextIndex = 0
+				}
+
+				nextTrack = &p.Tracks[nextIndex]
+				playlist = &p
+			}
+		}
+
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume")), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {

@@ -187,7 +187,7 @@ func (p *Playlist) GetMissingTracks() error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
-			missing = append(missing, MissingTrack{ID: track.ID, Index: i})
+			missing = append(missing, MissingTrack{ID: strconv.FormatInt(int64(track.IDint), 10), Index: i})
 		}
 	}
 
@@ -211,4 +211,8 @@ func (p *Playlist) GetMissingTracks() error {
 	p.MissingTracks = JoinMissingTracks(next)
 
 	return nil
+}
+
+func (p Playlist) Href() string {
+	return "/" + p.Author.Permalink + "/sets/" + p.Permalink
 }

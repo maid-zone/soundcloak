@@ -16,8 +16,12 @@ templ PlaylistHeader(p sc.Playlist) {
 	<link rel="icon" type="image/x-icon" href={ p.Artwork }/>
 }
 
+func playlist(t sc.Track, p sc.Playlist) string {
+	return t.Href() + "?playlist=" + p.Href()[1:]
+}
+
 templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
-	<a class="listing" href={ templ.URL("/" + playlist.Author.Permalink + "/sets/" + playlist.Permalink) }>
+	<a class="listing" href={ templ.URL(playlist.Href()) }>
 		if playlist.Artwork != "" {
 			<img src={ playlist.Artwork }/>
 		} else {
@@ -40,7 +44,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	<h1>{ p.Title }</h1>
 	@UserItem(&p.Author)
 	<div style="display: flex;">
-		<a class="btn" href={ templ.URL("https://soundcloud.com/" + p.Author.Permalink + "/sets/" + p.Permalink) }>view on soundcloud</a>
+		<a class="btn" href={ templ.URL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
 	</div>
 	<br/>
 	@Description(prefs, p.Description, nil)
@@ -49,7 +53,11 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	<br/>
 	<div>
 		for _, track := range p.Tracks {
-			@TrackItem(&track, true)
+			if *prefs.AutoplayNextTrack {
+				@TrackItem(&track, true, playlist(track, p))
+			} else {
+				@TrackItem(&track, true, "")
+			}
 		}
 	</div>
 	if len(p.MissingTracks) != 0 {

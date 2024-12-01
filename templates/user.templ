@@ -105,7 +105,7 @@ templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 	if len(p.Collection) != 0 {
 		<div>
 			for _, track := range p.Collection {
-				@TrackItem(track, false)
+				@TrackItem(track, false, "")
 			}
 		</div>
 		if p.Next != "" && len(p.Collection) != int(u.Tracks) {
@@ -160,7 +160,7 @@ templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost])
 		<div>
 			for _, repost := range p.Collection {
 				if repost.Type == sc.TrackRepost && repost.Track != nil {
-					@TrackItem(repost.Track, true)
+					@TrackItem(repost.Track, true, "")
 				} else if repost.Type == sc.PlaylistRepost && repost.Playlist != nil {
 					@PlaylistItem(repost.Playlist, true)
 				}
@@ -182,7 +182,7 @@ templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 		<div>
 			for _, like := range p.Collection {
 				if like.Track != nil {
-					@TrackItem(like.Track, true)
+					@TrackItem(like.Track, true, "")
 				} else if like.Playlist != nil {
 					@PlaylistItem(like.Playlist, true)
 				}

@@ -30,6 +30,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.ParseDescriptions == nil {
 		dst.ParseDescriptions = cfg.DefaultPreferences.ParseDescriptions
 	}
+
+	if dst.AutoplayNextTrack == nil {
+		dst.AutoplayNextTrack = cfg.DefaultPreferences.AutoplayNextTrack
+	}
 }
 
 func Get(c *fiber.Ctx) (cfg.Preferences, error) {
@@ -51,6 +55,7 @@ type PrefsForm struct {
 	Player            string
 	ProxyStreams      string
 	FullyPreloadTrack string
+	AutoplayNextTrack string
 }
 
 func Load(r fiber.Router) {
@@ -84,6 +89,12 @@ func Load(r fiber.Router) {
 					old.ProxyStreams = &cfg.ProxyStreams // true!
 				} else if p.ProxyStreams == "" {
 					old.ProxyStreams = &f
+				}
+
+				if p.AutoplayNextTrack == "on" {
+					old.AutoplayNextTrack = &t
+				} else {
+					old.AutoplayNextTrack = &f
 				}
 			}
 

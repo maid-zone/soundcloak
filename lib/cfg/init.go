@@ -38,6 +38,9 @@ type Preferences struct {
 
 	// Highlight @username, https://example.com and email@example.com in text as clickable links
 	ParseDescriptions *bool
+
+	// Automatically play next track in playlists
+	AutoplayNextTrack *bool
 }
 
 // // config // //
@@ -67,22 +70,23 @@ var InstanceInfo = true
 
 // time-to-live for clientid cache
 // larger number will improve performance (no need to recheck everytime) but might make soundcloak briefly unusable for a larger amount of time if the client id is invalidated
-var ClientIDTTL = 30 * time.Minute
+// I went with 4 hours, since those clientids still remain active for quite some time, even after soundcloud updates it
+var ClientIDTTL = 4 * time.Hour
 
 // time-to-live for user profile cache
-var UserTTL = 10 * time.Minute
+var UserTTL = 20 * time.Minute
 
 // delay between cleanup of user cache
 var UserCacheCleanDelay = UserTTL / 4
 
 // time-to-live for track cache
-var TrackTTL = 10 * time.Minute
+var TrackTTL = 20 * time.Minute
 
 // delay between cleanup of track cache
 var TrackCacheCleanDelay = TrackTTL / 4
 
 // time-to-live for playlist cache
-var PlaylistTTL = 10 * time.Minute
+var PlaylistTTL = 20 * time.Minute
 
 // delay between cleanup of playlist cache
 var PlaylistCacheCleanDelay = PlaylistTTL / 4
@@ -91,7 +95,7 @@ var PlaylistCacheCleanDelay = PlaylistTTL / 4
 var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.3"
 
 // time-to-live for dns cache
-var DNSCacheTTL = 10 * time.Minute
+var DNSCacheTTL = 60 * time.Minute
 
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
@@ -118,6 +122,7 @@ var TrustedProxies = []string{}
 // FullyPreloadTrack: false
 // ProxyImages: same as ProxyImages in your config (false by default)
 // ParseDescriptions: true
+// AutoplayNextTrack: false
 func defaultPreferences() {
 	var p string
 	if Restream {
@@ -136,6 +141,7 @@ func defaultPreferences() {
 	DefaultPreferences.ProxyImages = &ProxyImages
 
 	DefaultPreferences.ParseDescriptions = &t
+	DefaultPreferences.AutoplayNextTrack = &f
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -175,6 +181,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.ParseDescriptions = loaded.ParseDescriptions
 	} else {
 		DefaultPreferences.ParseDescriptions = &t
+	}
+
+	if loaded.AutoplayNextTrack != nil {
+		DefaultPreferences.AutoplayNextTrack = loaded.AutoplayNextTrack
+	} else {
+		DefaultPreferences.AutoplayNextTrack = &f
 	}
 }
 
