@@ -72,6 +72,16 @@ templ Preferences(prefs cfg.Preferences) {
 				Autoplay next track in playlists:
 				@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
 			</label>
+			if *prefs.AutoplayNextTrack {
+				<br/>
+				<label>
+					Default autoplay mode:
+					@sel("DefaultAutoplayMode", []option{
+						{"normal", "Normal (play songs in order)", false},
+						{"random", "Random (play random song)", false},
+					}, *prefs.DefaultAutoplayMode)
+				</label>
+			}
 			<br/>
 		}
 		<input type="submit" value="Update" class="btn" style="margin-top: 1rem;"/>

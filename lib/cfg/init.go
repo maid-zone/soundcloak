@@ -25,6 +25,13 @@ const (
 	NonePlayer string = "none"
 )
 
+const (
+	// Just plays every song in order, one after another
+	AutoplayNormal string = "normal"
+	// Randomly selects a song to play from the playlist
+	AutoplayRandom string = "random"
+)
+
 type Preferences struct {
 	Player       *string
 	ProxyStreams *bool
@@ -41,6 +48,8 @@ type Preferences struct {
 
 	// Automatically play next track in playlists
 	AutoplayNextTrack *bool
+
+	DefaultAutoplayMode *string
 }
 
 // // config // //
@@ -123,6 +132,7 @@ var TrustedProxies = []string{}
 // ProxyImages: same as ProxyImages in your config (false by default)
 // ParseDescriptions: true
 // AutoplayNextTrack: false
+// DefaultAutoplayMode: AutoplayNormal
 func defaultPreferences() {
 	var p string
 	if Restream {
@@ -134,19 +144,18 @@ func defaultPreferences() {
 
 	DefaultPreferences.ProxyStreams = &ProxyStreams
 
-	var f bool
-	var t = true
-	DefaultPreferences.FullyPreloadTrack = &f
+	DefaultPreferences.FullyPreloadTrack = &False
 
 	DefaultPreferences.ProxyImages = &ProxyImages
 
-	DefaultPreferences.ParseDescriptions = &t
-	DefaultPreferences.AutoplayNextTrack = &f
+	DefaultPreferences.ParseDescriptions = &True
+	DefaultPreferences.AutoplayNextTrack = &False
+
+	p2 := AutoplayNormal
+	DefaultPreferences.DefaultAutoplayMode = &p2
 }
 
 func loadDefaultPreferences(loaded Preferences) {
-	var f bool
-	var t = true
 	if loaded.Player != nil {
 		DefaultPreferences.Player = loaded.Player
 	} else {
@@ -168,7 +177,7 @@ func loadDefaultPreferences(loaded Preferences) {
 	if loaded.FullyPreloadTrack != nil {
 		DefaultPreferences.FullyPreloadTrack = loaded.FullyPreloadTrack
 	} else {
-		DefaultPreferences.FullyPreloadTrack = &f
+		DefaultPreferences.FullyPreloadTrack = &False
 	}
 
 	if loaded.ProxyImages != nil {
@@ -180,13 +189,20 @@ func loadDefaultPreferences(loaded Preferences) {
 	if loaded.ParseDescriptions != nil {
 		DefaultPreferences.ParseDescriptions = loaded.ParseDescriptions
 	} else {
-		DefaultPreferences.ParseDescriptions = &t
+		DefaultPreferences.ParseDescriptions = &True
 	}
 
 	if loaded.AutoplayNextTrack != nil {
 		DefaultPreferences.AutoplayNextTrack = loaded.AutoplayNextTrack
 	} else {
-		DefaultPreferences.AutoplayNextTrack = &f
+		DefaultPreferences.AutoplayNextTrack = &False
+	}
+
+	if loaded.DefaultAutoplayMode != nil {
+		DefaultPreferences.DefaultAutoplayMode = loaded.DefaultAutoplayMode
+	} else {
+		p := AutoplayNormal
+		DefaultPreferences.DefaultAutoplayMode = &p
 	}
 }
 
@@ -495,3 +511,6 @@ func init() {
 // seems soundcloud has 4 of these (i1, i2, i3, i4)
 // they point to the same ip from my observations, and they all serve the same files
 const ImageCDN = "i1.sndcdn.com"
+
+var True = true
+var False = false

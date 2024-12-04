@@ -19,11 +19,21 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track) {
 	}
 }
 
-func next(t *sc.Track, p *sc.Playlist) string {
-	return t.Href() + "?autoplay=true&playlist=" + p.Href()[1:]
+func next(t *sc.Track, p *sc.Playlist, autoplay bool, mode string, volume string) string {
+	r := t.Href() + "?playlist=" + p.Href()[1:]
+	if autoplay {
+		r += "&autoplay=true"
+	}
+	if mode != "" {
+		r += "&mode=" + mode
+	}
+	if volume != "" {
+		r += "&volume=" + volume
+	}
+	return r
 }
 
-templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string) {
+templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string) {
 	if *prefs.Player == cfg.NonePlayer {
 		{{ return }}
 	}
@@ -32,7 +42,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 			<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
 		} else if stream != "" {
 			if nextTrack != nil {
-				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={next(nextTrack, playlist)} volume={volume}></audio>
+				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={next(nextTrack, playlist, true, mode, "")} volume={volume}></audio>
 			} else {
 				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
 			}
@@ -78,12 +88,12 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume)
+	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
 	} else {
@@ -91,16 +101,22 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 		<br/>
 	}
 	if playlist != nil {
-		<details style="margin-bottom: 1rem;">
+		<details open style="margin-bottom: 1rem;">
 			<summary>Playback info</summary>
 
 			<h2>In playlist:</h2>
 			@PlaylistItem(playlist, true)
 
 			<h2>Next track:</h2>
-			@TrackItem(nextTrack, true, next(nextTrack, playlist) + "&volume=" + volume)
+			@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
 
 			<a href={templ.URL(t.Href())} class="link">Stop playlist playback</a>
+			<br>
+			if mode != cfg.AutoplayRandom {
+				<a href={templ.URL(next(&t, playlist, false, cfg.AutoplayRandom, volume))} class="link">Switch to random mode</a>
+			} else {
+				<a href={templ.URL(next(&t, playlist, false, cfg.AutoplayNormal, volume))} class="link">Switch to normal mode</a>
+			}
 		</details>
 	}
 	@UserItem(&t.Author)
@@ -142,7 +158,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "")
+			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "", "")
 			@UserItem(&t.Author)
 		</body>
 	</html>

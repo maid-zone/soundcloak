@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math/rand"
 	"net/url"
 	"strings"
 
@@ -369,33 +370,39 @@ func main() {
 
 		var playlist *sc.Playlist
 		var nextTrack *sc.Track
+		mode := c.Query("mode", *prefs.DefaultAutoplayMode)
 		if pl := c.Query("playlist"); pl != "" {
 			p, err := sc.GetPlaylist(pl)
-
 			if err != nil {
 				log.Printf("error getting %s playlist (track): %s\n", pl, err)
 				return err
 			}
 
+			p.Tracks = p.Postfix(prefs, true, false)
+
 			nextIndex := -1
-			for i, t := range p.Tracks {
-				if t.ID == track.ID {
-					nextIndex = i + 1
+			if mode == cfg.AutoplayRandom {
+				nextIndex = rand.Intn(len(p.Tracks))
+			} else {
+				for i, t := range p.Tracks {
+					if t.ID == track.ID {
+						nextIndex = i + 1
+					}
+				}
+
+				if nextIndex == len(p.Tracks) {
+					nextIndex = 0
 				}
 			}
 
 			if nextIndex != -1 {
-				if nextIndex == len(p.Tracks) {
-					nextIndex = 0
-				}
-
 				nextTrack = &p.Tracks[nextIndex]
 				playlist = &p
 			}
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume")), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {

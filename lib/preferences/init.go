@@ -34,6 +34,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.AutoplayNextTrack == nil {
 		dst.AutoplayNextTrack = cfg.DefaultPreferences.AutoplayNextTrack
 	}
+
+	if dst.DefaultAutoplayMode == nil {
+		dst.DefaultAutoplayMode = cfg.DefaultPreferences.DefaultAutoplayMode
+	}
 }
 
 func Get(c *fiber.Ctx) (cfg.Preferences, error) {
@@ -50,12 +54,13 @@ func Get(c *fiber.Ctx) (cfg.Preferences, error) {
 }
 
 type PrefsForm struct {
-	ProxyImages       string
-	ParseDescriptions string
-	Player            string
-	ProxyStreams      string
-	FullyPreloadTrack string
-	AutoplayNextTrack string
+	ProxyImages         string
+	ParseDescriptions   string
+	Player              string
+	ProxyStreams        string
+	FullyPreloadTrack   string
+	AutoplayNextTrack   string
+	DefaultAutoplayMode string
 }
 
 func Load(r fiber.Router) {
@@ -81,27 +86,25 @@ func Load(r fiber.Router) {
 			return err
 		}
 
-		var f bool
-		var t bool = true
 		if *old.Player == "hls" {
 			if cfg.ProxyStreams {
 				if p.ProxyStreams == "on" {
 					old.ProxyStreams = &cfg.ProxyStreams // true!
 				} else if p.ProxyStreams == "" {
-					old.ProxyStreams = &f
+					old.ProxyStreams = &cfg.False
 				}
 
 				if p.AutoplayNextTrack == "on" {
-					old.AutoplayNextTrack = &t
+					old.AutoplayNextTrack = &cfg.True
 				} else {
-					old.AutoplayNextTrack = &f
+					old.AutoplayNextTrack = &cfg.False
 				}
 			}
 
 			if p.FullyPreloadTrack == "on" {
-				old.FullyPreloadTrack = &t
+				old.FullyPreloadTrack = &cfg.True
 			} else if p.FullyPreloadTrack == "" {
-				old.FullyPreloadTrack = &f
+				old.FullyPreloadTrack = &cfg.False
 			}
 		}
 
@@ -109,14 +112,18 @@ func Load(r fiber.Router) {
 			if p.ProxyImages == "on" {
 				old.ProxyImages = &cfg.ProxyImages // true!
 			} else if p.ProxyImages == "" {
-				old.ProxyImages = &f
+				old.ProxyImages = &cfg.False
 			}
 		}
 
 		if p.ParseDescriptions == "on" {
-			old.ParseDescriptions = &t
+			old.ParseDescriptions = &cfg.True
 		} else {
-			old.ParseDescriptions = &f
+			old.ParseDescriptions = &cfg.False
+		}
+
+		if *old.AutoplayNextTrack {
+			old.DefaultAutoplayMode = &p.DefaultAutoplayMode
 		}
 		old.Player = &p.Player
 
