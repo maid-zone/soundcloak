@@ -9,8 +9,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var sndcdn = []byte(".sndcdn.com")
-
 func Load(r fiber.Router) {
 	r.Get("/_/proxy/images", func(c *fiber.Ctx) error {
 		url := c.Query("url")
@@ -26,7 +24,7 @@ func Load(r fiber.Router) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
+		if !bytes.HasSuffix(parsed.Host(), []byte(".sndcdn.com")) {
 			return fiber.ErrBadRequest
 		}
 
@@ -37,23 +35,22 @@ func Load(r fiber.Router) {
 
 		req.SetURI(parsed)
 		req.Header.Set("User-Agent", cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+		//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
 
 		resp := fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseResponse(resp)
+		//defer fasthttp.ReleaseResponse(resp) moved to proxyreader!!!
 
 		err = sc.DoWithRetry(sc.ImageClient, req, resp)
 		if err != nil {
 			return err
 		}
 
-		data, err := resp.BodyUncompressed()
-		if err != nil {
-			data = resp.Body()
-		}
-
-		c.Response().Header.SetBytesV("Content-Type", resp.Header.Peek("Content-Type"))
+		c.Set("Content-Type", "image/jpeg")
 		c.Set("Cache-Control", cfg.ImageCacheControl)
-		return c.Send(data)
+		//return c.Send(resp.Body())
+		pr := cfg.AcquireProxyReader()
+		pr.Reader = resp.BodyStream()
+		pr.Resp = resp
+		return c.SendStream(pr)
 	})
 }

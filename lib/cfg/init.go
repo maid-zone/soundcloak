@@ -2,13 +2,16 @@ package cfg
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/segmentio/encoding/json"
+	"github.com/valyala/fasthttp"
 )
 
 // You can now use a soundcloak.json file to configure!
@@ -514,3 +517,28 @@ const ImageCDN = "i1.sndcdn.com"
 
 var True = true
 var False = false
+
+var prpool = sync.Pool{
+	New: func() any {
+		return &ProxyReader{}
+	},
+}
+
+func AcquireProxyReader() *ProxyReader {
+	return prpool.Get().(*ProxyReader)
+}
+
+type ProxyReader struct {
+	Reader io.Reader
+	Resp   *fasthttp.Response
+}
+
+func (pr *ProxyReader) Read(p []byte) (n int, err error) {
+	return pr.Reader.Read(p)
+}
+
+func (pr *ProxyReader) Close() error {
+	defer fasthttp.ReleaseResponse(pr.Resp)
+	defer prpool.Put(pr)
+	return pr.Resp.CloseBodyStream()
+}

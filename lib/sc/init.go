@@ -39,6 +39,7 @@ var ImageClient = &fasthttp.HostClient{
 	DialDualStack:       true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: 1<<63 - 1,
+	StreamResponseBody:  true,
 }
 
 var genericClient = &fasthttp.Client{

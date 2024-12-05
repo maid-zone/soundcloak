@@ -12,14 +12,13 @@ import (
 
 const cdn = "cf-hls-media.sndcdn.com"
 
-var cdnb = []byte(cdn)
-
 var httpc = &fasthttp.HostClient{
 	Addr:                cdn + ":443",
 	IsTLS:               true,
 	DialDualStack:       true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: 1<<63 - 1,
+	StreamResponseBody:  true,
 }
 
 func Load(r fiber.Router) {
@@ -37,7 +36,7 @@ func Load(r fiber.Router) {
 			return err
 		}
 
-		if !bytes.Equal(parsed.Host(), cdnb) {
+		if !bytes.Equal(parsed.Host(), []byte(cdn)) {
 			return fiber.ErrBadRequest
 		}
 
@@ -49,14 +48,17 @@ func Load(r fiber.Router) {
 		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 		resp := fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseResponse(resp)
+		//defer fasthttp.ReleaseResponse(resp)
 
 		err = sc.DoWithRetry(httpc, req, resp)
 		if err != nil {
 			return err
 		}
-
-		return c.Send(resp.Body())
+		//return c.Send(resp.Body())
+		pr := cfg.AcquireProxyReader()
+		pr.Reader = resp.BodyStream()
+		pr.Resp = resp
+		return c.SendStream(pr)
 	})
 
 	r.Get("/_/proxy/streams/playlist", func(c *fiber.Ctx) error {
@@ -73,7 +75,7 @@ func Load(r fiber.Router) {
 			return err
 		}
 
-		if !bytes.Equal(parsed.Host(), cdnb) {
+		if !bytes.Equal(parsed.Host(), []byte(cdn)) {
 			return fiber.ErrBadRequest
 		}
 

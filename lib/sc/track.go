@@ -414,15 +414,13 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 
 	req.SetRequestURI(t.Artwork)
 	req.Header.Set("User-Agent", cfg.UserAgent)
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
 	err := DoWithRetry(ImageClient, req, resp)
 	if err != nil {
-		fmt.Println(t.Artwork)
-		fmt.Println("hi", err)
 		return nil, "", err
 	}
 
