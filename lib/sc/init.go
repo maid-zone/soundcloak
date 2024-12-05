@@ -41,6 +41,10 @@ var ImageClient = &fasthttp.HostClient{
 	MaxIdleConnDuration: 1<<63 - 1,
 }
 
+var genericClient = &fasthttp.Client{
+	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+}
+
 var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
 var scriptsRegex = regexp.MustCompile(`(?m)^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`)
 var clientIdRegex = regexp.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`)
@@ -70,7 +74,7 @@ func GetClientID() (string, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err := fasthttp.Do(req, resp)
+	err := DoWithRetryAll(genericClient, req, resp)
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +108,7 @@ func GetClientID() (string, error) {
 
 		req.SetRequestURIBytes(scr[1])
 
-		err = fasthttp.Do(req, resp)
+		err = DoWithRetryAll(genericClient, req, resp)
 		if err != nil {
 			continue
 		}
@@ -126,6 +130,18 @@ func GetClientID() (string, error) {
 	}
 
 	return "", ErrIDNotFound
+}
+
+// Just retry any kind of errors, why not
+func DoWithRetryAll(httpc *fasthttp.Client, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
+	for i := 0; i < 10; i++ {
+		err = httpc.Do(req, resp)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return
 }
 
 // Since the http client is setup to always keep connections idle (great for speed, no need to open a new one everytime), those connections may be closed by soundcloud after some time of inactivity, this ensures that we retry those requests that fail due to the connection closing/timing out
