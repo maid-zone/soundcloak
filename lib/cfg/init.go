@@ -533,7 +533,7 @@ type ProxyReader struct {
 	Resp   *fasthttp.Response
 }
 
-func (pr *ProxyReader) Read(p []byte) (n int, err error) {
+func (pr *ProxyReader) Read(p []byte) (int, error) {
 	return pr.Reader.Read(p)
 }
 

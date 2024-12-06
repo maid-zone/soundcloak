@@ -1,0 +1,3 @@
+templ generate
+go generate ./lib/textparsing
+go build -ldflags "-X main.commit=`git rev-parse HEAD | head -c 7` -X main.repo=`git remote get-url origin`" main.go

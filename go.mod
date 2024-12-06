@@ -1,10 +1,11 @@
 module github.com/maid-zone/soundcloak
 
-go 1.21.3
+go 1.22.10
 
 require (
 	github.com/a-h/templ v0.2.793
 	github.com/bogem/id3v2/v2 v2.1.4
+	github.com/dlclark/regexp2 v1.11.5-0.20240806004527-5bbbed8ea10b
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/segmentio/encoding v0.4.0
 	github.com/valyala/fasthttp v1.57.0

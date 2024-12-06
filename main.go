@@ -22,6 +22,10 @@ import (
 	"github.com/maid-zone/soundcloak/templates"
 )
 
+// see build script/dockerfile
+var commit = "unknown"
+var repo = "unknown"
+
 func main() {
 	app := fiber.New(fiber.Config{
 		Prefork:     cfg.Prefork,
@@ -220,6 +224,8 @@ func main() {
 
 	if cfg.InstanceInfo {
 		type info struct {
+			Commit             string
+			Repo               string
 			ProxyImages        bool
 			ProxyStreams       bool
 			Restream           bool
@@ -229,6 +235,8 @@ func main() {
 
 		app.Get("/_/info", func(c *fiber.Ctx) error {
 			return c.JSON(info{
+				Commit:             commit,
+				Repo:               repo,
 				ProxyImages:        cfg.ProxyImages,
 				ProxyStreams:       cfg.ProxyStreams,
 				Restream:           cfg.Restream,

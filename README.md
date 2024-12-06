@@ -59,7 +59,7 @@ You can also [reach out to me privately](https://laptopc.at)
 ## Prerequisites:
 
 1. [node.js + npm](https://nodejs.org) (any recent enough version should do, it's just used for getting hls.js builds)
-2. [golang](https://go.dev) (1.21 or higher was tested, others might work too)
+2. [golang](https://go.dev) (I recommend version 1.22.10. Technically, you need 1.21.4 or higher)
 3. [git](https://git-scm.com)
 
 ## Setup:
@@ -88,35 +88,31 @@ npm i
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
+5. Download regexp2cg:
+
+Not really required, but helps speed up some parts of the code that use regular expressions. Keep in mind that the `build` script expects this to be installed.
+```sh
+go install github.com/dlclark/regexp2cg@main
+```
+
 *You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
 
 ```sh
 export PATH=${PATH}:`go env GOPATH`/bin
 ```
 
-5. Generate code from templates:
-
-```sh
-templ generate
-```
-
-6. Download other required go modules:
-
-```sh
-go get
-```
-
-7. *Optional.* Edit config:
+6. *Optional.* Edit config:
 
 Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
 
-8. Build binary:
+7. Build binary:
 
+This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
 ```sh
-go build main.go
+./build
 ```
 
-9. Run the binary:
+8. Run the binary:
 
 ```sh
 ./main
@@ -219,7 +215,7 @@ Some notes:
 
 ## Updating
 
-Note: this guide works only if you install from source. If you used docker, you could probably do the 1st step (pulling the code), stop the container (`docker container stop soundcloak`) and start it again. (`docker compose up -d`)
+Note: this guide works only if you install from source. If you used docker, you could probably do the 1st step (pulling the code), stop the container (`docker container stop soundcloak`), build it (`docker compose build`) and start it again. (`docker compose up -d`)
 
 <details>
 <summary>Click to view</summary>
@@ -246,31 +242,19 @@ rm *.fiber.gz
 
 Sometimes, new updates add new config values or change default ones. Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
 
-4. Regenerate templates (if they changed):
-
-```sh
-templ generate
-```
-
-5. Get latest Go modules:
-
-```sh
-go get
-```
-
-6. Update hls.js:
+5. Update hls.js:
 
 ```sh
 npm i
 ```
 
-7. Build binary:
+6. Build binary:
 
 ```sh
-go build main.go
+./build
 ```
 
-8. Run it:
+7. Run it:
 
 ```sh
 ./main

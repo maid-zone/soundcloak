@@ -4,23 +4,27 @@ import (
 	"fmt"
 	"html"
 	"net/url"
-	"regexp"
 	"strings"
+
+	"github.com/dlclark/regexp2"
 )
 
 //var wordre = regexp.MustCompile(`\S+`)
-
-// var urlre = regexp.MustCompile(`https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*`)
-var emailre = regexp.MustCompile(`^[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}$`)
-
 // var usernamere = regexp.MustCompile(`@[a-zA-Z0-9\-]+`)
-var theregex = regexp.MustCompile(`@[a-zA-Z0-9\-]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`)
+// var urlre = regexp.MustCompile(`https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*`)
+
+//go:generate regexp2cg -package textparsing -o regexp2_codegen.go
+var emailre = regexp2.MustCompile(`^[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}$`, 0)
+var theregex = regexp2.MustCompile(`@[a-zA-Z0-9\-]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`, 0)
 
 func IsEmail(s string) bool {
-	return emailre.MatchString(s)
+	t, _ := emailre.MatchString(s)
+	return t
 }
 
-func replacer(ent string) string {
+func replacer(m regexp2.Match) string {
+	ent := m.Capture.String()
+
 	if strings.HasPrefix(ent, "@") {
 		return fmt.Sprintf(`<a class="link" href="/%s">%s</a>`, ent[1:], ent)
 	}
@@ -46,5 +50,11 @@ func replacer(ent string) string {
 }
 
 func Format(text string) string {
-	return theregex.ReplaceAllStringFunc(html.EscapeString(text), replacer)
+	text = html.EscapeString(text)
+	out, err := theregex.ReplaceFunc(text, replacer, -1, -1)
+	if err != nil {
+		return text
+	}
+
+	return out
 }

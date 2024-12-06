@@ -2,3 +2,5 @@ Dockerfile
 LICENSE
 README.md
 *.yaml
+*_templ.go
+regexp2_codegen.go
