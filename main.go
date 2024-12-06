@@ -406,6 +406,15 @@ func main() {
 			if nextIndex != -1 {
 				nextTrack = &p.Tracks[nextIndex]
 				playlist = &p
+
+				if nextTrack.Title == "" {
+					nt, err := sc.GetTrackByID(nextTrack.ID)
+					if err != nil {
+						return err
+					}
+
+					nextTrack = &nt
+				}
 			}
 		}
 
