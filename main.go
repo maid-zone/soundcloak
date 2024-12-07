@@ -344,6 +344,75 @@ func main() {
 		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
+	app.Get("/:user/popular-tracks", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (popular-tracks): %s\n", c.Params("user"), err)
+			return err
+		}
+		user.Postfix(prefs)
+
+		p, err := user.GetTopTracks(prefs)
+		if err != nil {
+			log.Printf("error getting %s popular tracks: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/followers", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (followers): %s\n", c.Params("user"), err)
+			return err
+		}
+		user.Postfix(prefs)
+
+		p, err := user.GetFollowers(prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s followers: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/following", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (following): %s\n", c.Params("user"), err)
+			return err
+		}
+		user.Postfix(prefs)
+
+		p, err := user.GetFollowing(prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s following: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
 	app.Get("/:user/:track", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
@@ -484,6 +553,29 @@ func main() {
 
 		c.Set("Content-Type", "text/html")
 		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/_/related", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (related): %s\n", c.Params("user"), err)
+			return err
+		}
+		user.Postfix(prefs)
+
+		r, err := user.GetRelated(prefs)
+		if err != nil {
+			log.Printf("error getting %s related users: %s\n", c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

@@ -28,13 +28,13 @@ type User struct {
 	FullName     string `json:"full_name"`
 	Kind         string `json:"kind"` // should always be "user"!
 	LastModified string `json:"last_modified"`
-	//Liked        int    `json:"likes_count"`
-	Permalink string `json:"permalink"`
-	Playlists int64  `json:"playlist_count"`
-	Tracks    int64  `json:"track_count"`
-	ID        string `json:"urn"`
-	Username  string `json:"username"`
-	Verified  bool   `json:"verified"`
+	Liked        int64  `json:"likes_count"`
+	Permalink    string `json:"permalink"`
+	Playlists    int64  `json:"playlist_count"`
+	Tracks       int64  `json:"track_count"`
+	ID           string `json:"urn"`
+	Username     string `json:"username"`
+	Verified     bool   `json:"verified"`
 
 	WebProfiles []Link
 }
@@ -329,4 +329,86 @@ func (u *User) GetWebProfiles() error {
 	}
 
 	return json.Unmarshal(data, &u.WebProfiles)
+}
+
+func (u *User) GetRelated(prefs cfg.Preferences) ([]*User, error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	p := Paginated[*User]{
+		Next: "https://" + api + "/users/" + u.ID + "/relatedartists?page_size=20&client_id=" + cid,
+	}
+
+	err = p.Proceed(true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix(false)
+		u.Postfix(prefs)
+	}
+
+	return p.Collection, nil
+}
+
+func (u *User) GetTopTracks(prefs cfg.Preferences) ([]*Track, error) {
+	cid, err := GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	p := Paginated[*Track]{
+		Next: "https://" + api + "/users/" + u.ID + "/toptracks?client_id=" + cid,
+	}
+
+	err = p.Proceed(true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range p.Collection {
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
+	}
+
+	return p.Collection, nil
+}
+
+func (u User) GetFollowers(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+	p := Paginated[*User]{
+		Next: "https://" + api + "/users/" + u.ID + "/followers" + args,
+	}
+
+	err := p.Proceed(true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix(false)
+		u.Postfix(prefs)
+	}
+
+	return &p, nil
+}
+
+func (u User) GetFollowing(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+	p := Paginated[*User]{
+		Next: "https://" + api + "/users/" + u.ID + "/followings" + args,
+	}
+
+	err := p.Proceed(true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, u := range p.Collection {
+		u.Fix(false)
+		u.Postfix(prefs)
+	}
+
+	return &p, nil
 }

@@ -63,8 +63,9 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 		@Description(prefs, u.Description, nil)
 	}
 	<div>
-		<p>{ strconv.FormatInt(u.Followers, 10) } followers</p>
-		<p>{ strconv.FormatInt(u.Following, 10) } following</p>
+		<p><a class="link" href={templ.URL("/" + u.Permalink + "/followers")}>{ strconv.FormatInt(u.Followers, 10) } followers</a></p>
+		<p><a class="link" href={templ.URL("/" + u.Permalink + "/following")}>{ strconv.FormatInt(u.Following, 10) } followings</a></p>
+		<p><a class="link" href={templ.URL("/" + u.Permalink + "/likes")}>{ strconv.FormatInt(u.Liked, 10) } liked</a></p>
 		<p>{ strconv.FormatInt(u.Tracks, 10) } tracks</p>
 		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists & albums</p>
 		<br/>
@@ -82,7 +83,7 @@ type btn struct {
 templ UserButtons(current string, user string) {
 	<div class="btns">
 		//       this part is the tedious one now, because formatting breaks if i space the list out with newlines
-		for _, b := range [6]btn{{"tracks", "", false},{"playlists", "/sets",false},{"albums", "/albums", false},{"reposts","/reposts", false},{"likes", "/likes", false},{"view on soundcloud", "https://soundcloud.com/"+user, true}} {
+		for _, b := range [7]btn{{"tracks", "", false},{"popular tracks", "/popular-tracks", false},{"playlists", "/sets",false},{"albums", "/albums", false},{"reposts","/reposts", false},{"related", "/_/related", false},{"view on soundcloud", "https://soundcloud.com/"+user, true}} {
 			if b.text == current {
 				<a class="btn active">{ b.text }</a>
 			} else {
@@ -176,8 +177,8 @@ templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost])
 
 templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 	@UserBase(prefs, u)
-	@UserButtons("likes", u.Permalink)
-	<br/>
+	@UserButtons("", u.Permalink)
+	<h1>Likes</h1>
 	if len(p.Collection) != 0 {
 		<div>
 			for _, like := range p.Collection {
@@ -193,6 +194,72 @@ templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 		}
 	} else {
 		<span>no more likes</span>
+	}
+}
+
+templ UserRelated(prefs cfg.Preferences, u sc.User, r []*sc.User) {
+	@UserBase(prefs, u)
+	@UserButtons("related", u.Permalink)
+	<br/>
+	if len(r) != 0 {
+		<div>
+			for _, u := range r {
+				@UserItem(u)
+			}
+		</div>
+	} else {
+		<span>no related users</span>
+	}
+}
+
+templ UserTopTracks(prefs cfg.Preferences, u sc.User, t []*sc.Track) {
+	@UserBase(prefs, u)
+	@UserButtons("popular-tracks", u.Permalink)
+	<br/>
+	if len(t) != 0 {
+		<div>
+			for _, track := range t {
+				@TrackItem(track, false, "")
+			}
+		</div>
+	} else {
+		<span>no popular tracks</span>
+	}
+}
+
+templ UserFollowers(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User]) {
+	@UserBase(prefs, u)
+	@UserButtons("", u.Permalink)
+	<h1>Followers</h1>
+	if len(p.Collection) != 0 {
+		<div>
+			for _, user := range p.Collection {
+				@UserItem(user)
+			}
+		</div>
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/followers")[1])) } rel="noreferrer">more users</a>
+		}
+	} else {
+		<span>no more users</span>
+	}
+}
+
+templ UserFollowing(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User]) {
+	@UserBase(prefs, u)
+	@UserButtons("", u.Permalink)
+	<h1>Following</h1>
+	if len(p.Collection) != 0 {
+		<div>
+			for _, user := range p.Collection {
+				@UserItem(user)
+			}
+		</div>
+		if p.Next != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/following")[1])) } rel="noreferrer">more users</a>
+		}
+	} else {
+		<span>no more users</span>
 	}
 }
 
