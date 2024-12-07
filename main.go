@@ -43,8 +43,7 @@ func main() {
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
 	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
-	const debug = false
-	if debug {
+	if cfg.Debug {
 		app.Get("/_/cachedump/tracks", func(c *fiber.Ctx) error {
 			return c.JSON(sc.TracksCache)
 		})
@@ -72,7 +71,7 @@ func main() {
 		t := c.Query("type")
 		switch t {
 		case "tracks":
-			p, err := sc.SearchTracks(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchTracks("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
@@ -82,7 +81,7 @@ func main() {
 			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(context.Background(), c)
 
 		case "users":
-			p, err := sc.SearchUsers(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchUsers("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -92,7 +91,7 @@ func main() {
 			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(context.Background(), c)
 
 		case "playlists":
-			p, err := sc.SearchPlaylists(prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -152,7 +151,12 @@ func main() {
 			return err
 		}
 
-		track, err := sc.GetArbitraryTrack(u)
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetArbitraryTrack(cid, u)
 		if err != nil {
 			log.Printf("error getting %s: %s\n", u, err)
 			return err
@@ -167,7 +171,7 @@ func main() {
 			if tr == nil {
 				err = sc.ErrIncompatibleStream
 			} else if *prefs.Player == cfg.HLSPlayer {
-				stream, err = tr.GetStream(prefs, track.Authorization)
+				stream, err = tr.GetStream(cid, prefs, track.Authorization)
 			}
 
 			if err != nil {
@@ -188,7 +192,7 @@ func main() {
 			return err
 		}
 
-		tracks, err := sc.GetFeaturedTracks(prefs, c.Query("pagination", "?limit=20"))
+		tracks, err := sc.GetFeaturedTracks("", prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting featured tracks: %s\n", err)
 			return err
@@ -204,7 +208,7 @@ func main() {
 			return err
 		}
 
-		selections, err := sc.GetSelections(prefs) // There is no pagination
+		selections, err := sc.GetSelections("", prefs) // There is no pagination
 		if err != nil {
 			log.Printf("error getting selections: %s\n", err)
 			return err
@@ -258,14 +262,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (playlists): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		pl, err := user.GetPlaylists(prefs, c.Query("pagination", "?limit=20"))
+		pl, err := user.GetPlaylists(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
 			return err
@@ -281,14 +290,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (albums): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		pl, err := user.GetAlbums(prefs, c.Query("pagination", "?limit=20"))
+		pl, err := user.GetAlbums(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s albums: %s\n", c.Params("user"), err)
 			return err
@@ -304,14 +318,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (reposts): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetReposts(prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetReposts(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s reposts: %s\n", c.Params("user"), err)
 			return err
@@ -327,14 +346,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (likes): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetLikes(prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetLikes(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s likes: %s\n", c.Params("user"), err)
 			return err
@@ -350,14 +374,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (popular-tracks): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetTopTracks(prefs)
+		p, err := user.GetTopTracks(cid, prefs)
 		if err != nil {
 			log.Printf("error getting %s popular tracks: %s\n", c.Params("user"), err)
 			return err
@@ -373,14 +402,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (followers): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetFollowers(prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetFollowers(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s followers: %s\n", c.Params("user"), err)
 			return err
@@ -396,14 +430,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (following): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetFollowing(prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetFollowing(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s following: %s\n", c.Params("user"), err)
 			return err
@@ -419,7 +458,12 @@ func main() {
 			return err
 		}
 
-		track, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetTrack(cid, c.Params("user")+"/"+c.Params("track"))
 		if err != nil {
 			log.Printf("error getting %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
@@ -434,7 +478,7 @@ func main() {
 			if tr == nil {
 				err = sc.ErrIncompatibleStream
 			} else if *prefs.Player == cfg.HLSPlayer {
-				stream, err = tr.GetStream(prefs, track.Authorization)
+				stream, err = tr.GetStream(cid, prefs, track.Authorization)
 			}
 
 			if err != nil {
@@ -449,7 +493,7 @@ func main() {
 		var nextTrack *sc.Track
 		mode := c.Query("mode", *prefs.DefaultAutoplayMode)
 		if pl := c.Query("playlist"); pl != "" {
-			p, err := sc.GetPlaylist(pl)
+			p, err := sc.GetPlaylist(cid, pl)
 			if err != nil {
 				log.Printf("error getting %s playlist (track): %s\n", pl, err)
 				return err
@@ -477,7 +521,7 @@ func main() {
 				playlist = &p
 
 				if nextTrack.Title == "" {
-					nt, err := sc.GetTrackByID(nextTrack.ID)
+					nt, err := sc.GetTrackByID(cid, nextTrack.ID)
 					if err != nil {
 						return err
 					}
@@ -499,22 +543,23 @@ func main() {
 			return err
 		}
 
-		//h := time.Now()
-		usr, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		usr, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s: %s\n", c.Params("user"), err)
 			return err
 		}
 		usr.Postfix(prefs)
-		//fmt.Println("getuser", time.Since(h))
 
-		//h = time.Now()
-		p, err := usr.GetTracks(prefs, c.Query("pagination", "?limit=20"))
+		p, err := usr.GetTracks(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
 			return err
 		}
-		//fmt.Println("gettracks", time.Since(h))
 
 		c.Set("Content-Type", "text/html")
 		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(context.Background(), c)
@@ -526,7 +571,12 @@ func main() {
 			return err
 		}
 
-		playlist, err := sc.GetPlaylist(c.Params("user") + "/sets/" + c.Params("playlist"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		playlist, err := sc.GetPlaylist(cid, c.Params("user")+"/sets/"+c.Params("playlist"))
 		if err != nil {
 			log.Printf("error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 			return err
@@ -536,7 +586,7 @@ func main() {
 
 		p := c.Query("pagination")
 		if p != "" {
-			tracks, next, err := sc.GetNextMissingTracks(p)
+			tracks, next, err := sc.GetNextMissingTracks(cid, p)
 			if err != nil {
 				log.Printf("error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("user"), err)
 				return err
@@ -561,14 +611,19 @@ func main() {
 			return err
 		}
 
-		user, err := sc.GetUser(c.Params("user"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		user, err := sc.GetUser(cid, c.Params("user"))
 		if err != nil {
 			log.Printf("error getting %s (related): %s\n", c.Params("user"), err)
 			return err
 		}
 		user.Postfix(prefs)
 
-		r, err := user.GetRelated(prefs)
+		r, err := user.GetRelated(cid, prefs)
 		if err != nil {
 			log.Printf("error getting %s related users: %s\n", c.Params("user"), err)
 			return err

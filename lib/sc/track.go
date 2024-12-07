@@ -90,7 +90,7 @@ func (m Media) SelectCompatible() *Transcoding {
 	return nil
 }
 
-func GetTrack(permalink string) (Track, error) {
+func GetTrack(cid string, permalink string) (Track, error) {
 	tracksCacheLock.RLock()
 	if cell, ok := TracksCache[permalink]; ok && cell.Expires.After(time.Now()) {
 		tracksCacheLock.RUnlock()
@@ -99,7 +99,7 @@ func GetTrack(permalink string) (Track, error) {
 	tracksCacheLock.RUnlock()
 
 	var t Track
-	err := Resolve(permalink, &t)
+	err := Resolve(cid, permalink, &t)
 	if err != nil {
 		return t, err
 	}
@@ -125,12 +125,12 @@ func GetTrack(permalink string) (Track, error) {
 // plain permalink/id:
 // - <user>/<track>
 // - <id>
-func GetArbitraryTrack(data string) (Track, error) {
+func GetArbitraryTrack(cid string, data string) (Track, error) {
 	if len(data) > 8 && (data[:8] == "https://" || data[:7] == "http://") {
 		u, err := url.Parse(data)
 		if err == nil {
 			if (u.Host == "api.soundcloud.com" || u.Host == "api-v2.soundcloud.com") && len(u.Path) > 8 && u.Path[:8] == "/tracks/" {
-				return GetTrackByID(u.Path[8:])
+				return GetTrackByID(cid, u.Path[8:])
 			}
 
 			if u.Host == "soundcloud.com" {
@@ -158,7 +158,7 @@ func GetArbitraryTrack(data string) (Track, error) {
 					return Track{}, ErrKindNotCorrect
 				}
 
-				return GetTrack(u.Path)
+				return GetTrack(cid, u.Path)
 			}
 		} else {
 			return Track{}, err
@@ -174,7 +174,7 @@ func GetArbitraryTrack(data string) (Track, error) {
 	}
 
 	if valid {
-		return GetTrackByID(data)
+		return GetTrackByID(cid, data)
 	}
 
 	// this part should be at the end since it manipulates data
@@ -197,21 +197,16 @@ func GetArbitraryTrack(data string) (Track, error) {
 	}
 
 	if n == 1 {
-		return GetTrack(data)
+		return GetTrack(cid, data)
 	}
 
 	// failed to find a data point
 	return Track{}, ErrKindNotCorrect
 }
 
-func SearchTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
-	p := Paginated[*Track]{Next: "https://" + api + "/search/tracks" + args + "&client_id=" + cid}
-	err = p.Proceed(true)
+func SearchTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{Next: "https://" + api + "/search/tracks" + args}
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -224,10 +219,13 @@ func SearchTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error
 	return &p, nil
 }
 
-func GetTracks(ids string) ([]Track, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
+func GetTracks(cid string, ids string) ([]Track, error) {
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -259,10 +257,13 @@ func GetTracks(ids string) ([]Track, error) {
 	return res, err
 }
 
-func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (string, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return "", err
+func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization string) (string, error) {
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -354,12 +355,7 @@ func (t Track) FormatDescription() string {
 	return desc
 }
 
-func GetTrackByID(id string) (Track, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return Track{}, err
-	}
-
+func GetTrackByID(cid string, id string) (Track, error) {
 	tracksCacheLock.RLock()
 	for _, cell := range TracksCache {
 		if cell.Value.ID == id && cell.Expires.After(time.Now()) {
@@ -370,6 +366,14 @@ func GetTrackByID(id string) (Track, error) {
 	tracksCacheLock.RUnlock()
 
 	var t Track
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return t, err
+		}
+	}
+
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 

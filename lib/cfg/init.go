@@ -542,3 +542,11 @@ func (pr *ProxyReader) Close() error {
 	defer prpool.Put(pr)
 	return pr.Resp.CloseBodyStream()
 }
+
+const Debug = false
+
+func Log(what ...any) {
+	if Debug {
+		fmt.Println(what...)
+	}
+}

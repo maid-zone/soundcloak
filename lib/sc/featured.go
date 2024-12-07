@@ -10,17 +10,12 @@ type Selection struct {
 	Items Paginated[*Playlist] `json:"items"` // ?? why
 }
 
-func GetFeaturedTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
-	p := Paginated[*Track]{Next: "https://" + api + "/featured_tracks/top/all-music" + args + "&client_id=" + cid}
+func GetFeaturedTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{Next: "https://" + api + "/featured_tracks/top/all-music" + args}
 	// DO NOT UNFOLD
 	// dangerous
 	// seems to go in an infinite loop
-	err = p.Proceed(false)
+	err := p.Proceed(cid, false)
 	if err != nil {
 		return nil, err
 	}
@@ -33,15 +28,10 @@ func GetFeaturedTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], 
 	return &p, nil
 }
 
-func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
+func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], error) {
 	// There is no pagination
-	p := Paginated[*Selection]{Next: "https://" + api + "/mixed-selections?limit=20&client_id=" + cid}
-	err = p.Proceed(false)
+	p := Paginated[*Selection]{Next: "https://" + api + "/mixed-selections?limit=20"}
+	err := p.Proceed(cid, false)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +45,7 @@ func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
 
 func (s *Selection) Fix(prefs cfg.Preferences) {
 	for _, p := range s.Items.Collection {
-		p.Fix(false, false)
+		p.Fix("", false, false)
 		p.Postfix(prefs, false, false)
 	}
 }

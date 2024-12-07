@@ -50,11 +50,6 @@ func replacer(m regexp2.Match) string {
 }
 
 func Format(text string) string {
-	text = html.EscapeString(text)
-	out, err := theregex.ReplaceFunc(text, replacer, -1, -1)
-	if err != nil {
-		return text
-	}
-
-	return out
+	text, _ = theregex.ReplaceFunc(html.EscapeString(text), replacer, -1, -1)
+	return text
 }

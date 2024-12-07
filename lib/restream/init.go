@@ -138,7 +138,12 @@ func (c *collector) Write(data []byte) (n int, err error) {
 
 func Load(r fiber.Router) {
 	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
-		t, err := sc.GetTrack(c.Params("author") + "/" + c.Params("track"))
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		t, err := sc.GetTrack(cid, c.Params("author")+"/"+c.Params("track"))
 		if err != nil {
 			return err
 		}
@@ -148,7 +153,7 @@ func Load(r fiber.Router) {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(stubPrefs, t.Authorization)
+		u, err := tr.GetStream(cid, stubPrefs, t.Authorization)
 		if err != nil {
 			return err
 		}

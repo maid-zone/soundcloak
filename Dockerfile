@@ -11,7 +11,7 @@ RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN templ generate
 
 RUN go install github.com/dlclark/regexp2cg@main
-RUN go generate ./lib/textparsing
+RUN go generate ./lib/*
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static' -X main.commit=`git rev-parse HEAD | head -c 7` -X main.repo=`git remote get-url origin`" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \

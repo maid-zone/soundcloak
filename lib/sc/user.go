@@ -69,7 +69,7 @@ func (r Repost) Fix(prefs cfg.Preferences) {
 		return
 	case PlaylistRepost:
 		if r.Playlist != nil {
-			r.Playlist.Fix(false, false) // err always nil if cached == false
+			r.Playlist.Fix("", false, false) // err always nil if cached == false
 			r.Playlist.Postfix(prefs, false, false)
 		}
 		return
@@ -87,11 +87,11 @@ func (l Like) Fix(prefs cfg.Preferences) {
 		l.Track.Fix(false, false)
 		l.Track.Postfix(prefs, false)
 	} else if l.Playlist != nil {
-		l.Playlist.Fix(false, false)
+		l.Playlist.Fix("", false, false)
 		l.Playlist.Postfix(prefs, false, false)
 	}
 }
-func GetUser(permalink string) (User, error) {
+func GetUser(cid string, permalink string) (User, error) {
 	usersCacheLock.RLock()
 	if cell, ok := UsersCache[permalink]; ok && cell.Expires.After(time.Now()) {
 		usersCacheLock.RUnlock()
@@ -101,7 +101,15 @@ func GetUser(permalink string) (User, error) {
 	usersCacheLock.RUnlock()
 
 	var u User
-	err := Resolve(permalink, &u)
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return u, err
+		}
+	}
+
+	err = Resolve(cid, permalink, &u)
 	if err != nil {
 		return u, err
 	}
@@ -112,7 +120,7 @@ func GetUser(permalink string) (User, error) {
 	}
 
 	if cfg.GetWebProfiles {
-		err = u.GetWebProfiles()
+		err = u.GetWebProfiles(cid)
 		if err != nil {
 			return u, err
 		}
@@ -126,14 +134,9 @@ func GetUser(permalink string) (User, error) {
 	return u, err
 }
 
-func SearchUsers(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
-	p := Paginated[*User]{Next: "https://" + api + "/search/users" + args + "&client_id=" + cid}
-	err = p.Proceed(true)
+func SearchUsers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+	p := Paginated[*User]{Next: "https://" + api + "/search/users" + args}
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -146,12 +149,12 @@ func SearchUsers(prefs cfg.Preferences, args string) (*Paginated[*User], error) 
 	return &p, nil
 }
 
-func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+func (u User) GetTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{
 		Next: "https://" + api + "/users/" + u.ID + "/tracks" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -228,48 +231,48 @@ func (u *User) Postfix(prefs cfg.Preferences) {
 	}
 }
 
-func (u User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false, false)
+		pl.Fix("", false, false)
 		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix(false, false)
+		pl.Fix("", false, false)
 		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
+func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
 	p := Paginated[*Repost]{
 		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -281,12 +284,12 @@ func (u User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost
 	return &p, nil
 }
 
-func (u User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
+func (u User) GetLikes(cid string, prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
 	p := Paginated[*Like]{
 		Next: "https://" + api + "/users/" + u.ID + "/likes" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -298,10 +301,13 @@ func (u User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], e
 	return &p, nil
 }
 
-func (u *User) GetWebProfiles() error {
-	cid, err := GetClientID()
-	if err != nil {
-		return err
+func (u *User) GetWebProfiles(cid string) error {
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return err
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -331,17 +337,12 @@ func (u *User) GetWebProfiles() error {
 	return json.Unmarshal(data, &u.WebProfiles)
 }
 
-func (u *User) GetRelated(prefs cfg.Preferences) ([]*User, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
+func (u *User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + u.ID + "/relatedartists?page_size=20&client_id=" + cid,
+		Next: "https://" + api + "/users/" + u.ID + "/relatedartists?page_size=20",
 	}
 
-	err = p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -354,17 +355,12 @@ func (u *User) GetRelated(prefs cfg.Preferences) ([]*User, error) {
 	return p.Collection, nil
 }
 
-func (u *User) GetTopTracks(prefs cfg.Preferences) ([]*Track, error) {
-	cid, err := GetClientID()
-	if err != nil {
-		return nil, err
-	}
-
+func (u *User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
 	p := Paginated[*Track]{
-		Next: "https://" + api + "/users/" + u.ID + "/toptracks?client_id=" + cid,
+		Next: "https://" + api + "/users/" + u.ID + "/toptracks?limit=10",
 	}
 
-	err = p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -377,12 +373,12 @@ func (u *User) GetTopTracks(prefs cfg.Preferences) ([]*Track, error) {
 	return p.Collection, nil
 }
 
-func (u User) GetFollowers(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{
 		Next: "https://" + api + "/users/" + u.ID + "/followers" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}
@@ -395,12 +391,12 @@ func (u User) GetFollowers(prefs cfg.Preferences, args string) (*Paginated[*User
 	return &p, nil
 }
 
-func (u User) GetFollowing(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+func (u User) GetFollowing(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{
 		Next: "https://" + api + "/users/" + u.ID + "/followings" + args,
 	}
 
-	err := p.Proceed(true)
+	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
 	}

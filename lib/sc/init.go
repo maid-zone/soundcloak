@@ -1,15 +1,15 @@
 package sc
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
 	"os"
-	"regexp"
+	"sync"
 	"syscall"
 	"time"
 
+	"github.com/dlclark/regexp2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
@@ -17,7 +17,7 @@ import (
 
 type clientIdCache struct {
 	ClientID  string
-	Version   []byte
+	Version   string
 	NextCheck time.Time
 }
 
@@ -46,9 +46,11 @@ var genericClient = &fasthttp.Client{
 	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 }
 
-var verRegex = regexp.MustCompile(`(?m)^<script>window\.__sc_version="([0-9]{10})"</script>$`)
-var scriptsRegex = regexp.MustCompile(`(?m)^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`)
-var clientIdRegex = regexp.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`)
+//go:generate regexp2cg -package sc -o regexp2_codegen.go
+var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
+var scriptsRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`, 2)
+var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
+var clientIdRegex = regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")
 var ErrIDNotFound = errors.New("clientid not found")
@@ -59,9 +61,72 @@ type cached[T any] struct {
 	Expires time.Time
 }
 
+// don't be spooked by cfg.Log, it will be removed during compilation if cfg.Debug == false
+func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
+	cfg.Log(uri)
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	req.SetRequestURI(uri)
+	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	defer wg.Done()
+
+	if *isDone {
+		cfg.Log("early 1")
+		return
+	}
+
+	err := DoWithRetryAll(genericClient, req, resp)
+	if err != nil {
+		cfg.Log(err)
+		return
+	}
+
+	if *isDone {
+		cfg.Log("early 2")
+		return
+	}
+
+	data, err := resp.BodyUncompressed()
+	if err != nil {
+		data = resp.Body()
+	}
+
+	if *isDone {
+		cfg.Log("early 3")
+		return
+	}
+
+	m2, _ := clientIdRegex.FindStringMatch(string(data))
+	if m2 != nil {
+		g := m2.GroupByNumber(1)
+		if g != nil {
+			if *isDone {
+				cfg.Log("early 4")
+				return
+			}
+
+			ch <- g.String()
+			cfg.Log("found in", uri)
+			return
+		}
+	}
+
+	cfg.Log("not found in", uri)
+}
+
+// Experimental method, which asserts that the clientId is inside the file that starts with "0-"
+const experimental_GetClientID = false
+
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
 	if ClientIDCache.NextCheck.After(time.Now()) {
+		cfg.Log("clientidcache hit @ 1")
 		return ClientIDCache.ClientID, nil
 	}
 
@@ -85,49 +150,94 @@ func GetClientID() (string, error) {
 		data = resp.Body()
 	}
 
-	res := verRegex.FindSubmatch(data)
-	if len(res) != 2 {
+	m, _ := verRegex.FindStringMatch(string(data))
+	if m == nil {
 		return "", ErrVersionNotFound
 	}
 
-	if bytes.Equal(res[1], ClientIDCache.Version) {
+	g := m.GroupByNumber(1)
+	if g == nil {
+		return "", ErrVersionNotFound
+	}
+
+	ver := g.String()
+	if ver == ClientIDCache.Version {
+		cfg.Log("clientidcache hit @ ver")
 		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
 		return ClientIDCache.ClientID, nil
 	}
 
-	ver := res[1]
+	if experimental_GetClientID {
+		m, _ = scriptRegex.FindStringMatch(string(data))
+		if m != nil {
+			g = m.GroupByNumber(1)
+			if g != nil {
+				req.SetRequestURI(g.String())
+				err = DoWithRetryAll(genericClient, req, resp)
+				if err != nil {
+					return "", err
+				}
 
-	scripts := scriptsRegex.FindAllSubmatch(data, -1)
-	if len(scripts) == 0 {
-		return "", ErrScriptNotFound
-	}
+				data, err = resp.BodyUncompressed()
+				if err != nil {
+					data = resp.Body()
+				}
 
-	for _, scr := range scripts {
-		if len(scr) != 2 {
-			continue
+				m, _ = clientIdRegex.FindStringMatch(string(data))
+				if m != nil {
+					g = m.GroupByNumber(1)
+					if g != nil {
+						ClientIDCache.ClientID = g.String()
+						ClientIDCache.Version = ver
+						ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+						cfg.Log(ClientIDCache)
+						return ClientIDCache.ClientID, nil
+					}
+				}
+			}
+		}
+	} else {
+		ch := make(chan string, 1)
+		wg := &sync.WaitGroup{}
+		done := false
+		m, _ = scriptsRegex.FindStringMatch(string(data))
+		for m != nil {
+			g = m.GroupByNumber(1)
+			if g != nil {
+				wg.Add(1)
+				go processFile(wg, ch, g.String(), &done)
+			}
+
+			m, _ = scriptsRegex.FindNextMatch(m)
 		}
 
-		req.SetRequestURIBytes(scr[1])
+		go func() {
+			defer func() {
+				err := recover()
+				cfg.Log("-- GetClientID recovered:", err)
+			}()
 
-		err = DoWithRetryAll(genericClient, req, resp)
-		if err != nil {
-			continue
+			wg.Wait()
+
+			//time.Sleep(time.Millisecond) // maybe race?
+			if !done {
+				ch <- ""
+			}
+		}()
+
+		res := <-ch
+		done = true
+		close(ch)
+		if res == "" {
+			err = ErrIDNotFound
+		} else {
+			ClientIDCache.ClientID = res
+			ClientIDCache.Version = ver
+			ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+			cfg.Log(ClientIDCache)
 		}
 
-		data, err = resp.BodyUncompressed()
-		if err != nil {
-			data = resp.Body()
-		}
-
-		res = clientIdRegex.FindSubmatch(data)
-		if len(res) != 2 {
-			continue
-		}
-
-		ClientIDCache.ClientID = string(res[1])
-		ClientIDCache.Version = ver
-		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		return ClientIDCache.ClientID, nil
+		return res, err
 	}
 
 	return "", ErrIDNotFound
@@ -167,10 +277,13 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 	return
 }
 
-func Resolve(path string, out any) error {
-	cid, err := GetClientID()
-	if err != nil {
-		return err
+func Resolve(cid string, path string, out any) error {
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return err
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -206,10 +319,13 @@ type Paginated[T any] struct {
 	Next       string `json:"next_href"`
 }
 
-func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
-	cid, err := GetClientID()
-	if err != nil {
-		return err
+func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
+	var err error
+	if cid == "" {
+		cid, err = GetClientID()
+		if err != nil {
+			return err
+		}
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -253,7 +369,7 @@ func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
 	// another note: in featured tracks it seems to just be forever stuck after 2-3~ pages so i added a way to disable this behaviour
 	if shouldUnfold && len(p.Collection) == 0 && p.Next != "" {
 		// this will make sure that we actually proceed to something useful and not emptiness
-		return p.Proceed(true)
+		return p.Proceed(cid, true)
 	}
 
 	return nil
