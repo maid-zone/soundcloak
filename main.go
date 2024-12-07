@@ -413,6 +413,8 @@ func main() {
 						return err
 					}
 
+					nt.Postfix(prefs, false)
+
 					nextTrack = &nt
 				}
 			}
