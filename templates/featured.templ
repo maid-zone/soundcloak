@@ -23,7 +23,7 @@ templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
 
 templ Discover(p *sc.Paginated[*sc.Selection]) {
 	<h1>Discover Playlists</h1> // also tracks apparently? haven't seen any
-	<span>Got { strconv.FormatInt(int64(len(p.Collection)), 10) } playlists</span>
+	<span>Got { strconv.FormatInt(int64(len(p.Collection)), 10) } selections</span>
 	if len(p.Collection) != 0 {
 		for _, selection := range p.Collection {
 			// skip so we don't just include the title and zero playlists with it
