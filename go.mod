@@ -7,8 +7,8 @@ require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/dlclark/regexp2 v1.11.5-0.20240806004527-5bbbed8ea10b
 	github.com/gofiber/fiber/v2 v2.52.5
-	github.com/segmentio/encoding v0.4.0
-	github.com/valyala/fasthttp v1.57.0
+	github.com/segmentio/encoding v0.4.1
+	github.com/valyala/fasthttp v1.58.0
 )
 
 require (
@@ -22,6 +22,6 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 )
