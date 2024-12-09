@@ -63,6 +63,10 @@ type PrefsForm struct {
 	DefaultAutoplayMode string
 }
 
+type Export struct {
+	Preferences *cfg.Preferences `json:",omitempty"`
+}
+
 func Load(r fiber.Router) {
 	r.Get("/_/preferences", func(c *fiber.Ctx) error {
 		p, err := Get(c)
@@ -84,6 +88,10 @@ func Load(r fiber.Router) {
 		old, err := Get(c)
 		if err != nil {
 			return err
+		}
+
+		if *old.AutoplayNextTrack {
+			old.DefaultAutoplayMode = &p.DefaultAutoplayMode
 		}
 
 		if *old.Player == "hls" {
@@ -122,12 +130,73 @@ func Load(r fiber.Router) {
 			old.ParseDescriptions = &cfg.False
 		}
 
-		if *old.AutoplayNextTrack {
-			old.DefaultAutoplayMode = &p.DefaultAutoplayMode
-		}
 		old.Player = &p.Player
 
 		data, err := json.Marshal(old)
+		if err != nil {
+			return err
+		}
+
+		c.Cookie(&fiber.Cookie{
+			Name:     "prefs",
+			Value:    string(data),
+			Expires:  time.Now().Add(400 * 24 * time.Hour),
+			HTTPOnly: true,
+			SameSite: "strict",
+		})
+
+		return c.Redirect("/_/preferences")
+	})
+
+	r.Get("/_/preferences/reset", func(c *fiber.Ctx) error {
+		// c.ClearCookie("prefs")
+		c.Cookie(&fiber.Cookie{ // I've had some issues with c.ClearCookie() method, so using this workaround for now
+			Name:     "prefs",
+			Value:    "{}",
+			Expires:  time.Now().Add(400 * 24 * time.Hour),
+			HTTPOnly: true,
+			SameSite: "strict",
+		})
+
+		return c.Redirect("/_/preferences")
+	})
+
+	r.Get("/_/preferences/export", func(c *fiber.Ctx) error {
+		p, err := Get(c)
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(Export{Preferences: &p})
+	})
+
+	r.Post("/_/preferences/import", func(c *fiber.Ctx) error {
+		f, err := c.FormFile("prefs")
+		if err != nil {
+			return err
+		}
+
+		fd, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer fd.Close()
+
+		dec := json.NewDecoder(fd)
+
+		var p Export
+		err = dec.Decode(&p)
+		if err != nil {
+			return err
+		}
+
+		if p.Preferences == nil {
+			p.Preferences = &cfg.Preferences{}
+		}
+
+		Defaults(p.Preferences)
+
+		data, err := json.Marshal(p.Preferences)
 		if err != nil {
 			return err
 		}

@@ -32,7 +32,7 @@ templ sel(name string, options []option, selected string) {
 
 templ Preferences(prefs cfg.Preferences) {
 	<h1>Preferences</h1>
-	<form method="post">
+	<form method="post" autocomplete="off">
 		<label>
 			Parse descriptions:
 			@checkbox("ParseDescriptions", *prefs.ParseDescriptions)
@@ -88,5 +88,17 @@ templ Preferences(prefs cfg.Preferences) {
 		<br/>
 		<br/>
 		<p>These preferences get saved in a cookie.</p>
+	</form>
+
+	<h1>Management</h1>
+	<h2>Preferences</h2>
+	<div style="display: flex; gap: 1rem;">
+		<a class="btn" href="/_/preferences/export" download="soundcloak_preferences.json">Export</a>
+		<a class="btn" href="/_/preferences/reset">Reset</a>
+	</div>
+	<br>
+	<form method="post" action="/_/preferences/import" autocomplete="off" style="display: grid; gap: 1rem;" enctype="multipart/form-data">
+		<input class="btn" type="file" autocomplete="off" name="prefs" />
+		<input type="submit" value="Import" class="btn"/>
 	</form>
 }
