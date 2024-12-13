@@ -21,24 +21,31 @@ wip alternative frontend for soundcloud
 
 The UI isn't really done yet. All parameters other than url are unsupported. You can also specify track without the `soundcloud.com` part: `https://sc.maid.zone/w/player/?url=<id>` or `https://sc.maid.zone/w/player/?url=<user>/<track>`
 
-# Viewing instance settings
+# Settings
 
+## Viewing instance config
 If the instance isn't outdated and has `InstanceInfo` setting enabled, you can navigate to `<instance>/_/info` to view useful instance settings. ([sc.maid.zone/_/info](https://sc.maid.zone/_/info) for example)
 
-An easier way is to navigate to `<instance>/_/preferences`.
+## Preferences
 
-If some features are disabled by the instance, they won't show up there.
+You can go to `/_/preferences` page to configure them. You can view default preferences using the method described above or by resetting your preferences.
 
-Available features:
+You can also Export/Import your preferences, for backup purposes or for easily transfering them between instances.
 
 - Parse descriptions: Highlight `@username`, `https://example.com` and `email@example.com` in text as clickable links
+- Show current audio: shows what [preset](#audio-presets) is currently playing (mpeg, opus or aac)
 - Proxy images: Retrieve images through the instance, instead of going to soundcloud's servers for them
 - Player: In what way should the track be streamed. Can be Restream (does not require JS, better compatibility, can be a bit buggy client-side) or HLS (requires JS, more stable, less good compatibility (you'll be ok unless you are using a very outdated browser))
-- Player-specific settings: They will only show up if you have selected HLS player currently.
-- - Proxy streams: Retrieve song pieces through the instance, instead of going to soundcloud's servers for them
-- - Fully preload track: Fully loads the track when you load the page instead of buffering a small part of it
-- - Autoplay next track in playlists: self-explanatory
-- - Default autoplay mode: Default mode for autoplaying. Can be normal (play songs in order) or random (play random song)
+- Autoplay next track in playlists: self-explanatory
+- Default autoplay mode: Default mode for autoplaying. Can be normal (play songs in order) or random (play random song)
+- Player-specific settings:
+- - HLS Player:
+- - - Proxy streams: Retrieve song pieces through the instance, instead of going to soundcloud's servers for them
+- - - Fully preload track: Fully loads the track when you load the page instead of buffering a small part of it
+- - - Streaming audio: What [preset](#audio-presets) of audio should be streamed (Opus is not supported here)
+- - Restream Player:
+- - - Streaming audio: What [preset](#audio-presets) of audio should be streamed
+
 # Contributing
 
 Contributions are appreciated! This includes feedback, feature requests, issues, pull requests and etc.
@@ -91,6 +98,7 @@ go install github.com/a-h/templ/cmd/templ@latest
 5. Download regexp2cg:
 
 Not really required, but helps speed up some parts of the code that use regular expressions. Keep in mind that the `build` script expects this to be installed.
+
 ```sh
 go install github.com/dlclark/regexp2cg@main
 ```
@@ -108,6 +116,7 @@ Refer to [Configuration guide](#configuration-guide) for configuration informati
 7. Build binary:
 
 This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
+
 ```sh
 ./build
 ```
@@ -187,9 +196,9 @@ Some notes:
 
 | JSON key                | Environment variable       | Default value                                                                                                                                                                      | Description                                                                                                                                                                          |
 | :------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| None                    | SOUNDCLOAK_CONFIG          | soundcloak.json                                                                                                                                                                    | File to load soundcloak config from. If set to`FROM_ENV`, soundcloak loads the config from environment variables.                                                                    |
+| None                    | SOUNDCLOAK_CONFIG          | soundcloak.json                                                                                                                                                                    | File to load soundcloak config from. If set to `FROM_ENV`, soundcloak loads the config from environment variables.                                                                    |
 | GetWebProfiles          | GET_WEB_PROFILES           | true                                                                                                                                                                               | Retrieve links users set in their profile (social media, website, etc)                                                                                                               |
-| DefaultPreferences      | DEFAULT_PREFERENCES        | {"Player": "hls", "ProxyStreams": false, "FullyPreloadTrack": false, "ProxyImages": false, "ParseDescriptions": true, "AutoplayNextTrack": false, "DefaultAutoplayMode": "normal"} | see /_/preferences page, default values adapt to your config (Player: "restream" if Restream, else "hls", ProxyStreams and ProxyImages will be same as respective config values)     |
+| DefaultPreferences      | DEFAULT_PREFERENCES        | {"Player": "hls", "ProxyStreams": false, "FullyPreloadTrack": false, "ProxyImages": false, "ParseDescriptions": true, "AutoplayNextTrack": false, "DefaultAutoplayMode": "normal", "HLSAudio": "mpeg", "RestreamAudio": "mpeg", "DownloadAudio": "mpeg"} | see /_/preferences page. [Read more](#preferences)  |
 | ProxyImages             | PROXY_IMAGES               | false                                                                                                                                                                              | Enables proxying of images (user avatars, track covers etc)                                                                                                                          |
 | ImageCacheControl       | IMAGE_CACHE_CONTROL        | max-age=600, public, immutable                                                                                                                                                     | [Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) header value for proxied images. Cached for 10 minutes by default.                          |
 | ProxyStreams            | PROXY_STREAMS              | false                                                                                                                                                                              | Enables proxying of song parts and hls playlist files                                                                                                                                |
@@ -208,6 +217,42 @@ Some notes:
 | Prefork                 | PREFORK                    | false                                                                                                                                                                              | Run multiple instances of soundcloak locally to be able to handle more requests. Each one will be a separate process, so they will have separate cache.                              |
 | TrustedProxyCheck       | TRUSTED_PROXY_CHECK        | true                                                                                                                                                                               | Use X-Forwarded-* headers if IP is in TrustedProxies list. When disabled, those headers will blindly be used.                                                                        |
 | TrustedProxies          | TRUSTED_PROXIES            | []                                                                                                                                                                                 | List of IPs or IP ranges of trusted proxies                                                                                                                                          |
+
+</details>
+
+## Preferences
+
+<details>
+<summary>Click to view</summary>
+
+
+| Name                | Default             | Description                                                                                                                                                                                          | Possible values               |
+| --------------------- | --------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ |
+| Player              | "restream" if Restream is enabled in config, otherwise - "hls"              | Method used to play the track in the frontend. HLS - requires JavaScript, loads the track in pieces. Restream - works without JavaScript, loads entire track right away. None - don't play the track | "hls", "restream", "none"     |
+| ProxyStreams        | same as your config | Proxy track streams. Refer to configuration guide for more info. Not effective unless ProxyStreams is enabled in your config and you are using HLS player (Restream proxies songs by default)        | true, false                   |
+| FullyPreloadTrack   | false               | Fully load track when the page is loaded. Only effective if you are using HLS player                                                                                                                 | true, false                   |
+| ParseDescriptions   | true                | Highlight links, usernames and emails in track/user/playlist descriptions                                                                                                                            | true, false                   |
+| AutoplayNextTrack   | false               | Automatically start playlist playback when you open a track from it                                                                                                                                  | true, false                   |
+| DefaultAutoplayMode | "normal"            | Default mode for autoplay. Normal - play songs in order. Random - play random song next                                                                                                              | "normal", "random"            |
+| HLSAudio            | "mpeg"              | What audio preset should be loaded when using HLS player. Note that "opus" is not supported here. [Read more](#audio-presets)                                                                         | "aac", "mpeg"                 |
+| RestreamAudio       | "mpeg"              | What audio preset should be loaded when using Restream player. [Read more](#audio-presets)                                                                                                            | "best", "aac", "opus", "mpeg" |
+| DownloadAudio       | "mpeg"              | What audio preset should be loaded when downloading audio with metadata. [Read more](#audio-presets)                                                                                                  | "best", "aac", "opus", "mpeg" |
+| ShowAudio           | false               | Show what audio preset was loaded on the track page                                                                                                                                                  | true, false                   |
+
+</details>
+
+## Audio presets
+
+<details>
+<summary>Click to view</summary>
+
+
+| Name | Container  | Codec | Bitrate | Note                                                                                   |
+| ---- | ---------- | ----- | ------- | -------------------------------------------------------------------------------------- |
+| Best |            |       |         | Prefer AAC over Opus over MPEG. Not supported for HLS player (use AAC for same effect) |
+| AAC  | mp4 (m4a)  | AAC   | 160kbps | Rarely available. Falls back to MPEG if unavailable                                    |
+| Opus | ogg        | Opus  | 72kbps  | Usually available. Falls back to MPEG if unavailable. Not supported for HLS player     |
+| MP3  | mpeg (mp3) | MP3   | 128kbps | Always available. Good for compatibility                                               |
 
 </details>
 
@@ -263,17 +308,3 @@ npm i
 Congratulations! You have succesfully updated your soundcloak.
 
 </details>
-
-# Built with
-
-## Backend
-
-- [Go programming language](https://github.com/golang/go)
-- [Fiber (v2)](https://github.com/gofiber/fiber/tree/v2)
-- [templ](https://github.com/a-h/templ)
-- [fasthttp](https://github.com/valyala/fasthttp)
-
-## Frontend
-
-- HTML, CSS and JavaScript
-- [hls.js](https://github.com/video-dev/hls.js)

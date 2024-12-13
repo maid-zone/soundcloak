@@ -25,5 +25,5 @@
     "Addr": "127.0.0.1:4664"
 
     // Note: if you are going to make your own config, you should start from scratch, or remove the comments. Comments aren't allowed in JSON, but they are used here to explain some stuff.
-    // For all the possible configuration keys, refer to lib/cfg/init.go file.
+    // For more information, refer to README.md (Configuration guide) and lib/cfg/init.go
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
+
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
@@ -167,7 +168,7 @@ func main() {
 		stream := ""
 
 		if *prefs.Player != cfg.NonePlayer {
-			tr := track.Media.SelectCompatible()
+			tr, _ := track.Media.SelectCompatible(*prefs.HLSAudio, false)
 			if tr == nil {
 				err = sc.ErrIncompatibleStream
 			} else if *prefs.Player == cfg.HLSPlayer {
@@ -472,13 +473,22 @@ func main() {
 
 		displayErr := ""
 		stream := ""
+		audio := ""
 
 		if *prefs.Player != cfg.NonePlayer {
-			tr := track.Media.SelectCompatible()
-			if tr == nil {
-				err = sc.ErrIncompatibleStream
-			} else if *prefs.Player == cfg.HLSPlayer {
-				stream, err = tr.GetStream(cid, prefs, track.Authorization)
+			if *prefs.Player == cfg.HLSPlayer {
+				var tr *sc.Transcoding
+				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false)
+				if tr == nil {
+					err = sc.ErrIncompatibleStream
+				} else {
+					stream, err = tr.GetStream(cid, prefs, track.Authorization)
+				}
+			} else {
+				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true)
+				if audio == "" {
+					err = sc.ErrIncompatibleStream
+				}
 			}
 
 			if err != nil {
@@ -534,7 +544,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {

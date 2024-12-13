@@ -2,49 +2,40 @@ package restream
 
 import (
 	"bytes"
+	"image/jpeg"
 	"io"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/gcottom/mp4meta"
+	"github.com/gcottom/oggmeta"
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/preferences"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
 
-const cdn = "cf-hls-media.sndcdn.com"
-
-var httpc = &fasthttp.HostClient{
-	Addr:                cdn + ":443",
-	IsTLS:               true,
-	DialDualStack:       true,
-	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	MaxIdleConnDuration: 1<<63 - 1,
-}
-
-// Needed for restream to work even if prefs.Player != RestreamPlayer
-var stubPrefs = cfg.Preferences{}
-
-func init() {
-	p := cfg.RestreamPlayer
-
-	stubPrefs.Player = &p
-
-	f := false
-
-	stubPrefs.ProxyStreams = &f
-	stubPrefs.ProxyImages = &f
-}
+var httpc *fasthttp.HostClient
+var httpc_aac *fasthttp.HostClient
+var httpc_image *fasthttp.HostClient
 
 type reader struct {
 	parts    [][]byte
 	leftover []byte
 	index    int
 
-	req  *fasthttp.Request
-	resp *fasthttp.Response
+	req    *fasthttp.Request
+	resp   *fasthttp.Response
+	client *fasthttp.HostClient
 }
 
-func (r *reader) Setup(url string) error {
+func clone(buf []byte) []byte {
+	out := make([]byte, len(buf))
+	copy(out, buf)
+	return out
+}
+
+func (r *reader) Setup(url string, aac bool) error {
 	r.req = fasthttp.AcquireRequest()
 	r.resp = fasthttp.AcquireResponse()
 
@@ -52,7 +43,13 @@ func (r *reader) Setup(url string) error {
 	r.req.Header.Set("User-Agent", cfg.UserAgent)
 	r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
-	err := httpc.Do(r.req, r.resp)
+	if aac {
+		r.client = httpc_aac
+	} else {
+		r.client = httpc
+	}
+
+	err := sc.DoWithRetry(r.client, r.req, r.resp)
 	if err != nil {
 		return err
 	}
@@ -62,12 +59,31 @@ func (r *reader) Setup(url string) error {
 		data = r.resp.Body()
 	}
 
-	for _, s := range bytes.Split(data, []byte{'\n'}) {
-		if len(s) == 0 || s[0] == '#' {
-			continue
-		}
+	r.parts = make([][]byte, 0, 16)
+	if aac {
+		// clone needed to mitigate memory skill issues here
+		for _, s := range bytes.Split(data, []byte{'\n'}) {
+			if len(s) == 0 {
+				continue
+			}
+			if s[0] == '#' {
+				if bytes.HasPrefix(s, []byte(`#EXT-X-MAP:URI="`)) {
+					r.parts = append(r.parts, clone(s[16:len(s)-1]))
+				}
 
-		r.parts = append(r.parts, s)
+				continue
+			}
+
+			r.parts = append(r.parts, clone(s))
+		}
+	} else {
+		for _, s := range bytes.Split(data, []byte{'\n'}) {
+			if len(s) == 0 || s[0] == '#' {
+				continue
+			}
+
+			r.parts = append(r.parts, s)
+		}
 	}
 
 	return nil
@@ -105,7 +121,7 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 
 	r.req.SetRequestURIBytes(r.parts[r.index])
 
-	err = httpc.Do(r.req, r.resp)
+	err = sc.DoWithRetry(r.client, r.req, r.resp)
 	if err != nil {
 		return
 	}
@@ -115,7 +131,11 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 		data = r.resp.Body()
 	}
 
-	n = copy(buf, data[:len(buf)])
+	if len(data) > len(buf) {
+		n = copy(buf, data[:len(buf)])
+	} else {
+		n = copy(buf, data)
+	}
 
 	r.leftover = data[n:]
 	r.index++
@@ -137,7 +157,39 @@ func (c *collector) Write(data []byte) (n int, err error) {
 }
 
 func Load(r fiber.Router) {
+	httpc = &fasthttp.HostClient{
+		Addr:                cfg.HLSCDN + ":443",
+		IsTLS:               true,
+		DialDualStack:       true,
+		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+		MaxIdleConnDuration: 1<<63 - 1,
+	}
+
+	httpc_aac = &fasthttp.HostClient{
+		Addr:                cfg.HLSAACCDN + ":443",
+		IsTLS:               true,
+		DialDualStack:       true,
+		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+		MaxIdleConnDuration: 1<<63 - 1,
+	}
+
+	httpc_image = &fasthttp.HostClient{
+		Addr:                cfg.ImageCDN + ":443",
+		IsTLS:               true,
+		DialDualStack:       true,
+		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+		MaxIdleConnDuration: 1<<63 - 1,
+		StreamResponseBody:  true,
+	}
+
 	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
+		p, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+		p.ProxyImages = &cfg.False
+		p.ProxyStreams = &cfg.False
+
 		cid, err := sc.GetClientID()
 		if err != nil {
 			return err
@@ -148,46 +200,231 @@ func Load(r fiber.Router) {
 			return err
 		}
 
-		tr := t.Media.SelectCompatible()
+		var isDownload = c.Query("metadata") == "true"
+		var quality *string
+		if isDownload {
+			quality = p.DownloadAudio
+		} else {
+			quality = p.RestreamAudio
+		}
+
+		tr, audio := t.Media.SelectCompatible(*quality, true)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(cid, stubPrefs, t.Authorization)
+		u, err := tr.GetStream(cid, p, t.Authorization)
 		if err != nil {
 			return err
 		}
 
-		c.Set("Content-Type", "audio/mpeg")
+		c.Set("Content-Type", tr.Format.MimeType)
 		c.Set("Cache-Control", cfg.RestreamCacheControl)
 
-		r := reader{}
-		if err := r.Setup(u); err != nil {
-			return err
-		}
+		if isDownload {
+			switch audio {
+			case cfg.AudioMP3:
+				r := reader{}
+				if err := r.Setup(u, false); err != nil {
+					return err
+				}
 
-		if c.Query("metadata") == "true" {
-			tag := id3v2.NewEmptyTag()
+				tag := id3v2.NewEmptyTag()
 
-			tag.SetArtist(t.Author.Username)
-			if t.Genre != "" {
-				tag.SetGenre(t.Genre)
-			}
+				tag.SetArtist(t.Author.Username)
+				if t.Genre != "" {
+					tag.SetGenre(t.Genre)
+				}
 
-			tag.SetTitle(t.Title)
+				tag.SetTitle(t.Title)
 
-			if t.Artwork != "" {
-				data, mime, err := t.DownloadImage()
+				if t.Artwork != "" {
+					data, mime, err := t.DownloadImage()
+					if err != nil {
+						return err
+					}
+
+					tag.AddAttachedPicture(id3v2.PictureFrame{MimeType: mime, Picture: data, PictureType: id3v2.PTFrontCover, Encoding: id3v2.EncodingUTF8})
+				}
+
+				var col collector
+				tag.WriteTo(&col)
+				r.leftover = col.data
+
+				// id3 is quite flexible and the files streamed by soundcloud don't have it so its easy to restream the stuff like this
+				return c.SendStream(&r)
+
+			case cfg.AudioOpus:
+				req := fasthttp.AcquireRequest()
+				defer fasthttp.ReleaseRequest(req)
+
+				req.SetRequestURI(u)
+				req.Header.Set("User-Agent", cfg.UserAgent)
+				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+				resp := fasthttp.AcquireResponse()
+				defer fasthttp.ReleaseResponse(resp)
+
+				err = sc.DoWithRetry(httpc, req, resp)
 				if err != nil {
 					return err
 				}
 
-				tag.AddAttachedPicture(id3v2.PictureFrame{MimeType: mime, Picture: data, PictureType: id3v2.PTFrontCover, Encoding: id3v2.EncodingUTF8})
-			}
+				data, err := resp.BodyUncompressed()
+				if err != nil {
+					data = resp.Body()
+				}
 
-			var c collector
-			tag.WriteTo(&c)
-			r.leftover = c.data
+				parts := make([][]byte, 0, 16)
+				for _, s := range bytes.Split(data, []byte{'\n'}) {
+					if len(s) == 0 || s[0] == '#' {
+						continue
+					}
+
+					parts = append(parts, s)
+				}
+
+				result := []byte{}
+
+				for _, part := range parts {
+					req.SetRequestURIBytes(part)
+
+					err = sc.DoWithRetry(httpc, req, resp)
+					if err != nil {
+						return err
+					}
+
+					data, err = resp.BodyUncompressed()
+					if err != nil {
+						data = resp.Body()
+					}
+
+					result = append(result, data...)
+				}
+
+				tag, err := oggmeta.ReadOGG(bytes.NewReader(result))
+				if err != nil {
+					return err
+				}
+
+				tag.SetArtist(t.Author.Username)
+				if t.Genre != "" {
+					tag.SetGenre(t.Genre)
+				}
+
+				tag.SetTitle(t.Title)
+
+				if t.Artwork != "" {
+					req.SetRequestURI(t.Artwork)
+					req.Header.Del("Accept-Encoding")
+
+					err := sc.DoWithRetry(httpc_image, req, resp)
+					if err != nil {
+						return err
+					}
+
+					defer resp.CloseBodyStream()
+					parsed, err := jpeg.Decode(resp.BodyStream())
+					if err != nil {
+						return err
+					}
+
+					tag.SetCoverArt(&parsed)
+				}
+
+				return tag.Save(c)
+			case cfg.AudioAAC:
+				req := fasthttp.AcquireRequest()
+				defer fasthttp.ReleaseRequest(req)
+
+				req.SetRequestURI(u)
+				req.Header.Set("User-Agent", cfg.UserAgent)
+				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+				resp := fasthttp.AcquireResponse()
+				defer fasthttp.ReleaseResponse(resp)
+
+				err = sc.DoWithRetry(httpc_aac, req, resp)
+				if err != nil {
+					return err
+				}
+
+				data, err := resp.BodyUncompressed()
+				if err != nil {
+					data = resp.Body()
+				}
+
+				parts := make([][]byte, 0, 16)
+				// clone needed to mitigate memory skill issues here
+				for _, s := range bytes.Split(data, []byte{'\n'}) {
+					if len(s) == 0 {
+						continue
+					}
+					if s[0] == '#' {
+						if bytes.HasPrefix(s, []byte(`#EXT-X-MAP:URI="`)) {
+							parts = append(parts, clone(s[16:len(s)-1]))
+						}
+
+						continue
+					}
+
+					parts = append(parts, clone(s))
+				}
+
+				result := []byte{}
+				for _, part := range parts {
+					req.SetRequestURIBytes(part)
+
+					err = sc.DoWithRetry(httpc_aac, req, resp)
+					if err != nil {
+						return err
+					}
+
+					data, err = resp.BodyUncompressed()
+					if err != nil {
+						data = resp.Body()
+					}
+
+					result = append(result, data...)
+				}
+
+				tag, err := mp4meta.ReadMP4(bytes.NewReader(result))
+				if err != nil {
+					return err
+				}
+
+				tag.SetArtist(t.Author.Username)
+				if t.Genre != "" {
+					tag.SetGenre(t.Genre)
+				}
+
+				tag.SetTitle(t.Title)
+
+				if t.Artwork != "" {
+					req.SetRequestURI(t.Artwork)
+					req.Header.Del("Accept-Encoding")
+
+					err := sc.DoWithRetry(httpc_image, req, resp)
+					if err != nil {
+						return err
+					}
+
+					defer resp.CloseBodyStream()
+					parsed, err := jpeg.Decode(resp.BodyStream())
+					if err != nil {
+						return err
+					}
+
+					tag.SetCoverArt(&parsed)
+				}
+
+				return tag.Save(c)
+			}
+		}
+
+		r := reader{}
+		if err := r.Setup(u, audio == cfg.AudioAAC); err != nil {
+			return err
 		}
 
 		return c.SendStream(&r)

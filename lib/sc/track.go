@@ -80,14 +80,42 @@ type Stream struct {
 	URL string `json:"url"`
 }
 
-func (m Media) SelectCompatible() *Transcoding {
-	for _, t := range m.Transcodings {
-		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
-			return &t
+func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {
+	switch mode {
+	case cfg.AudioBest:
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
+				return &t, cfg.AudioAAC
+			}
+		}
+
+		if opus {
+			for _, t := range m.Transcodings {
+				if t.Format.Protocol == ProtocolHLS && strings.HasPrefix(t.Preset, "opus_") {
+					return &t, cfg.AudioOpus
+				}
+			}
+		}
+	case cfg.AudioAAC:
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
+				return &t, cfg.AudioAAC
+			}
+		}
+	case cfg.AudioOpus:
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS && strings.HasPrefix(t.Preset, "opus_") {
+				return &t, cfg.AudioOpus
+			}
 		}
 	}
 
-	return nil
+	for _, t := range m.Transcodings {
+		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
+			return &t, cfg.AudioMP3
+		}
+	}
+	return nil, ""
 }
 
 func GetTrack(cid string, permalink string) (Track, error) {
@@ -296,11 +324,17 @@ func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization
 		return "", err
 	}
 
+	cfg.Log(s)
+
 	if s.URL == "" {
 		return "", ErrNoURL
 	}
 
 	if cfg.ProxyStreams && *prefs.ProxyStreams && *prefs.Player == cfg.HLSPlayer {
+		if tr.Preset == "aac_160k" {
+			return "/_/proxy/streams/playlist/aac?url=" + url.QueryEscape(s.URL), nil
+		}
+
 		return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
 	}
 
@@ -423,7 +457,7 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err := DoWithRetry(ImageClient, req, resp)
+	err := DoWithRetry(httpc_image, req, resp)
 	if err != nil {
 		return nil, "", err
 	}

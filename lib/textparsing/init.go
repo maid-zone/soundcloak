@@ -9,13 +9,9 @@ import (
 	"github.com/dlclark/regexp2"
 )
 
-//var wordre = regexp.MustCompile(`\S+`)
-// var usernamere = regexp.MustCompile(`@[a-zA-Z0-9\-]+`)
-// var urlre = regexp.MustCompile(`https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*`)
-
 //go:generate regexp2cg -package textparsing -o regexp2_codegen.go
 var emailre = regexp2.MustCompile(`^[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}$`, 0)
-var theregex = regexp2.MustCompile(`@[a-zA-Z0-9\-]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`, 0)
+var theregex = regexp2.MustCompile(`@[a-zA-Z0-9\-_]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`, 0)
 
 func IsEmail(s string) bool {
 	t, _ := emailre.MatchString(s)

@@ -33,7 +33,7 @@ var httpc = &fasthttp.HostClient{
 	MaxIdleConnDuration: 1<<63 - 1,
 }
 
-var ImageClient = &fasthttp.HostClient{
+var httpc_image = &fasthttp.HostClient{
 	Addr:                cfg.ImageCDN + ":443",
 	IsTLS:               true,
 	DialDualStack:       true,
@@ -121,7 +121,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 }
 
 // Experimental method, which asserts that the clientId is inside the file that starts with "0-"
-const experimental_GetClientID = false
+const experimental_GetClientID = true
 
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
@@ -272,6 +272,8 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 			err.Error() != "timeout" {
 			return
 		}
+
+		cfg.Log("we failed haha", err)
 	}
 
 	return
@@ -396,6 +398,10 @@ func TagListParser(taglist string) (res []string) {
 		}
 
 		cur = append(cur, c)
+	}
+
+	if len(cur) != 0 {
+		res = append(res, string(cur))
 	}
 
 	return

@@ -38,6 +38,22 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.DefaultAutoplayMode == nil {
 		dst.DefaultAutoplayMode = cfg.DefaultPreferences.DefaultAutoplayMode
 	}
+
+	if dst.HLSAudio == nil {
+		dst.HLSAudio = cfg.DefaultPreferences.HLSAudio
+	}
+
+	if dst.RestreamAudio == nil {
+		dst.RestreamAudio = cfg.DefaultPreferences.RestreamAudio
+	}
+
+	if dst.DownloadAudio == nil {
+		dst.DownloadAudio = cfg.DefaultPreferences.DownloadAudio
+	}
+
+	if dst.ShowAudio == nil {
+		dst.ShowAudio = cfg.DefaultPreferences.ShowAudio
+	}
 }
 
 func Get(c *fiber.Ctx) (cfg.Preferences, error) {
@@ -61,6 +77,10 @@ type PrefsForm struct {
 	FullyPreloadTrack   string
 	AutoplayNextTrack   string
 	DefaultAutoplayMode string
+	HLSAudio            string
+	RestreamAudio       string
+	DownloadAudio       string
+	ShowAudio           string
 }
 
 type Export struct {
@@ -94,18 +114,24 @@ func Load(r fiber.Router) {
 			old.DefaultAutoplayMode = &p.DefaultAutoplayMode
 		}
 
-		if *old.Player == "hls" {
+		if p.AutoplayNextTrack == "on" {
+			old.AutoplayNextTrack = &cfg.True
+		} else {
+			old.AutoplayNextTrack = &cfg.False
+		}
+
+		if p.ShowAudio == "on" {
+			old.ShowAudio = &cfg.True
+		} else {
+			old.ShowAudio = &cfg.False
+		}
+
+		if *old.Player == cfg.HLSPlayer {
 			if cfg.ProxyStreams {
 				if p.ProxyStreams == "on" {
 					old.ProxyStreams = &cfg.ProxyStreams // true!
 				} else if p.ProxyStreams == "" {
 					old.ProxyStreams = &cfg.False
-				}
-
-				if p.AutoplayNextTrack == "on" {
-					old.AutoplayNextTrack = &cfg.True
-				} else {
-					old.AutoplayNextTrack = &cfg.False
 				}
 			}
 
@@ -114,6 +140,16 @@ func Load(r fiber.Router) {
 			} else if p.FullyPreloadTrack == "" {
 				old.FullyPreloadTrack = &cfg.False
 			}
+
+			old.HLSAudio = &p.HLSAudio
+		}
+
+		if cfg.Restream {
+			if *old.Player == cfg.RestreamPlayer {
+				old.RestreamAudio = &p.RestreamAudio
+			}
+
+			old.DownloadAudio = &p.DownloadAudio
 		}
 
 		if cfg.ProxyImages {

@@ -35,6 +35,20 @@ const (
 	AutoplayRandom string = "random"
 )
 
+const (
+	// choose best for quality/size (AudioAAC over AudioOpus over AudioMP3)
+	AudioBest string = "best"
+
+	// 160kbps m4a AAC audio, rarely available (fallback to AudioMP3 if unavailable)
+	AudioAAC string = "aac"
+
+	// 72kbps ogg opus audio, usually available 99% of the time (fallback to AudioMP3 if unavailable)
+	AudioOpus string = "opus"
+
+	// 128kbps mp3 audio, always available, good for compatibility
+	AudioMP3 string = "mpeg"
+)
+
 type Preferences struct {
 	Player       *string
 	ProxyStreams *bool
@@ -52,7 +66,15 @@ type Preferences struct {
 	// Automatically play next track in playlists
 	AutoplayNextTrack *bool
 
-	DefaultAutoplayMode *string
+	DefaultAutoplayMode *string // "normal" or "random"
+
+	// Check line 38 for constants
+	// Probably best to keep all at "mpeg" by default for compatibility
+	HLSAudio      *string // Please don't use "opus" or "best". hls.js doesn't work with ogg/opus
+	RestreamAudio *string // You can actually use anything here
+	DownloadAudio *string // "aac" may not play well with some players
+
+	ShowAudio *bool // display audio (aac, opus, mpeg etc) under track player
 }
 
 // // config // //
@@ -156,6 +178,13 @@ func defaultPreferences() {
 
 	p2 := AutoplayNormal
 	DefaultPreferences.DefaultAutoplayMode = &p2
+
+	p3 := AudioMP3
+	DefaultPreferences.HLSAudio = &p3
+	DefaultPreferences.RestreamAudio = &p3
+	DefaultPreferences.DownloadAudio = &p3
+
+	DefaultPreferences.ShowAudio = &False
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -206,6 +235,31 @@ func loadDefaultPreferences(loaded Preferences) {
 	} else {
 		p := AutoplayNormal
 		DefaultPreferences.DefaultAutoplayMode = &p
+	}
+
+	p := AudioMP3
+	if loaded.HLSAudio != nil {
+		DefaultPreferences.HLSAudio = loaded.HLSAudio
+	} else {
+		DefaultPreferences.HLSAudio = &p
+	}
+
+	if loaded.RestreamAudio != nil {
+		DefaultPreferences.RestreamAudio = loaded.RestreamAudio
+	} else {
+		DefaultPreferences.RestreamAudio = &p
+	}
+
+	if loaded.DownloadAudio != nil {
+		DefaultPreferences.DownloadAudio = loaded.DownloadAudio
+	} else {
+		DefaultPreferences.DownloadAudio = &p
+	}
+
+	if loaded.ShowAudio != nil {
+		DefaultPreferences.ShowAudio = loaded.ShowAudio
+	} else {
+		DefaultPreferences.ShowAudio = &False
 	}
 }
 
@@ -514,6 +568,8 @@ func init() {
 // seems soundcloud has 4 of these (i1, i2, i3, i4)
 // they point to the same ip from my observations, and they all serve the same files
 const ImageCDN = "i1.sndcdn.com"
+const HLSCDN = "cf-hls-media.sndcdn.com"
+const HLSAACCDN = "playback.media-streaming.soundcloud.cloud"
 
 var True = true
 var False = false

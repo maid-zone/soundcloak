@@ -9,7 +9,18 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var httpc *fasthttp.HostClient
+
 func Load(r fiber.Router) {
+	httpc = &fasthttp.HostClient{
+		Addr:                cfg.ImageCDN + ":443",
+		IsTLS:               true,
+		DialDualStack:       true,
+		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+		MaxIdleConnDuration: 1<<63 - 1,
+		StreamResponseBody:  true,
+	}
+
 	r.Get("/_/proxy/images", func(c *fiber.Ctx) error {
 		url := c.Query("url")
 		if url == "" {
@@ -40,7 +51,7 @@ func Load(r fiber.Router) {
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp) moved to proxyreader!!!
 
-		err = sc.DoWithRetry(sc.ImageClient, req, resp)
+		err = sc.DoWithRetry(httpc, req, resp)
 		if err != nil {
 			return err
 		}

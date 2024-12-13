@@ -8,6 +8,19 @@ import (
 	"strings"
 )
 
+func toExt(audio string) string {
+	switch audio {
+		case cfg.AudioAAC:
+			return "m4a"
+		case cfg.AudioOpus:
+			return "ogg"
+		case cfg.AudioMP3:
+			return "mp3"
+	}
+
+	return ""
+}
+
 templ TrackHeader(prefs cfg.Preferences, t sc.Track) {
 	<meta name="og:site_name" content={ t.Author.Username + " ~ soundcloak" }/>
 	<meta name="og:title" content={ t.Title }/>
@@ -33,16 +46,24 @@ func next(t *sc.Track, p *sc.Playlist, autoplay bool, mode string, volume string
 	return r
 }
 
-templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string) {
+templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string, audio string) {
 	if *prefs.Player == cfg.NonePlayer {
 		{{ return }}
 	}
 	if displayErr == "" {
+		{{ var audioPref string }}
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
-			<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
-		} else if stream != "" {
+			{{ audioPref = *prefs.RestreamAudio }}
 			if nextTrack != nil {
-				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={next(nextTrack, playlist, true, mode, "")} volume={volume}></audio>
+				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay } data-next={ next(nextTrack, playlist, true, mode, "") } volume={volume}></audio>
+				<script async src="/restream.js"></script>
+			} else {
+				<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
+			}
+		} else if stream != "" {
+			{{ audioPref = *prefs.HLSAudio }}
+			if nextTrack != nil {
+				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={ next(nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
 			} else {
 				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
 			}
@@ -60,6 +81,15 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				}
 			</noscript>
 		}
+		if *prefs.ShowAudio {
+			<div>
+				if audioPref == cfg.AudioBest {
+					<p>Audio: best ({ audio })</p>
+				} else {
+					<p>Audio: { audio }</p>
+				}
+			</div>
+		}
 	} else {
 		<div>
 			<p style="white-space: pre-wrap;">{ displayErr }</p>
@@ -69,9 +99,11 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 
 templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	if track.Title != "" {
-		{{ if overrideHref == "" {
-			overrideHref = track.Href()
-		} }}
+		{{
+			if overrideHref == "" {
+				overrideHref = track.Href()
+			}
+		}}
 		<a class="listing" href={ templ.URL(overrideHref) }>
 			if track.Artwork != "" {
 				<img src={ track.Artwork }/>
@@ -88,42 +120,37 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
+	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
 	if t.Genre != "" {
 		<p class="tag">{ t.Genre }</p>
-	} else {
-		<br/>
-		<br/>
 	}
 	if playlist != nil {
 		<details open style="margin-bottom: 1rem;">
 			<summary>Playback info</summary>
-
 			<h2>In playlist:</h2>
 			@PlaylistItem(playlist, true)
-
 			<h2>Next track:</h2>
 			@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
-
-			<a href={templ.URL(t.Href())} class="link">Stop playlist playback</a>
-			<br>
+			<div style="display: flex; gap: 1rem">
+			<a href={ templ.URL(t.Href()) } class="btn">Stop playlist playback</a>
 			if mode != cfg.AutoplayRandom {
-				<a href={templ.URL(next(&t, playlist, false, cfg.AutoplayRandom, volume))} class="link">Switch to random mode</a>
+				<a href={ templ.URL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
 			} else {
-				<a href={templ.URL(next(&t, playlist, false, cfg.AutoplayNormal, volume))} class="link">Switch to normal mode</a>
+				<a href={ templ.URL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
 			}
+			</div>
 		</details>
 	}
 	@UserItem(&t.Author)
 	<div style="display: flex; gap: 1rem">
 		<a class="btn" href={ templ.URL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
 		if cfg.Restream {
-			<a class="btn" href={ templ.URL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Author.Username + " - " + t.Title + ".mp3" }>download</a>
+			<a class="btn" href={ templ.URL("/_/restream" + t.Href() + "?metadata=true") } download={t.Permalink + "." + toExt(audio)}>download</a>
 		}
 	</div>
 	<br/>
@@ -158,7 +185,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "", "")
+			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "", "", "")
 			@UserItem(&t.Author)
 		</body>
 	</html>

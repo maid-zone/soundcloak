@@ -30,6 +30,15 @@ templ sel(name string, options []option, selected string) {
 	</select>
 }
 
+templ sel_audio(name string, selected string, noOpus bool) {
+	@sel(name, []option{
+		{cfg.AudioBest, "Best", noOpus},
+		{cfg.AudioAAC, "M4A AAC 160kb/s", false},
+		{cfg.AudioOpus, "OGG Opus 72kb/s", noOpus},
+		{cfg.AudioMP3, "MP3 128kb/s", false},
+	}, selected)
+}
+
 templ Preferences(prefs cfg.Preferences) {
 	<h1>Preferences</h1>
 	<form method="post" autocomplete="off">
@@ -37,68 +46,82 @@ templ Preferences(prefs cfg.Preferences) {
 			Parse descriptions:
 			@checkbox("ParseDescriptions", *prefs.ParseDescriptions)
 		</label>
-		<br/>
+		<label>
+			Show current audio:
+			@checkbox("ShowAudio", *prefs.ShowAudio)
+		</label>
 		if cfg.ProxyImages {
 			<label>
 				Proxy images:
 				@checkbox("ProxyImages", *prefs.ProxyImages)
 			</label>
-			<br/>
+		}
+		if cfg.Restream {
+			<label>
+				Download audio:
+				@sel_audio("DownloadAudio", *prefs.DownloadAudio, false)
+			</label>
+		}
+		<label>
+			Autoplay next track in playlists:
+			@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
+			(requires JS)
+		</label>
+		if *prefs.AutoplayNextTrack {
+			<label>
+				Default autoplay mode:
+				@sel("DefaultAutoplayMode", []option{
+					{"normal", "Normal (play songs in order)", false},
+					{"random", "Random (play random song)", false},
+				}, *prefs.DefaultAutoplayMode)
+			</label>
 		}
 		<label>
 			Player:
 			@sel("Player", []option{
-				{"restream", "Restream Player", !cfg.Restream},
-				{"hls", "HLS Player (more stable, requires JS)", false},
-				{"none", "None", false},
+				{cfg.RestreamPlayer, "Restream Player", !cfg.Restream},
+				{cfg.HLSPlayer, "HLS Player (requires JS)", false},
+				{cfg.NonePlayer, "None", false},
 			}, *prefs.Player)
 		</label>
-		<br/>
-		if *prefs.Player == "hls" {
-			<h1>Player-specific preferences</h1>
-			if cfg.ProxyStreams {
+		switch *prefs.Player {
+			case cfg.HLSPlayer:
+				<h1>Player-specific preferences</h1>
+				if cfg.ProxyStreams {
+					<label>
+						Proxy song streams:
+						@checkbox("ProxyStreams", *prefs.ProxyStreams)
+					</label>
+				}
 				<label>
-					Proxy song streams:
-					@checkbox("ProxyStreams", *prefs.ProxyStreams)
+					Fully preload track:
+					@checkbox("FullyPreloadTrack", *prefs.FullyPreloadTrack)
 				</label>
-				<br/>
-			}
-			<label>
-				Fully preload track:
-				@checkbox("FullyPreloadTrack", *prefs.FullyPreloadTrack)
-			</label>
-			<br/>
-			<label>
-				Autoplay next track in playlists:
-				@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
-			</label>
-			if *prefs.AutoplayNextTrack {
-				<br/>
 				<label>
-					Default autoplay mode:
-					@sel("DefaultAutoplayMode", []option{
-						{"normal", "Normal (play songs in order)", false},
-						{"random", "Random (play random song)", false},
-					}, *prefs.DefaultAutoplayMode)
+					Streaming audio:
+					@sel_audio("HLSAudio", *prefs.HLSAudio, true)
 				</label>
-			}
-			<br/>
+			case cfg.RestreamPlayer:
+				<h1>Player-specific preferences</h1>
+				<label>
+					Streaming audio:
+					@sel_audio("RestreamAudio", *prefs.RestreamAudio, false)
+				</label>
 		}
 		<input type="submit" value="Update" class="btn" style="margin-top: 1rem;"/>
-		<br/>
-		<br/>
 		<p>These preferences get saved in a cookie.</p>
 	</form>
-
 	<h1>Management</h1>
 	<h2>Preferences</h2>
 	<div style="display: flex; gap: 1rem;">
 		<a class="btn" href="/_/preferences/export" download="soundcloak_preferences.json">Export</a>
 		<a class="btn" href="/_/preferences/reset">Reset</a>
 	</div>
-	<br>
+	<br/>
 	<form method="post" action="/_/preferences/import" autocomplete="off" style="display: grid; gap: 1rem;" enctype="multipart/form-data">
-		<input class="btn" type="file" autocomplete="off" name="prefs" />
+		<input class="btn" type="file" autocomplete="off" name="prefs"/>
 		<input type="submit" value="Import" class="btn"/>
 	</form>
+
+	<style>label{display:flex;gap:.5rem;align-items:center;margin-bottom:.35rem}</style>
 }

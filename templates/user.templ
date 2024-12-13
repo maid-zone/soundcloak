@@ -214,7 +214,7 @@ templ UserRelated(prefs cfg.Preferences, u sc.User, r []*sc.User) {
 
 templ UserTopTracks(prefs cfg.Preferences, u sc.User, t []*sc.Track) {
 	@UserBase(prefs, u)
-	@UserButtons("popular-tracks", u.Permalink)
+	@UserButtons("popular tracks", u.Permalink)
 	<br/>
 	if len(t) != 0 {
 		<div>
