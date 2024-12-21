@@ -222,7 +222,7 @@ func main() {
 		}
 
 		tag := c.Params("tag")
-		p, err := sc.SearchTracks(cid, prefs, "?q=*&filter.genre_or_tag="+tag+"&sort=popular")
+		p, err := sc.SearchTracks(cid, prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag+"&sort=popular"))
 		if err != nil {
 			log.Printf("error getting %s tagged popular-tracks: %s\n", tag, err)
 			return err
@@ -245,7 +245,7 @@ func main() {
 
 		tag := c.Params("tag")
 		// Using a different method, since /playlists/discovery endpoint seems to be broken :P
-		p, err := sc.SearchPlaylists(cid, prefs, "?q=*&filter.genre_or_tag="+tag)
+		p, err := sc.SearchPlaylists(cid, prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag))
 		if err != nil {
 			log.Printf("error getting %s tagged playlists: %s\n", tag, err)
 			return err
