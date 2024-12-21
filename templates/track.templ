@@ -81,6 +81,12 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				}
 			</noscript>
 		}
+		if track.Policy == sc.PolicySnip {
+			<div>
+				<p>Only a 30-second snippet is available.</p>
+			</div>
+		}
+
 		if *prefs.ShowAudio {
 			<div>
 				if audioPref == cfg.AudioBest {
