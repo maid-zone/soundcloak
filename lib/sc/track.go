@@ -467,8 +467,8 @@ func (t Track) Href() string {
 	return "/" + t.Author.Permalink + "/" + t.Permalink
 }
 
-func RecentTracks(cid string, prefs cfg.Preferences, tag string, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{Next: "https://" + api + "/recent-tracks/" + tag + args}
+func RecentTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{Next: "https://" + api + "/recent-tracks/" + args}
 	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err

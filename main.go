@@ -200,7 +200,7 @@ func main() {
 		}
 
 		tag := c.Params("tag")
-		p, err := sc.RecentTracks(cid, prefs, tag, c.Query("pagination", "?limit=20"))
+		p, err := sc.RecentTracks(cid, prefs, c.Query("pagination", tag+"?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tagged recent-tracks: %s\n", tag, err)
 			return err
