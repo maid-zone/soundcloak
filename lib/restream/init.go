@@ -20,6 +20,8 @@ var httpc *fasthttp.HostClient
 var httpc_aac *fasthttp.HostClient
 var httpc_image *fasthttp.HostClient
 
+const defaultPartsCapacity = 24
+
 type reader struct {
 	parts    [][]byte
 	leftover []byte
@@ -72,7 +74,7 @@ func (r *reader) Setup(url string, aac bool) error {
 
 	if r.parts == nil {
 		cfg.Log("make() r.parts")
-		r.parts = make([][]byte, 0, 16)
+		r.parts = make([][]byte, 0, defaultPartsCapacity)
 	} else {
 		cfg.Log(cap(r.parts), len(r.parts))
 	}
@@ -310,7 +312,7 @@ func Load(r fiber.Router) {
 					data = resp.Body()
 				}
 
-				parts := make([][]byte, 0, 16)
+				parts := make([][]byte, 0, defaultPartsCapacity)
 				for _, s := range bytes.Split(data, []byte{'\n'}) {
 					if len(s) == 0 || s[0] == '#' {
 						continue
@@ -389,7 +391,7 @@ func Load(r fiber.Router) {
 					data = resp.Body()
 				}
 
-				parts := make([][]byte, 0, 16)
+				parts := make([][]byte, 0, defaultPartsCapacity)
 				// clone needed to mitigate memory skill issues here
 				for _, s := range bytes.Split(data, []byte{'\n'}) {
 					if len(s) == 0 {
