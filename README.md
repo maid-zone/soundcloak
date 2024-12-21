@@ -256,6 +256,33 @@ Some notes:
 
 </details>
 
+## Tinkering with the frontend
+
+I will mainly talk about the static files here. Maybe about the templates too in the future
+
+The static files are stored in `assets` folder
+
+### Overriding files
+
+You can override files by putting identically named files in the `instance` folder.
+
+### Basic theming
+
+1. Create `instance.css` file in `instance` folder
+2. Put your CSS rules there:
+```css
+/* Some basic CSS to change colors of the frontend. Put your own colors here as this one probably looks horrible (I did not test it) */
+:root {
+    --accent: #ffffff;
+    --primary: #000000;
+    --secondary: #00010a;
+    --0: #fafafa; /* Used for things, such as border color for buttons, etc */
+    --text: green;
+}
+```
+
+Refer to `assets/global.css` file for existing rules.
+
 # Maintenance-related stuffs
 
 ## Updating

@@ -1,9 +1,19 @@
-node_modules
-main
-package-lock.json
-*_templ.go
-fly.toml
-*.fiber.gz
+# soundcloak config (and instance-specific files)
 soundcloak.json
+instance/*
+
+# other configs
 compose.yaml
+fly.toml
+
+# created by soundcloak/dependencies
+node_modules
+package-lock.json
+*.fiber.gz
+
+# codegen
+*_templ.go
 regexp2_codegen.go
+
+# built binary
+main

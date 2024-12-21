@@ -40,7 +40,8 @@ func main() {
 	app.Use(recover.New())
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
-	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 7200})                              // 2 hours
+	app.Static("/", "instance", fiber.Static{Compress: true, MaxAge: 7200})                            // 2 hours
+	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 14400})                             // 4 hours
 	app.Static("/js/hls.js/", "node_modules/hls.js/dist", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
 	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
