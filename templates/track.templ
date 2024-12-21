@@ -133,7 +133,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	<h1>{ t.Title }</h1>
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
 	if t.Genre != "" {
-		<p class="tag">{ t.Genre }</p>
+		<a href={templ.URL("/tags/"+t.Genre)}><p class="tag">{ t.Genre }</p></a>
 	}
 	if playlist != nil {
 		<details open style="margin-bottom: 1rem;">

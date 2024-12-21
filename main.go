@@ -188,6 +188,73 @@ func main() {
 		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(context.Background(), c)
 	})
 
+	app.Get("/tags/:tag", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		tag := c.Params("tag")
+		p, err := sc.RecentTracks(cid, prefs, tag, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s tagged recent-tracks: %s\n", tag, err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(context.Background(), c)
+	})
+
+	app.Get("/tags/:tag/popular-tracks", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		tag := c.Params("tag")
+		p, err := sc.SearchTracks(cid, prefs, "?q=*&filter.genre_or_tag="+tag+"&sort=popular")
+		if err != nil {
+			log.Printf("error getting %s tagged popular-tracks: %s\n", tag, err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(context.Background(), c)
+	})
+
+	app.Get("/tags/:tag/playlists", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		tag := c.Params("tag")
+		// Using a different method, since /playlists/discovery endpoint seems to be broken :P
+		p, err := sc.SearchPlaylists(cid, prefs, "?q=*&filter.genre_or_tag="+tag)
+		if err != nil {
+			log.Printf("error getting %s tagged playlists: %s\n", tag, err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(context.Background(), c)
+	})
+
 	app.Get("/_/featured", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {

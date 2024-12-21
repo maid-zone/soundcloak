@@ -14,6 +14,7 @@ wip alternative frontend for soundcloud
 - Content proxying (images, audio)
 - View featured tracks, playlists
 - Users can change their preferences (should proxying be enabled, what method of playing the song should be used etc)
+- Viewing popular/recent tracks/playlists with a certain tag/genre (actually working for playlists, unlike soundcloud itself!)
 
 ## In the works
 

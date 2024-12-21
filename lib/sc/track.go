@@ -466,3 +466,18 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 func (t Track) Href() string {
 	return "/" + t.Author.Permalink + "/" + t.Permalink
 }
+
+func RecentTracks(cid string, prefs cfg.Preferences, tag string, args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{Next: "https://" + api + "/recent-tracks/" + tag + args}
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range p.Collection {
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
+	}
+
+	return &p, nil
+}
