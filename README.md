@@ -258,6 +258,9 @@ Some notes:
 
 ## Tinkering with the frontend
 
+<details>
+<summary>Click to view</summary>
+
 I will mainly talk about the static files here. Maybe about the templates too in the future
 
 The static files are stored in `assets` folder
@@ -282,6 +285,8 @@ You can override files by putting identically named files in the `instance` fold
 ```
 
 Refer to `assets/global.css` file for existing rules.
+
+</details>
 
 # Maintenance-related stuffs
 
