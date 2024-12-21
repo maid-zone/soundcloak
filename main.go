@@ -116,7 +116,7 @@ func main() {
 
 		req.Header.SetMethod("HEAD")
 		req.SetRequestURI("https://on.soundcloud.com/" + id)
-		req.Header.Set("User-Agent", cfg.UserAgent)
+		req.Header.SetUserAgent(cfg.UserAgent)
 
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
@@ -531,7 +531,7 @@ func main() {
 				playlist = &p
 
 				if nextTrack.Title == "" {
-					nt, err := sc.GetTrackByID(cid, nextTrack.ID)
+					nt, err := sc.GetTrackByID(cid, string(nextTrack.ID))
 					if err != nil {
 						return err
 					}

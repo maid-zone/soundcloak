@@ -45,7 +45,7 @@ func Load(r fiber.Router) {
 		defer fasthttp.ReleaseRequest(req)
 
 		req.SetURI(parsed)
-		req.Header.Set("User-Agent", cfg.UserAgent)
+		req.Header.SetUserAgent(cfg.UserAgent)
 		//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
 
 		resp := fasthttp.AcquireResponse()

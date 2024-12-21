@@ -190,7 +190,7 @@ func (p *Playlist) GetMissingTracks(cid string) error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
-			missing = append(missing, MissingTrack{ID: strconv.FormatInt(int64(track.IDint), 10), Index: i})
+			missing = append(missing, MissingTrack{ID: string(track.ID), Index: i})
 		}
 	}
 
@@ -205,7 +205,7 @@ func (p *Playlist) GetMissingTracks(cid string) error {
 
 	for _, oldTrack := range missing {
 		for _, newTrack := range res {
-			if newTrack.ID == oldTrack.ID {
+			if string(newTrack.ID) == string(oldTrack.ID) {
 				p.Tracks[oldTrack.Index] = newTrack
 			}
 		}

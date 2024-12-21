@@ -20,21 +20,21 @@ var UsersCache = map[string]cached[User]{}
 var usersCacheLock = &sync.RWMutex{}
 
 type User struct {
-	Avatar       string `json:"avatar_url"`
-	CreatedAt    string `json:"created_at"`
-	Description  string `json:"description"`
-	Followers    int64  `json:"followers_count"`
-	Following    int64  `json:"followings_count"`
-	FullName     string `json:"full_name"`
-	Kind         string `json:"kind"` // should always be "user"!
-	LastModified string `json:"last_modified"`
-	Liked        int64  `json:"likes_count"`
-	Permalink    string `json:"permalink"`
-	Playlists    int64  `json:"playlist_count"`
-	Tracks       int64  `json:"track_count"`
-	ID           string `json:"urn"`
-	Username     string `json:"username"`
-	Verified     bool   `json:"verified"`
+	Avatar       string      `json:"avatar_url"`
+	CreatedAt    string      `json:"created_at"`
+	Description  string      `json:"description"`
+	Followers    int64       `json:"followers_count"`
+	Following    int64       `json:"followings_count"`
+	FullName     string      `json:"full_name"`
+	Kind         string      `json:"kind"` // should always be "user"!
+	LastModified string      `json:"last_modified"`
+	Liked        int64       `json:"likes_count"`
+	Permalink    string      `json:"permalink"`
+	Playlists    int64       `json:"playlist_count"`
+	Tracks       int64       `json:"track_count"`
+	ID           json.Number `json:"id"`
+	Username     string      `json:"username"`
+	Verified     bool        `json:"verified"`
 
 	WebProfiles []Link
 }
@@ -151,7 +151,7 @@ func SearchUsers(cid string, prefs cfg.Preferences, args string) (*Paginated[*Us
 
 func (u User) GetTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{
-		Next: "https://" + api + "/users/" + u.ID + "/tracks" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/tracks" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -202,9 +202,6 @@ func (u *User) Fix(large bool) {
 		u.Avatar = ""
 	}
 
-	ls := strings.Split(u.ID, ":")
-	u.ID = ls[len(ls)-1]
-
 	for i, l := range u.WebProfiles {
 		if textparsing.IsEmail(l.URL) {
 			l.URL = "mailto:" + l.URL
@@ -233,7 +230,7 @@ func (u *User) Postfix(prefs cfg.Preferences) {
 
 func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/users/" + u.ID + "/playlists_without_albums" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/playlists_without_albums" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -251,7 +248,7 @@ func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Pag
 
 func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/users/" + u.ID + "/albums" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/albums" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -269,7 +266,7 @@ func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Pagina
 
 func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
 	p := Paginated[*Repost]{
-		Next: "https://" + api + "/stream/users/" + u.ID + "/reposts" + args,
+		Next: "https://" + api + "/stream/users/" + string(u.ID) + "/reposts" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -286,7 +283,7 @@ func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Pagin
 
 func (u User) GetLikes(cid string, prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
 	p := Paginated[*Like]{
-		Next: "https://" + api + "/users/" + u.ID + "/likes" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/likes" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -313,8 +310,8 @@ func (u *User) GetWebProfiles(cid string) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://" + api + "/users/" + u.ID + "/web-profiles?client_id=" + cid)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.SetRequestURI("https://" + api + "/users/soundcloud:users:" + string(u.ID) + "/web-profiles?client_id=" + cid)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -339,7 +336,7 @@ func (u *User) GetWebProfiles(cid string) error {
 
 func (u *User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + u.ID + "/relatedartists?page_size=20",
+		Next: "https://" + api + "/users/" + string(u.ID) + "/relatedartists?page_size=20",
 	}
 
 	err := p.Proceed(cid, true)
@@ -357,7 +354,7 @@ func (u *User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 
 func (u *User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
 	p := Paginated[*Track]{
-		Next: "https://" + api + "/users/" + u.ID + "/toptracks?limit=10",
+		Next: "https://" + api + "/users/" + string(u.ID) + "/toptracks?limit=10",
 	}
 
 	err := p.Proceed(cid, true)
@@ -375,7 +372,7 @@ func (u *User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error)
 
 func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + u.ID + "/followers" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/followers" + args,
 	}
 
 	err := p.Proceed(cid, true)
@@ -393,7 +390,7 @@ func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Pag
 
 func (u User) GetFollowing(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + u.ID + "/followings" + args,
+		Next: "https://" + api + "/users/" + string(u.ID) + "/followings" + args,
 	}
 
 	err := p.Proceed(cid, true)

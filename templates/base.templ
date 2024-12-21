@@ -22,6 +22,9 @@ templ Base(title string, content templ.Component, head templ.Component) {
 			}
 		</head>
 		<body>
+			if cfg.Debug {
+				<h1>!! running in debug mode !!</h1>
+			}
 			<a href="/" id="sc"><h1>soundcloak</h1></a>
 			@content
 		</body>

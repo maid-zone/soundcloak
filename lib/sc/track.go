@@ -38,13 +38,11 @@ type Track struct {
 	Reposted      int64       `json:"reposts_count"`
 	TagList       string      `json:"tag_list"`
 	Title         string      `json:"title"`
-	ID            string      `json:"urn"`
+	ID            json.Number `json:"id"`
 	Media         Media       `json:"media"`
 	Authorization string      `json:"track_authorization"`
 	Author        User        `json:"user"`
 	Policy        TrackPolicy `json:"policy"`
-
-	IDint int64 `json:"id"`
 }
 
 type TrackPolicy string
@@ -260,7 +258,7 @@ func GetTracks(cid string, ids string) ([]Track, error) {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI("https://" + api + "/tracks?ids=" + ids + "&client_id=" + cid)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -298,7 +296,7 @@ func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI(tr.URL + "?client_id=" + cid + "&track_authorization=" + authorization)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -348,13 +346,6 @@ func (t *Track) Fix(large bool, fixAuthor bool) {
 		t.Artwork = strings.Replace(t.Artwork, "-large.", "-t200x200.", 1)
 	}
 
-	if t.ID == "" {
-		t.ID = strconv.FormatInt(t.IDint, 10)
-	} else {
-		ls := strings.Split(t.ID, ":")
-		t.ID = ls[len(ls)-1]
-	}
-
 	if fixAuthor {
 		t.Author.Fix(false)
 	}
@@ -392,7 +383,7 @@ func (t Track) FormatDescription() string {
 func GetTrackByID(cid string, id string) (Track, error) {
 	tracksCacheLock.RLock()
 	for _, cell := range TracksCache {
-		if cell.Value.ID == id && cell.Expires.After(time.Now()) {
+		if string(cell.Value.ID) == string(id) && cell.Expires.After(time.Now()) {
 			tracksCacheLock.RUnlock()
 			return cell.Value, nil
 		}
@@ -412,7 +403,7 @@ func GetTrackByID(cid string, id string) (Track, error) {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI("https://" + api + "/tracks/" + id + "?client_id=" + cid)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -451,7 +442,7 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI(t.Artwork)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
 
 	resp := fasthttp.AcquireResponse()

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image/jpeg"
 	"io"
+	"sync"
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/gcottom/mp4meta"
@@ -29,6 +30,16 @@ type reader struct {
 	client *fasthttp.HostClient
 }
 
+var readerpool = sync.Pool{
+	New: func() any {
+		return &reader{}
+	},
+}
+
+func acquireReader() *reader {
+	return readerpool.Get().(*reader)
+}
+
 func clone(buf []byte) []byte {
 	out := make([]byte, len(buf))
 	copy(out, buf)
@@ -40,7 +51,7 @@ func (r *reader) Setup(url string, aac bool) error {
 	r.resp = fasthttp.AcquireResponse()
 
 	r.req.SetRequestURI(url)
-	r.req.Header.Set("User-Agent", cfg.UserAgent)
+	r.req.Header.SetUserAgent(cfg.UserAgent)
 	r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	if aac {
@@ -59,7 +70,10 @@ func (r *reader) Setup(url string, aac bool) error {
 		data = r.resp.Body()
 	}
 
-	r.parts = make([][]byte, 0, 16)
+	if r.parts == nil {
+		cfg.Log("make() r.parts")
+		r.parts = make([][]byte, 0, 16)
+	}
 	if aac {
 		// clone needed to mitigate memory skill issues here
 		for _, s := range bytes.Split(data, []byte{'\n'}) {
@@ -89,6 +103,27 @@ func (r *reader) Setup(url string, aac bool) error {
 	return nil
 }
 
+func (r *reader) Close() error {
+	cfg.Log("closed :D")
+	if r.req != nil {
+		fasthttp.ReleaseRequest(r.req)
+		r.req = nil
+	}
+
+	if r.resp != nil {
+		fasthttp.ReleaseResponse(r.resp)
+		r.resp = nil
+	}
+
+	r.client = nil
+	r.leftover = nil
+	r.index = 0
+	r.parts = r.parts[:0]
+
+	readerpool.Put(r)
+	return nil
+}
+
 // you could prob make this a bit faster by concurrency (make a bunch of workers => make them download the parts => temporarily add them to a map => fully assemble the result => make reader.Read() read out the result as the parts are coming in) but whatever, fine for now
 func (r *reader) Read(buf []byte) (n int, err error) {
 	if len(r.leftover) != 0 {
@@ -113,8 +148,6 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 	}
 
 	if r.index == len(r.parts) {
-		fasthttp.ReleaseRequest(r.req)
-		fasthttp.ReleaseResponse(r.resp)
 		err = io.EOF
 		return
 	}
@@ -224,7 +257,7 @@ func Load(r fiber.Router) {
 		if isDownload {
 			switch audio {
 			case cfg.AudioMP3:
-				r := reader{}
+				r := acquireReader()
 				if err := r.Setup(u, false); err != nil {
 					return err
 				}
@@ -252,14 +285,14 @@ func Load(r fiber.Router) {
 				r.leftover = col.data
 
 				// id3 is quite flexible and the files streamed by soundcloud don't have it so its easy to restream the stuff like this
-				return c.SendStream(&r)
+				return c.SendStream(r)
 
 			case cfg.AudioOpus:
 				req := fasthttp.AcquireRequest()
 				defer fasthttp.ReleaseRequest(req)
 
 				req.SetRequestURI(u)
-				req.Header.Set("User-Agent", cfg.UserAgent)
+				req.Header.SetUserAgent(cfg.UserAgent)
 				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 				resp := fasthttp.AcquireResponse()
@@ -338,7 +371,7 @@ func Load(r fiber.Router) {
 				defer fasthttp.ReleaseRequest(req)
 
 				req.SetRequestURI(u)
-				req.Header.Set("User-Agent", cfg.UserAgent)
+				req.Header.SetUserAgent(cfg.UserAgent)
 				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 				resp := fasthttp.AcquireResponse()
@@ -422,11 +455,11 @@ func Load(r fiber.Router) {
 			}
 		}
 
-		r := reader{}
+		r := acquireReader()
 		if err := r.Setup(u, audio == cfg.AudioAAC); err != nil {
 			return err
 		}
 
-		return c.SendStream(&r)
+		return c.SendStream(r)
 	})
 }

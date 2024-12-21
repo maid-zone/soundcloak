@@ -68,7 +68,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI(uri)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -134,7 +134,7 @@ func GetClientID() (string, error) {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI("https://soundcloud.com/h") // 404 page
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -292,7 +292,7 @@ func Resolve(cid string, path string, out any) error {
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI("https://" + api + "/resolve?url=https%3A%2F%2Fsoundcloud.com%2F" + url.QueryEscape(path) + "&client_id=" + cid)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -335,7 +335,7 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 
 	oldNext := p.Next
 	req.SetRequestURI(p.Next + "&client_id=" + cid)
-	req.Header.Set("User-Agent", cfg.UserAgent)
+	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
