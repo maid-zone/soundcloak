@@ -73,6 +73,8 @@ func (r *reader) Setup(url string, aac bool) error {
 	if r.parts == nil {
 		cfg.Log("make() r.parts")
 		r.parts = make([][]byte, 0, 16)
+	} else {
+		cfg.Log(cap(r.parts), len(r.parts))
 	}
 	if aac {
 		// clone needed to mitigate memory skill issues here

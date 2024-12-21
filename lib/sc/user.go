@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/maid-zone/soundcloak/lib/cfg"
 	"github.com/maid-zone/soundcloak/lib/textparsing"
-	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
 )
 

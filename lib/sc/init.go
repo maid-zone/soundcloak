@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
+	"github.com/goccy/go-json"
 	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/segmentio/encoding/json"
 	"github.com/valyala/fasthttp"
 )
 

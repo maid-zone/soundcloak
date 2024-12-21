@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/segmentio/encoding/json"
+	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
 )
 
