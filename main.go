@@ -325,6 +325,11 @@ func main() {
 
 	preferences.Load(app)
 
+	// Currently, /:user is the tracks page
+	app.Get("/:user/tracks", func(c *fiber.Ctx) error {
+		return c.Redirect("/" + c.Params("user"))
+	})
+
 	app.Get("/:user/sets", func(c *fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
@@ -612,7 +617,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track)).Render(context.Background(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track, true)).Render(context.Background(), c)
 	})
 
 	app.Get("/:user", func(c *fiber.Ctx) error {
@@ -709,6 +714,91 @@ func main() {
 
 		c.Set("Content-Type", "text/html")
 		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(context.Background(), c)
+	})
+
+	// I'd like to make this "related" but keeping it "recommended" to have the same url as soundcloud
+	app.Get("/:user/:track/recommended", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetTrack(cid, c.Params("user")+"/"+c.Params("track"))
+		if err != nil {
+			log.Printf("error getting %s from %s (related): %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+		track.Postfix(prefs, true)
+
+		r, err := track.GetRelated(cid, prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s from %s related tracks: %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/:track/sets", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetTrack(cid, c.Params("user")+"/"+c.Params("track"))
+		if err != nil {
+			log.Printf("error getting %s from %s (sets): %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+		track.Postfix(prefs, true)
+
+		p, err := track.GetPlaylists(cid, prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s from %s sets: %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(context.Background(), c)
+	})
+
+	app.Get("/:user/:track/albums", func(c *fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		track, err := sc.GetTrack(cid, c.Params("user")+"/"+c.Params("track"))
+		if err != nil {
+			log.Printf("error getting %s from %s (albums): %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+		track.Postfix(prefs, true)
+
+		p, err := track.GetAlbums(cid, prefs, c.Query("pagination", "?limit=20"))
+		if err != nil {
+			log.Printf("error getting %s from %s albums: %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+
+		c.Set("Content-Type", "text/html")
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(context.Background(), c)
 	})
 
 	log.Fatal(app.Listen(cfg.Addr))

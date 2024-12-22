@@ -481,3 +481,57 @@ func RecentTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*T
 
 	return &p, nil
 }
+
+func (t *Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+	p := Paginated[*Track]{
+		Next: "https://" + api + "/tracks/" + string(t.ID) + "/related" + args,
+	}
+
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range p.Collection {
+		t.Fix(false, false)
+		t.Postfix(prefs, false)
+	}
+
+	return &p, nil
+}
+
+func (t *Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+	p := Paginated[*Playlist]{
+		Next: "https://" + api + "/tracks/" + string(t.ID) + "/playlists_without_albums" + args,
+	}
+
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range p.Collection {
+		p.Fix("", false, false)
+		p.Postfix(prefs, false, false)
+	}
+
+	return &p, nil
+}
+
+func (t *Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+	p := Paginated[*Playlist]{
+		Next: "https://" + api + "/tracks/" + string(t.ID) + "/albums" + args,
+	}
+
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range p.Collection {
+		p.Fix("", false, false)
+		p.Postfix(prefs, false, false)
+	}
+
+	return &p, nil
+}
