@@ -106,6 +106,16 @@ func main() {
 		return c.SendStatus(404)
 	})
 
+	// someone is trying to hit those endpoints on sc.maid.zone at like 4am lol
+	// those are authentication-only, planning to make something similar later on
+	app.Get("/stream", func(c *fiber.Ctx) error {
+		return c.Redirect("/")
+	})
+
+	app.Get("/feed", func(c *fiber.Ctx) error {
+		return c.Redirect("/")
+	})
+
 	app.Get("/on/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		if id == "" {
