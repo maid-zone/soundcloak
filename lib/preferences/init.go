@@ -130,7 +130,7 @@ func Load(r fiber.Router) {
 		if *old.Player == cfg.HLSPlayer {
 			if cfg.ProxyStreams {
 				if p.ProxyStreams == "on" {
-					old.ProxyStreams = &cfg.ProxyStreams // true!
+					old.ProxyStreams = &cfg.True
 				} else if p.ProxyStreams == "" {
 					old.ProxyStreams = &cfg.False
 				}
@@ -155,7 +155,7 @@ func Load(r fiber.Router) {
 
 		if cfg.ProxyImages {
 			if p.ProxyImages == "on" {
-				old.ProxyImages = &cfg.ProxyImages // true!
+				old.ProxyImages = &cfg.True
 			} else if p.ProxyImages == "" {
 				old.ProxyImages = &cfg.False
 			}

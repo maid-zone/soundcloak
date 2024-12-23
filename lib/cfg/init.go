@@ -87,6 +87,8 @@ var TrustedProxyCheck = true
 // list of ips or ip ranges of trusted proxies (check above)
 var TrustedProxies = []string{}
 
+var CodegenConfig = false
+
 // // end of config // //
 
 // defaults are:
@@ -425,6 +427,7 @@ func init() {
 		Prefork                 *bool
 		TrustedProxyCheck       *bool
 		TrustedProxies          *[]string
+		CodegenConfig           *bool
 	}
 
 	err = json.Unmarshal(data, &config)
@@ -495,6 +498,9 @@ func init() {
 	}
 	if config.TrustedProxies != nil {
 		TrustedProxies = *config.TrustedProxies
+	}
+	if config.CodegenConfig != nil {
+		CodegenConfig = *config.CodegenConfig
 	}
 
 	if config.DefaultPreferences != nil {
