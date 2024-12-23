@@ -11,6 +11,7 @@ import (
 	"github.com/gcottom/oggmeta"
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/misc"
 	"github.com/maid-zone/soundcloak/lib/preferences"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
@@ -73,10 +74,10 @@ func (r *reader) Setup(url string, aac bool) error {
 	}
 
 	if r.parts == nil {
-		cfg.Log("make() r.parts")
+		misc.Log("make() r.parts")
 		r.parts = make([][]byte, 0, defaultPartsCapacity)
 	} else {
-		cfg.Log(cap(r.parts), len(r.parts))
+		misc.Log(cap(r.parts), len(r.parts))
 	}
 	if aac {
 		// clone needed to mitigate memory skill issues here
@@ -108,7 +109,7 @@ func (r *reader) Setup(url string, aac bool) error {
 }
 
 func (r *reader) Close() error {
-	cfg.Log("closed :D")
+	misc.Log("closed :D")
 	if r.req != nil {
 		fasthttp.ReleaseRequest(r.req)
 		r.req = nil

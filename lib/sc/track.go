@@ -11,6 +11,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/misc"
 	"github.com/valyala/fasthttp"
 )
 
@@ -324,7 +325,7 @@ func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization
 		return "", err
 	}
 
-	cfg.Log(s)
+	misc.Log(s)
 
 	if s.URL == "" {
 		return "", ErrNoURL

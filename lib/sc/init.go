@@ -12,6 +12,7 @@ import (
 	"github.com/dlclark/regexp2"
 	"github.com/goccy/go-json"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/misc"
 	"github.com/valyala/fasthttp"
 )
 
@@ -61,9 +62,9 @@ type cached[T any] struct {
 	Expires time.Time
 }
 
-// don't be spooked by cfg.Log, it will be removed during compilation if cfg.Debug == false
+// don't be spooked by misc.Log, it will be removed during compilation if cfg.Debug == false
 func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
-	cfg.Log(uri)
+	misc.Log(uri)
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
@@ -77,18 +78,18 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 	defer wg.Done()
 
 	if *isDone {
-		cfg.Log("early 1")
+		misc.Log("early 1")
 		return
 	}
 
 	err := DoWithRetryAll(genericClient, req, resp)
 	if err != nil {
-		cfg.Log(err)
+		misc.Log(err)
 		return
 	}
 
 	if *isDone {
-		cfg.Log("early 2")
+		misc.Log("early 2")
 		return
 	}
 
@@ -98,7 +99,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 	}
 
 	if *isDone {
-		cfg.Log("early 3")
+		misc.Log("early 3")
 		return
 	}
 
@@ -107,17 +108,17 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 		g := m2.GroupByNumber(1)
 		if g != nil {
 			if *isDone {
-				cfg.Log("early 4")
+				misc.Log("early 4")
 				return
 			}
 
 			ch <- g.String()
-			cfg.Log("found in", uri)
+			misc.Log("found in", uri)
 			return
 		}
 	}
 
-	cfg.Log("not found in", uri)
+	misc.Log("not found in", uri)
 }
 
 // Experimental method, which asserts that the clientId is inside the file that starts with "0-"
@@ -126,7 +127,7 @@ const experimental_GetClientID = true
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
 	if ClientIDCache.NextCheck.After(time.Now()) {
-		cfg.Log("clientidcache hit @ 1")
+		misc.Log("clientidcache hit @ 1")
 		return ClientIDCache.ClientID, nil
 	}
 
@@ -162,7 +163,7 @@ func GetClientID() (string, error) {
 
 	ver := g.String()
 	if ver == ClientIDCache.Version {
-		cfg.Log("clientidcache hit @ ver")
+		misc.Log("clientidcache hit @ ver")
 		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
 		return ClientIDCache.ClientID, nil
 	}
@@ -190,7 +191,7 @@ func GetClientID() (string, error) {
 						ClientIDCache.ClientID = g.String()
 						ClientIDCache.Version = ver
 						ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-						cfg.Log(ClientIDCache)
+						misc.Log(ClientIDCache)
 						return ClientIDCache.ClientID, nil
 					}
 				}
@@ -214,7 +215,7 @@ func GetClientID() (string, error) {
 		go func() {
 			defer func() {
 				err := recover()
-				cfg.Log("-- GetClientID recovered:", err)
+				misc.Log("-- GetClientID recovered:", err)
 			}()
 
 			wg.Wait()
@@ -234,7 +235,7 @@ func GetClientID() (string, error) {
 			ClientIDCache.ClientID = res
 			ClientIDCache.Version = ver
 			ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-			cfg.Log(ClientIDCache)
+			misc.Log(ClientIDCache)
 		}
 
 		return res, err
@@ -273,7 +274,7 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 			return
 		}
 
-		cfg.Log("we failed haha", err)
+		misc.Log("we failed haha", err)
 	}
 
 	return

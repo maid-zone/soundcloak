@@ -1,6 +1,16 @@
 Dockerfile
+*.yaml
+build
+.github
+.gitignore
+soundcloak.example.json
+
 LICENSE
 README.md
-*.yaml
+docs
+
+*.fiber.gz
+node_modules
 *_templ.go
 regexp2_codegen.go
+main

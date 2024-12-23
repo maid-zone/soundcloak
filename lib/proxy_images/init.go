@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/maid-zone/soundcloak/lib/cfg"
+	"github.com/maid-zone/soundcloak/lib/misc"
 	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
@@ -59,7 +60,7 @@ func Load(r fiber.Router) {
 		c.Set("Content-Type", "image/jpeg")
 		c.Set("Cache-Control", cfg.ImageCacheControl)
 		//return c.Send(resp.Body())
-		pr := cfg.AcquireProxyReader()
+		pr := misc.AcquireProxyReader()
 		pr.Reader = resp.BodyStream()
 		pr.Resp = resp
 		return c.SendStream(pr)
