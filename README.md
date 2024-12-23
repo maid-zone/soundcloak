@@ -19,9 +19,9 @@ Frontend for SoundCloud
 </details>
 
 # Documentation
-## [User Guide](/docs/USER_GUIDE.md)
-## [Instance Maintainer Guide](/docs/INSTANCE_GUIDE.md)
-## [Development Guide](/docs/DEV_GUIDE.md)
+## [User Guide](docs/USER_GUIDE.md)
+## [Instance Maintainer Guide](docs/INSTANCE_GUIDE.md)
+## [Development Guide](docs/DEV_GUIDE.md)
 
 # Notice
 soundcloak is not affiliated with SoundCloud.
