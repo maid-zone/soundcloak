@@ -133,7 +133,7 @@ func GetClientID() (string, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://soundcloud.com/h") // 404 page
+	req.SetRequestURI("https://soundcloud.com")
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
