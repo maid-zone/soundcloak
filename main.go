@@ -37,7 +37,9 @@ func main() {
 		TrustedProxies:          cfg.TrustedProxies,
 	})
 
-	app.Use(recover.New())
+	if !cfg.Debug {
+		app.Use(recover.New())
+	}
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
 	app.Static("/", "instance", fiber.Static{Compress: true, MaxAge: 7200})                            // 2 hours
@@ -811,5 +813,8 @@ func main() {
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(context.Background(), c)
 	})
 
+	if cfg.CodegenConfig {
+		log.Println("Warning: you have CodegenConfig enabled, but the config was loaded dynamically.")
+	}
 	log.Fatal(app.Listen(cfg.Addr))
 }
