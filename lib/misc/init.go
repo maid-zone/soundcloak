@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/maid-zone/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"github.com/valyala/fasthttp"
 )
 

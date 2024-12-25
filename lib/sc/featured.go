@@ -1,6 +1,6 @@
 package sc
 
-import "github.com/maid-zone/soundcloak/lib/cfg"
+import "git.maid.zone/stuff/soundcloak/lib/cfg"
 
 // Functions/structions related to featured/suggested content
 

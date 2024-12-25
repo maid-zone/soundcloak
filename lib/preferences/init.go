@@ -6,9 +6,9 @@ import (
 
 	"github.com/goccy/go-json"
 
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/templates"
 	"github.com/gofiber/fiber/v2"
-	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/templates"
 )
 
 func Defaults(dst *cfg.Preferences) {

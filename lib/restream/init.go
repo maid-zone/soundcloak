@@ -6,14 +6,14 @@ import (
 	"io"
 	"sync"
 
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"git.maid.zone/stuff/soundcloak/lib/preferences"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"github.com/bogem/id3v2/v2"
 	"github.com/gcottom/mp4meta"
 	"github.com/gcottom/oggmeta"
 	"github.com/gofiber/fiber/v2"
-	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/lib/misc"
-	"github.com/maid-zone/soundcloak/lib/preferences"
-	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
 

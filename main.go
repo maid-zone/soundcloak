@@ -14,13 +14,13 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/valyala/fasthttp"
 
-	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/lib/preferences"
-	proxyimages "github.com/maid-zone/soundcloak/lib/proxy_images"
-	proxystreams "github.com/maid-zone/soundcloak/lib/proxy_streams"
-	"github.com/maid-zone/soundcloak/lib/restream"
-	"github.com/maid-zone/soundcloak/lib/sc"
-	"github.com/maid-zone/soundcloak/templates"
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/preferences"
+	proxyimages "git.maid.zone/stuff/soundcloak/lib/proxy_images"
+	proxystreams "git.maid.zone/stuff/soundcloak/lib/proxy_streams"
+	"git.maid.zone/stuff/soundcloak/lib/restream"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
+	"git.maid.zone/stuff/soundcloak/templates"
 )
 
 // see build script/dockerfile

@@ -1,5 +1,6 @@
 # soundcloak
 
+# This readme is outdated
 wip alternative frontend for soundcloud
 
 # [Instance list](https://maid.zone/soundcloak/instances.html)

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"github.com/goccy/go-json"
-	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/lib/misc"
 	"github.com/valyala/fasthttp"
 )
 

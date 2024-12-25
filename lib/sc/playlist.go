@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/maid-zone/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
 )
 
 var PlaylistsCache = map[string]cached[Playlist]{}

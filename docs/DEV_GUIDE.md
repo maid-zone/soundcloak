@@ -8,7 +8,7 @@
 1. Clone this repository:
 
 ```sh
-git clone https://github.com/maid-zone/soundcloak
+git clone https://git.maid.zone/stuff/soundcloak
 ```
 
 2. Go into the cloned repository:

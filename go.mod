@@ -1,4 +1,4 @@
-module github.com/maid-zone/soundcloak
+module git.maid.zone/stuff/soundcloak
 
 go 1.22.10
 

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"net/url"
 
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"github.com/gofiber/fiber/v2"
-	"github.com/maid-zone/soundcloak/lib/cfg"
-	"github.com/maid-zone/soundcloak/lib/misc"
-	"github.com/maid-zone/soundcloak/lib/sc"
 	"github.com/valyala/fasthttp"
 )
 

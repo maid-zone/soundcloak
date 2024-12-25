@@ -7,7 +7,7 @@ You need to have [Docker](https://docker.com) and [Git](https://git-scm.com) ins
 1. Clone this repository:
 
 ```sh
-git clone https://github.com/maid-zone/soundcloak
+git clone https://git.maid.zone/stuff/soundcloak
 ```
 
 2. Go into the cloned repository:
@@ -167,4 +167,4 @@ Basic rules:
 
 Also, keep in mind that the instance list will periodically hit the `/_/info` endpoint on your instance (usually each 10 minutes) in order to display the instance settings. If you do not want this to happen, state it in your discussion/message, and I will exclude your instance from this checking.
 
-The source code powering the instance list can be found [here](https://github.com/maid-zone/soundcloak-instances)
+The source code powering the instance list can be found [here](https://git.maid.zone/stuff/soundcloak-instances)
