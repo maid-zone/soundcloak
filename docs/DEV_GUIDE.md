@@ -86,9 +86,9 @@ Now, you can run soundcloak with the `./main` binary.
 # Contributing
 Contributions are appreciated!
 
-Development and discussion mainly happens on [our GitHub](https://github.com/maid-zone/soundcloak), but feel free to contribute on our [Codeberg mirror](https://codeberg.org/maid-zone/soundcloak) as well!
+We develop soundcloak on [our forgejo instance](https://git.maid.zone/stuff/soundcloak), but feel free to contribute on our [Codeberg](https://codeberg.org/maid-zone/soundcloak) and [Github](https://github.com/maid-zone/soundcloak) as well!
 
-If you want to add a new feature that's not in [the todo list](https://github.com/maid-zone/soundcloak/discussions/6), please create an issue or discussion first.
+If you want to add a new feature that's not in [the todo list](https://git.maid.zone/stuff/soundcloak/issues/1), please create an issue or discussion first.
 
 If you have updated go dependencies or added new ones, please run `go mod tidy` before commiting.
 
