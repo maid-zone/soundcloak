@@ -11,10 +11,20 @@ import (
 )
 
 var httpc *fasthttp.HostClient
+var al_httpc *fasthttp.HostClient
 
 func Load(r fiber.Router) {
 	httpc = &fasthttp.HostClient{
 		Addr:                cfg.ImageCDN + ":443",
+		IsTLS:               true,
+		DialDualStack:       true,
+		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+		MaxIdleConnDuration: 1<<63 - 1,
+		StreamResponseBody:  true,
+	}
+
+	al_httpc = &fasthttp.HostClient{
+		Addr:                "al.sndcdn.com:443",
 		IsTLS:               true,
 		DialDualStack:       true,
 		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
@@ -40,7 +50,13 @@ func Load(r fiber.Router) {
 			return fiber.ErrBadRequest
 		}
 
-		parsed.SetHost(cfg.ImageCDN)
+		var cl *fasthttp.HostClient
+		if parsed.Host()[0] == 'i' {
+			parsed.SetHost(cfg.ImageCDN)
+			cl = httpc
+		} else if string(parsed.Host()[:2]) == "al" {
+			cl = al_httpc
+		}
 
 		req := fasthttp.AcquireRequest()
 		defer fasthttp.ReleaseRequest(req)
@@ -52,7 +68,7 @@ func Load(r fiber.Router) {
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp) moved to proxyreader!!!
 
-		err = sc.DoWithRetry(httpc, req, resp)
+		err = sc.DoWithRetry(cl, req, resp)
 		if err != nil {
 			return err
 		}

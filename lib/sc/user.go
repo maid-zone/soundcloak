@@ -35,6 +35,7 @@ type User struct {
 	ID           json.Number `json:"id"`
 	Username     string      `json:"username"`
 	Verified     bool        `json:"verified"`
+	Station      string      `json:"station_permalink"`
 
 	WebProfiles []Link
 }

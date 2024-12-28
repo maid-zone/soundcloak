@@ -32,7 +32,7 @@ templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 			if showUsername {
 				<span>{ playlist.Author.Username }</span>
 			}
-			<p>{ strconv.FormatInt(playlist.TrackCount, 10) } tracks</p>
+			<p>{ strconv.FormatInt(playlist.TracksCount(), 10) } tracks</p>
 		</div>
 	</a>
 }
@@ -48,7 +48,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	</div>
 	<br/>
 	@Description(prefs, p.Description, nil)
-	<p>{ strconv.FormatInt(p.TrackCount, 10) } tracks</p>
+	<p>{ strconv.FormatInt(p.TracksCount(), 10) } tracks</p>
 	<br/>
 	<br/>
 	<div>
@@ -69,8 +69,12 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 		}
 		<p>{ strconv.FormatInt(p.Likes, 10) } likes</p>
 		<br/>
-		<p>Created: { p.CreatedAt }</p>
-		<p>Last modified: { p.LastModified }</p>
+		if p.CreatedAt != "" {
+			<p>Created: { p.CreatedAt }</p>
+		}
+		if p.LastModified != "" {
+			<p>Last modified: { p.LastModified }</p>
+		}
 	</div>
 }
 

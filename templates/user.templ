@@ -77,20 +77,25 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 type btn struct {
 	text     string
 	href     string
+	override bool
 	external bool
 }
 
-templ UserButtons(current string, user string) {
+templ UserButtons(current string, user sc.User) {
 	<div class="btns">
 		//       this part is the tedious one now, because formatting breaks if i space the list out with newlines
-		for _, b := range [...]btn{{"tracks", "", false},{"popular tracks", "/popular-tracks", false},{"playlists", "/sets",false},{"albums", "/albums", false},{"reposts","/reposts", false},{"related", "/_/related", false},{"view on soundcloud", "https://soundcloud.com/"+user, true}} {
+		for _, b := range [...]btn{{"tracks", "", false, false},{"popular tracks", "/popular-tracks", false, false},{"playlists", "/sets", false, false},{"albums", "/albums", false, false},{"reposts","/reposts", false, false},{"related", "/_/related", false, false},{"user station", "/discover/sets/"+user.Station, true, false},{"view on soundcloud", "https://soundcloud.com/"+user.Permalink, true, true}} {
 			if b.text == current {
 				<a class="btn active">{ b.text }</a>
 			} else {
 				if b.external {
 					<a class="btn" href={ templ.URL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
 				} else {
-					<a class="btn" href={ templ.URL("/" + user + b.href) }>{ b.text }</a>
+					if b.override {
+						<a class="btn" href={ templ.URL(b.href) }>{ b.text }</a>
+					} else {
+						<a class="btn" href={ templ.URL("/" + user.Permalink + b.href) }>{ b.text }</a>
+					}
 				}
 			}
 		}
@@ -101,7 +106,7 @@ templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 	@UserBase(prefs, u)
 	// kinda tedious but whatever, might make it more flexible in the future
 	// ^ outdated, no longer tedious but whatever
-	@UserButtons("tracks", u.Permalink)
+	@UserButtons("tracks", u)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -119,7 +124,7 @@ templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 
 templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(prefs, u)
-	@UserButtons("playlists", u.Permalink)
+	@UserButtons("playlists", u)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -137,7 +142,7 @@ templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playli
 
 templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
 	@UserBase(prefs, u)
-	@UserButtons("albums", u.Permalink)
+	@UserButtons("albums", u)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -155,7 +160,7 @@ templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]
 
 templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost]) {
 	@UserBase(prefs, u)
-	@UserButtons("reposts", u.Permalink)
+	@UserButtons("reposts", u)
 	<br/>
 	if len(p.Collection) != 0 {
 		<div>
@@ -177,7 +182,7 @@ templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost])
 
 templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 	@UserBase(prefs, u)
-	@UserButtons("", u.Permalink)
+	@UserButtons("", u)
 	<h1>Likes</h1>
 	if len(p.Collection) != 0 {
 		<div>
@@ -199,7 +204,7 @@ templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 
 templ UserRelated(prefs cfg.Preferences, u sc.User, r []*sc.User) {
 	@UserBase(prefs, u)
-	@UserButtons("related", u.Permalink)
+	@UserButtons("related", u)
 	<br/>
 	if len(r) != 0 {
 		<div>
@@ -214,7 +219,7 @@ templ UserRelated(prefs cfg.Preferences, u sc.User, r []*sc.User) {
 
 templ UserTopTracks(prefs cfg.Preferences, u sc.User, t []*sc.Track) {
 	@UserBase(prefs, u)
-	@UserButtons("popular tracks", u.Permalink)
+	@UserButtons("popular tracks", u)
 	<br/>
 	if len(t) != 0 {
 		<div>
@@ -229,7 +234,7 @@ templ UserTopTracks(prefs cfg.Preferences, u sc.User, t []*sc.Track) {
 
 templ UserFollowers(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User]) {
 	@UserBase(prefs, u)
-	@UserButtons("", u.Permalink)
+	@UserButtons("", u)
 	<h1>Followers</h1>
 	if len(p.Collection) != 0 {
 		<div>
@@ -247,7 +252,7 @@ templ UserFollowers(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User])
 
 templ UserFollowing(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User]) {
 	@UserBase(prefs, u)
-	@UserButtons("", u.Permalink)
+	@UserButtons("", u)
 	<h1>Following</h1>
 	if len(p.Collection) != 0 {
 		<div>

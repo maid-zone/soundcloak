@@ -44,6 +44,7 @@ type Track struct {
 	Authorization string      `json:"track_authorization"`
 	Author        User        `json:"user"`
 	Policy        TrackPolicy `json:"policy"`
+	Station       string      `json:"station_permalink"`
 }
 
 type TrackPolicy string

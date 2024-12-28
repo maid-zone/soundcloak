@@ -23,14 +23,18 @@ func toExt(audio string) string {
 
 templ TrackButtons(current string, track sc.Track) {
 	<div class="btns">
-		for _, b := range [...]btn{{"related tracks", "/recommended", false},{"in albums", "/albums", false},{"in playlists", "/sets", false},{"view on soundcloud", "https://soundcloud.com"+track.Href(), true}} {
+		for _, b := range [...]btn{{"related tracks", "/recommended", false, false},{"in albums", "/albums", false, false},{"in playlists", "/sets", false, false},{"track station", "/discover/sets/"+track.Station, true, false},{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true}} {
 			if b.text == current {
 				<a class="btn active">{ b.text }</a>
 			} else {
 				if b.external {
 					<a class="btn" href={ templ.URL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
 				} else {
-					<a class="btn" href={ templ.URL(track.Href() + b.href) }>{ b.text }</a>
+					if b.override {
+						<a class="btn" href={ templ.URL(b.href) }>{ b.text }</a>
+					} else {
+						<a class="btn" href={ templ.URL(track.Href() + b.href) }>{ b.text }</a>
+					}
 				}
 			}
 		}

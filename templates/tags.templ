@@ -9,7 +9,7 @@ import (
 
 templ TagsButtons(current string, tag string) {
 	<div class="btns">
-		for _, b := range [...]btn{{"recent tracks", "", false},{"popular tracks", "/popular-tracks", false},{"playlists", "/playlists",false}} {
+		for _, b := range [...]btn{{"recent tracks", "", false, false},{"popular tracks", "/popular-tracks", false, false},{"playlists", "/playlists", false, false}} {
 			if b.text == current {
 				<a class="btn active">{ b.text }</a>
 			} else {

@@ -29,9 +29,14 @@ func (pr *ProxyReader) Read(p []byte) (int, error) {
 }
 
 func (pr *ProxyReader) Close() error {
-	defer fasthttp.ReleaseResponse(pr.Resp)
-	defer prpool.Put(pr)
-	return pr.Resp.CloseBodyStream()
+	pr.Resp.CloseBodyStream()
+	fasthttp.ReleaseResponse(pr.Resp)
+
+	pr.Reader = nil
+	pr.Resp = nil
+
+	prpool.Put(pr)
+	return nil
 }
 
 func Log(what ...any) {

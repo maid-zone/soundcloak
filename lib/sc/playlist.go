@@ -19,7 +19,7 @@ type Playlist struct {
 	Artwork      string `json:"artwork_url"`
 	CreatedAt    string `json:"created_at"`
 	Description  string `json:"description"`
-	Kind         string `json:"kind"` // should always be "playlist"!
+	Kind         string `json:"kind"` // should always be "playlist"! or "system-playlist"
 	LastModified string `json:"last_modified"`
 	Likes        int64  `json:"likes_count"`
 	Permalink    string `json:"permalink"`
@@ -57,7 +57,7 @@ func GetPlaylist(cid string, permalink string) (Playlist, error) {
 		return p, err
 	}
 
-	if p.Kind != "playlist" {
+	if p.Kind != "playlist" && p.Kind != "system-playlist" {
 		return p, ErrKindNotCorrect
 	}
 
@@ -217,5 +217,17 @@ func (p *Playlist) GetMissingTracks(cid string) error {
 }
 
 func (p Playlist) Href() string {
+	if p.Kind == "system-playlist" {
+		return "/discover/sets/" + p.Permalink
+	}
+
 	return "/" + p.Author.Permalink + "/sets/" + p.Permalink
+}
+
+func (p Playlist) TracksCount() int64 {
+	if p.TrackCount != 0 {
+		return p.TrackCount
+	}
+
+	return int64(len(p.Tracks))
 }
