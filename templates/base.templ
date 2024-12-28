@@ -1,9 +1,6 @@
 package templates
 
-import (
-	"git.maid.zone/stuff/soundcloak/lib/cfg"
-	"git.maid.zone/stuff/soundcloak/lib/textparsing"
-)
+import "git.maid.zone/stuff/soundcloak/lib/cfg"
 
 templ Base(title string, content templ.Component, head templ.Component) {
 	<!DOCTYPE html>
@@ -32,22 +29,35 @@ templ Base(title string, content templ.Component, head templ.Component) {
 	</html>
 }
 
-templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
-	if text != "" || injected != nil {
-		<details>
-			<summary>Toggle description</summary>
-			<p style="white-space: pre-wrap;">
-				if text != "" {
-					if *prefs.ParseDescriptions {
-						@templ.Raw(textparsing.Format(text))
-					} else {
-						{ text }
-					}
-				}
-				if injected != nil {
-					@injected
-				}
-			</p>
-		</details>
-	}
+templ MainPageHead() {
+	<link rel="stylesheet" href="/index.css"/>
+}
+
+templ MainPage(p cfg.Preferences) {
+	<form action="/search">
+		<div style="position: relative">
+			<div style="display: flex; gap: .5rem;">
+				<input id="q" name="q" type="text" autocomplete="off" autofill="off" style="padding: .5rem .6rem; flex-grow: 1;"/>
+				<select name="type">
+					<option value="tracks">Tracks</option>
+					<option value="users">Users</option>
+					<option value="playlists">Playlists</option>
+				</select>
+			</div>
+			if *p.SearchSuggestions {
+				<ul id="search-suggestions" style="display: none;"></ul>
+				<script async src="/index.js"></script>
+			}
+		</div>
+		<input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;"/>
+	</form>
+	
+	<footer>
+		<a class="btn" href="/_/featured">Featured Tracks</a>
+		<a class="btn" href="/discover">Discover Playlists</a>
+		<a class="btn" href="/_/preferences">Preferences</a>
+		
+		<a class="btn" href="https://git.maid.zone/stuff/soundcloak">Source code</a>
+		<a class="btn" href="/notice.txt">Legal notice</a>
+	</footer>
 }

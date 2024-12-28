@@ -408,6 +408,25 @@ func TagListParser(taglist string) (res []string) {
 	return
 }
 
+type SearchSuggestion struct {
+	Query string `json:"query"`
+}
+
+func GetSearchSuggestions(cid string, query string) ([]string, error) {
+	p := Paginated[SearchSuggestion]{Next: "https://" + api + "/search/queries?limit=10&q=" + url.QueryEscape(query)}
+	err := p.Proceed(cid, false)
+	if err != nil {
+		return nil, err
+	}
+
+	l := make([]string, len(p.Collection)) // just so the response is a bit smaller, why not
+	for i, r := range p.Collection {
+		l[i] = r.Query
+	}
+
+	return l, nil
+}
+
 // could probably make a generic function, whatever
 func init() {
 	go func() {

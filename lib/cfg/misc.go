@@ -58,11 +58,13 @@ type Preferences struct {
 
 	DefaultAutoplayMode *string // "normal" or "random"
 
-	// Check line 38 for constants
+	// Check above for more info
 	// Probably best to keep all at "mpeg" by default for compatibility
 	HLSAudio      *string // Please don't use "opus" or "best". hls.js doesn't work with ogg/opus
 	RestreamAudio *string // You can actually use anything here
 	DownloadAudio *string // "aac" may not play well with some players
 
 	ShowAudio *bool // display audio (aac, opus, mpeg etc) under track player
+
+	SearchSuggestions *bool // load search suggestions on main page
 }

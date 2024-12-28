@@ -133,14 +133,6 @@ details > summary:hover {
   width: fit-content;
 }
 
-footer {
-  margin-top: 5rem;
-  gap: 1rem;
-  display: grid;
-  grid-template: auto / auto auto auto;
-  justify-content: center;
-}
-
 select {
   background: var(--secondary);
   border-color: var(--0);

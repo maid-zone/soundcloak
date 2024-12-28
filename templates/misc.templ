@@ -1,0 +1,26 @@
+package templates
+
+import (
+    "git.maid.zone/stuff/soundcloak/lib/cfg"
+    "git.maid.zone/stuff/soundcloak/lib/textparsing"
+)
+
+templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
+	if text != "" || injected != nil {
+		<details>
+			<summary>Toggle description</summary>
+			<p style="white-space: pre-wrap;">
+				if text != "" {
+					if *prefs.ParseDescriptions {
+						@templ.Raw(textparsing.Format(text))
+					} else {
+						{ text }
+					}
+				}
+				if injected != nil {
+					@injected
+				}
+			</p>
+		</details>
+	}
+}

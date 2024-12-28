@@ -77,6 +77,11 @@ templ Preferences(prefs cfg.Preferences) {
 			</label>
 		}
 		<label>
+			Fetch search suggestions:
+			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)
+			(requires JS)
+		</label>
+		<label>
 			Player:
 			@sel("Player", []option{
 				{cfg.RestreamPlayer, "Restream Player", !cfg.Restream},

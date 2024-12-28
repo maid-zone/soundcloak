@@ -99,6 +99,10 @@ var CodegenConfig = false
 // ParseDescriptions: true
 // AutoplayNextTrack: false
 // DefaultAutoplayMode: AutoplayNormal
+// HLSAudio: AudioMP3
+// RestreamAudio: AudioMP3
+// DownloadAudio: AudioMP3
+// ShowAudio: false
 func defaultPreferences() {
 	var p string
 	if Restream {
@@ -126,6 +130,8 @@ func defaultPreferences() {
 	DefaultPreferences.DownloadAudio = &p3
 
 	DefaultPreferences.ShowAudio = &False
+
+	DefaultPreferences.SearchSuggestions = &False
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -201,6 +207,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.ShowAudio = loaded.ShowAudio
 	} else {
 		DefaultPreferences.ShowAudio = &False
+	}
+
+	if loaded.SearchSuggestions != nil {
+		DefaultPreferences.SearchSuggestions = loaded.SearchSuggestions
+	} else {
+		DefaultPreferences.SearchSuggestions = &False
 	}
 }
 

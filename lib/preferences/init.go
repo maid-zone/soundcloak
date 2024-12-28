@@ -55,6 +55,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.ShowAudio == nil {
 		dst.ShowAudio = cfg.DefaultPreferences.ShowAudio
 	}
+
+	if dst.SearchSuggestions == nil {
+		dst.SearchSuggestions = cfg.DefaultPreferences.SearchSuggestions
+	}
 }
 
 func Get(c *fiber.Ctx) (cfg.Preferences, error) {
@@ -82,6 +86,7 @@ type PrefsForm struct {
 	RestreamAudio       string
 	DownloadAudio       string
 	ShowAudio           string
+	SearchSuggestions   string
 }
 
 type Export struct {
@@ -165,6 +170,12 @@ func Load(r fiber.Router) {
 			old.ParseDescriptions = &cfg.True
 		} else {
 			old.ParseDescriptions = &cfg.False
+		}
+
+		if p.SearchSuggestions == "on" {
+			old.SearchSuggestions = &cfg.True
+		} else {
+			old.SearchSuggestions = &cfg.False
 		}
 
 		old.Player = &p.Player

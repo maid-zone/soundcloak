@@ -1,0 +1,26 @@
+#search-suggestions {
+    list-style: none;
+    position: absolute;
+    background-color: var(--secondary);
+    margin: 0;
+    padding: 1rem;
+    padding-bottom: 0;
+    /* god damn this shit i hate webdev */
+    width: 100%;
+    width: -moz-available;
+    width: -webkit-fill-available;
+    width: stretch;
+    width: fill-available;
+}
+
+#search-suggestions > li {
+    padding-bottom: 1rem;
+}
+
+footer {
+    margin-top: 5rem;
+    gap: 1rem;
+    display: grid;
+    grid-template: auto / auto auto auto;
+    justify-content: center;
+}
