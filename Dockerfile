@@ -1,5 +1,4 @@
 ARG GO_VERSION=1.22.10
-ARG NODE_VERSION=bookworm
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG TARGETOS
@@ -15,7 +14,8 @@ RUN go generate ./lib/*
 
 RUN go install git.maid.zone/stuff/soundcloakctl@master
 RUN soundcloakctl config codegen
-RUN soundcloakctl js download
+# this downloads JS modules (currently only hls.js) from jsdelivr and stores them locally for serving
+RUN soundcloakctl js download 
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static' -X main.commit=`git rev-parse HEAD | head -c 7` -X main.repo=`git remote get-url origin`" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
