@@ -15,22 +15,19 @@ RUN go generate ./lib/*
 
 RUN go install git.maid.zone/stuff/soundcloakctl@master
 RUN soundcloakctl config codegen
+RUN soundcloakctl js download
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static' -X main.commit=`git rev-parse HEAD | head -c 7` -X main.repo=`git remote get-url origin`" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
   echo "soundcloak:x:5000:" > /etc/minimal-group
 
-FROM node:${NODE_VERSION} AS node
-WORKDIR /hls.js
-COPY --from=build /build/package.json ./
-RUN npm i
-
 FROM scratch
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /build/assets /assets
+COPY --from=build /build/instance /instance
+COPY --from=build /build/external /external
 COPY --from=build /build/app /app
-COPY --from=node /hls.js/node_modules/hls.js/dist/hls.light.min.js /node_modules/hls.js/dist/hls.light.min.js
 COPY --from=build /etc/minimal-passwd /etc/passwd
 COPY --from=build /etc/minimal-group /etc/group
 

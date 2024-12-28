@@ -17,3 +17,5 @@ regexp2_codegen.go
 
 # built binary
 main
+
+!.gitkeep

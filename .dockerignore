@@ -1,7 +1,6 @@
 Dockerfile
 *.yaml
 build
-.github
 .gitignore
 soundcloak.example.json
 

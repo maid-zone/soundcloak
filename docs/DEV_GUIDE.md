@@ -1,8 +1,7 @@
 # Setup
 ## Prerequisites
-1. [node.js + npm](https://nodejs.org) (any recent enough version should do, it's just used for getting hls.js builds)
-2. [golang](https://go.dev) (I recommend version 1.22.10. Technically, you need 1.21.4 or higher)
-3. [git](https://git-scm.com)
+1. [golang](https://go.dev) (I recommend version 1.22.10. Technically, you need 1.21.4 or higher)
+2. [git](https://git-scm.com)
 
 ## The setup
 1. Clone this repository:
@@ -29,6 +28,12 @@ npm i
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
+*You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
+
+```sh
+export PATH=${PATH}:`go env GOPATH`/bin
+```
+
 5. Download regexp2cg:
 
 Not really required, but helps speed up some parts of the code that use regular expressions by generating code for them instead of compiling in runtime.
@@ -37,12 +42,21 @@ Not really required, but helps speed up some parts of the code that use regular 
 go install github.com/dlclark/regexp2cg@main
 ```
 
-*You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
+6. Download soundcloakctl:
+
+Soundcloakctl is helper for soundcloak.
 
 ```sh
-export PATH=${PATH}:`go env GOPATH`/bin
+go install git.maid.zone/stuff/soundcloakctl@master
 ```
-6. Build binary:
+
+7. Download requried JS modules:
+
+```sh
+soundcloakctl js download
+```
+
+8. Build binary:
 
 This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
 
@@ -61,13 +75,15 @@ git pull
 
 2. Update dependencies/tools:
 ```sh
-npm i # for hls.js
-
-go get # for other go packages
+go get # for go packages
 
 go install github.com/a-h/templ/cmd/templ@latest # templ cli
 
 go install github.com/dlclark/regexp2cg@main # regexp2 codegen cli. not required unless you've installed it
+
+go install git.maid.zone/stuff/soundcloakctl@master # soundcloakctl
+
+soundcloakctl js download # re-download JS modules
 ```
 
 3. Clean precompressed static files
