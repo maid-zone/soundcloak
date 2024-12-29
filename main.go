@@ -340,16 +340,22 @@ func main() {
 			DefaultPreferences cfg.Preferences
 		}
 
+		inf, err := json.Marshal(info{
+			Commit:             cfg.Commit,
+			Repo:               cfg.Repo,
+			ProxyImages:        cfg.ProxyImages,
+			ProxyStreams:       cfg.ProxyStreams,
+			Restream:           cfg.Restream,
+			GetWebProfiles:     cfg.GetWebProfiles,
+			DefaultPreferences: cfg.DefaultPreferences,
+		})
+		if err != nil {
+			log.Fatalln("failed to marshal info: ", err)
+		}
+
 		app.Get("/_/info", func(c *fiber.Ctx) error {
-			return c.JSON(info{
-				Commit:             cfg.Commit,
-				Repo:               cfg.Repo,
-				ProxyImages:        cfg.ProxyImages,
-				ProxyStreams:       cfg.ProxyStreams,
-				Restream:           cfg.Restream,
-				GetWebProfiles:     cfg.GetWebProfiles,
-				DefaultPreferences: cfg.DefaultPreferences,
-			})
+			c.Set("Content-Type", "application/json")
+			return c.Send(inf)
 		})
 	}
 

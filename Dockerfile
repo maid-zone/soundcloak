@@ -5,21 +5,21 @@ ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /build
-COPY . .
 
 # fuck google
 RUN go env -w GOPROXY=direct
 
 RUN go install github.com/a-h/templ/cmd/templ@latest
-RUN templ generate
-
 RUN go install github.com/dlclark/regexp2cg@main
-RUN go generate ./lib/*
 
+COPY . .
+# usually soundcloakctl updates together with soundcloak, so we should redownload it
 RUN go install git.maid.zone/stuff/soundcloakctl@master
+RUN soundcloakctl js download
+
+RUN templ generate
+RUN go generate ./lib/*
 RUN soundcloakctl config codegen
-# this downloads JS modules (currently only hls.js) from jsdelivr and stores them locally for serving
-RUN soundcloakctl js download 
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static'" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
