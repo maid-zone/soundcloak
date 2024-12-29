@@ -6,15 +6,16 @@
     padding: 1rem;
     padding-bottom: 0;
     /* god damn this shit i hate webdev */
-    width: 100%;
     width: -moz-available;
     width: -webkit-fill-available;
-    width: stretch;
-    width: fill-available;
 }
 
 #search-suggestions > li {
     padding-bottom: 1rem;
+}
+
+#search-suggestions > li:hover {
+    cursor: pointer;
 }
 
 footer > div {
