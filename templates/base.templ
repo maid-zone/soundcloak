@@ -51,13 +51,17 @@ templ MainPage(p cfg.Preferences) {
 		</div>
 		<input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;"/>
 	</form>
-	
 	<footer>
-		<a class="btn" href="/_/featured">Featured Tracks</a>
-		<a class="btn" href="/discover">Discover Playlists</a>
-		<a class="btn" href="/_/preferences">Preferences</a>
-		
-		<a class="btn" href="https://git.maid.zone/stuff/soundcloak">Source code</a>
-		<a class="btn" href="/_/static/notice.txt">Legal notice</a>
+		<div>
+			<a class="btn" href="/_/featured">Featured Tracks</a>
+			<a class="btn" href="/discover">Discover Playlists</a>
+			<a class="btn" href="/_/preferences">Preferences</a>
+			<a class="btn" href="https://git.maid.zone/stuff/soundcloak">Source code</a>
+			<a class="btn" href="/_/static/notice.txt">Legal notice</a>
+		</div>
+
+		if cfg.Commit != "unknown" {
+			<p style="text-align: center;">Build <a class="link" href={cfg.CommitURL}>{cfg.Commit}</a></p>
+		}
 	</footer>
 }

@@ -17,7 +17,7 @@
     padding-bottom: 1rem;
 }
 
-footer {
+footer > div {
     margin-top: 5rem;
     gap: 1rem;
     display: grid;
