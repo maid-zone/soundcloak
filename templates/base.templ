@@ -8,8 +8,8 @@ templ Base(title string, content templ.Component, head templ.Component) {
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link rel="stylesheet" href="/global.css"/>
-			<link rel="stylesheet" href="/instance.css"/>
+			<link rel="stylesheet" href="/_/static/global.css"/>
+			<link rel="stylesheet" href="/_/static/instance.css"/>
 			if title != "" {
 				<title>{ title } ~ soundcloak</title>
 			} else {
@@ -30,7 +30,7 @@ templ Base(title string, content templ.Component, head templ.Component) {
 }
 
 templ MainPageHead() {
-	<link rel="stylesheet" href="/index.css"/>
+	<link rel="stylesheet" href="/_/static/index.css"/>
 }
 
 templ MainPage(p cfg.Preferences) {
@@ -46,7 +46,7 @@ templ MainPage(p cfg.Preferences) {
 			</div>
 			if *p.SearchSuggestions {
 				<ul id="search-suggestions" style="display: none;"></ul>
-				<script async src="/index.js"></script>
+				<script async src="/_/static/index.js"></script>
 			}
 		</div>
 		<input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;"/>
@@ -58,6 +58,6 @@ templ MainPage(p cfg.Preferences) {
 		<a class="btn" href="/_/preferences">Preferences</a>
 		
 		<a class="btn" href="https://git.maid.zone/stuff/soundcloak">Source code</a>
-		<a class="btn" href="/notice.txt">Legal notice</a>
+		<a class="btn" href="/_/static/notice.txt">Legal notice</a>
 	</footer>
 }

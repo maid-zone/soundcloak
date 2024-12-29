@@ -78,13 +78,13 @@ func main() {
 	const AssetsMaxAge = 14400   // 4hrs
 	const ExternalMaxAge = 28800 // 8hrs
 	if cfg.EmbedFiles {
-		app.Use("/", filesystem.New(filesystem.Config{Root: http.FS(static.Instance), PathPrefix: "instance", MaxAge: InstanceMaxAge}))
-		app.Use("/", filesystem.New(filesystem.Config{Root: http.FS(static.Assets), PathPrefix: "assets", MaxAge: AssetsMaxAge}))
-		app.Use("/js/", filesystem.New(filesystem.Config{Root: http.FS(static.External), PathPrefix: "external", MaxAge: ExternalMaxAge}))
+		app.Use("/_/static/", filesystem.New(filesystem.Config{Root: http.FS(static.Instance), PathPrefix: "instance", MaxAge: InstanceMaxAge}))
+		app.Use("/_/static/", filesystem.New(filesystem.Config{Root: http.FS(static.Assets), PathPrefix: "assets", MaxAge: AssetsMaxAge}))
+		app.Use("/_/static/js/", filesystem.New(filesystem.Config{Root: http.FS(static.External), PathPrefix: "external", MaxAge: ExternalMaxAge}))
 	} else {
-		app.Static("/", "static/instance", fiber.Static{Compress: true, MaxAge: InstanceMaxAge})
-		app.Static("/", "static/assets", fiber.Static{Compress: true, MaxAge: AssetsMaxAge})
-		app.Static("/js/", "static/external", fiber.Static{Compress: true, MaxAge: ExternalMaxAge})
+		app.Static("/_/static/", "static/instance", fiber.Static{Compress: true, MaxAge: InstanceMaxAge})
+		app.Static("/_/static/", "static/assets", fiber.Static{Compress: true, MaxAge: AssetsMaxAge})
+		app.Static("/_/static/js/", "static/external", fiber.Static{Compress: true, MaxAge: ExternalMaxAge})
 	}
 
 	app.Get("/search", func(c *fiber.Ctx) error {

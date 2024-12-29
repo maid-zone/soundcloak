@@ -21,7 +21,7 @@ templ UserItem(user *sc.User) {
 		if user.Avatar != "" {
 			<img src={ user.Avatar }/>
 		} else {
-			<img src="/placeholder.jpg"/>
+			<img src="/_/static/placeholder.jpg"/>
 		}
 		<div class="meta">
 			<h3>{ user.Username }</h3>

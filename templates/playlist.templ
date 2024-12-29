@@ -25,7 +25,7 @@ templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 		if playlist.Artwork != "" {
 			<img src={ playlist.Artwork }/>
 		} else {
-			<img src="/placeholder.jpg"/>
+			<img src="/_/static/placeholder.jpg"/>
 		}
 		<div class="meta">
 			<h3>{ playlist.Title }</h3>

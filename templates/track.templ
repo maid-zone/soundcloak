@@ -48,7 +48,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
 	if needPlayer && *prefs.Player == cfg.HLSPlayer {
-		<script src="/js/hls.light.min.js"></script>
+		<script src="/_/static/js/hls.light.min.js"></script>
 	}
 }
 
@@ -76,7 +76,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 			{{ audioPref = *prefs.RestreamAudio }}
 			if nextTrack != nil {
 				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay } data-next={ next(nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
-				<script async src="/restream.js"></script>
+				<script async src="/_/static/restream.js"></script>
 			} else {
 				<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
 			}
@@ -88,9 +88,9 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
 			}
 			if *prefs.FullyPreloadTrack {
-				<script async src="/player_preload.js"></script>
+				<script async src="/_/static/player_preload.js"></script>
 			} else {
-				<script async src="/player.js"></script>
+				<script async src="/_/static/player.js"></script>
 			}
 			<noscript>
 				<br/>
@@ -133,7 +133,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 			if track.Artwork != "" {
 				<img src={ track.Artwork }/>
 			} else {
-				<img src="/placeholder.jpg"/>
+				<img src="/_/static/placeholder.jpg"/>
 			}
 			<div class="meta">
 				<h3>{ track.Title }</h3>
@@ -205,10 +205,10 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link rel="stylesheet" href="/global.css"/>
+			<link rel="stylesheet" href="/_/static/global.css"/>
 			<title>soundcloak</title>
 			if *prefs.Player == cfg.HLSPlayer {
-				<script src="/js/hls.js/hls.light.js"></script>
+				<script src="/_/static/js/hls.light.js"></script>
 			}
 		</head>
 		<body>
