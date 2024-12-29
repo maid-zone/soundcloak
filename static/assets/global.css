@@ -18,6 +18,7 @@ body {
   padding: 1.5rem;
   max-width: 50rem;
   margin-inline: auto;
+  line-height: 1.15;
 }
 
 #sc {
