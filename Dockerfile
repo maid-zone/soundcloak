@@ -6,6 +6,10 @@ ARG TARGETARCH
 
 WORKDIR /build
 COPY . .
+
+# fuck google
+RUN go env -w GOPROXY=direct
+
 RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN templ generate
 
@@ -21,12 +25,14 @@ RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
   echo "soundcloak:x:5000:" > /etc/minimal-group
 
+RUN soundcloakctl postbuild
+  
 FROM scratch
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build /build/assets /assets
-COPY --from=build /build/instance /instance
-COPY --from=build /build/external /external
+COPY --from=build /build/static/assets /static/assets
+COPY --from=build /build/static/instance /static/instance
+COPY --from=build /build/static/external /static/external
 COPY --from=build /build/app /app
 COPY --from=build /etc/minimal-passwd /etc/passwd
 COPY --from=build /etc/minimal-group /etc/group
