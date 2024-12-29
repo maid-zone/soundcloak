@@ -89,6 +89,8 @@ var TrustedProxies = []string{}
 
 var CodegenConfig = false
 
+var EmbedFiles = false
+
 // // end of config // //
 
 // defaults are:
@@ -389,6 +391,16 @@ func fromEnv() error {
 		TrustedProxies = p
 	}
 
+	env = os.Getenv("CODEGEN_CONFIG")
+	if env != "" {
+		CodegenConfig = boolean(env)
+	}
+
+	env = os.Getenv("EMBED_FILES")
+	if env != "" {
+		EmbedFiles = boolean(env)
+	}
+
 	return nil
 }
 
@@ -440,6 +452,7 @@ func init() {
 		TrustedProxyCheck       *bool
 		TrustedProxies          *[]string
 		CodegenConfig           *bool
+		EmbedFiles              *bool
 	}
 
 	err = json.Unmarshal(data, &config)
@@ -513,6 +526,9 @@ func init() {
 	}
 	if config.CodegenConfig != nil {
 		CodegenConfig = *config.CodegenConfig
+	}
+	if config.EmbedFiles != nil {
+		EmbedFiles = *config.EmbedFiles
 	}
 
 	if config.DefaultPreferences != nil {

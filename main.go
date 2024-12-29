@@ -3,11 +3,13 @@ package main
 import (
 	"log"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -19,6 +21,7 @@ import (
 	proxystreams "git.maid.zone/stuff/soundcloak/lib/proxy_streams"
 	"git.maid.zone/stuff/soundcloak/lib/restream"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
+	"git.maid.zone/stuff/soundcloak/static"
 	"git.maid.zone/stuff/soundcloak/templates"
 )
 
@@ -36,14 +39,10 @@ func main() {
 		TrustedProxies:          cfg.TrustedProxies,
 	})
 
-	if !cfg.Debug {
+	if !cfg.Debug { // you wanna catch any possible panics as soon as possible
 		app.Use(recover.New())
 	}
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
-
-	app.Static("/", "instance", fiber.Static{Compress: true, MaxAge: 7200})     // 2 hours
-	app.Static("/", "assets", fiber.Static{Compress: true, MaxAge: 14400})      // 4 hours
-	app.Static("/js/", "external", fiber.Static{Compress: true, MaxAge: 28800}) // 8 hours
 
 	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
 	if cfg.Debug {
@@ -77,6 +76,19 @@ func main() {
 
 		app.Get("/", mainPageHandler)
 		app.Get("/index.html", mainPageHandler)
+	}
+
+	const InstanceMaxAge = 7200  // 2hrs
+	const AssetsMaxAge = 14400   // 4hrs
+	const ExternalMaxAge = 28800 // 8hrs
+	if cfg.EmbedFiles {
+		app.Use("/", filesystem.New(filesystem.Config{Root: http.FS(static.Instance), PathPrefix: "instance", MaxAge: InstanceMaxAge}))
+		app.Use("/", filesystem.New(filesystem.Config{Root: http.FS(static.Assets), PathPrefix: "assets", MaxAge: AssetsMaxAge}))
+		app.Use("/js/", filesystem.New(filesystem.Config{Root: http.FS(static.External), PathPrefix: "external", MaxAge: ExternalMaxAge}))
+	} else {
+		app.Static("/", "static/instance", fiber.Static{Compress: true, MaxAge: InstanceMaxAge})
+		app.Static("/", "static/assets", fiber.Static{Compress: true, MaxAge: AssetsMaxAge})
+		app.Static("/js/", "static/external", fiber.Static{Compress: true, MaxAge: ExternalMaxAge})
 	}
 
 	app.Get("/search", func(c *fiber.Ctx) error {

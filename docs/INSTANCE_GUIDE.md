@@ -25,7 +25,9 @@ cp compose.example.yaml compose.yaml
 Make adjustments as needed.
 
 4. *Optional.* Edit config:
-   Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
+
+Refer to [Configuration guide](#configuration-guide) for configuration information. Can be configured from environment variables or JSON file.
+
 5. Run the container:
 
 ```sh
@@ -40,6 +42,7 @@ Soundcloak will now be up at `127.0.0.1:4664` (or the address you specified in y
 
 ## Regular method
 
+** Not recommended for deployment. **
 Refer to the [developer guide](DEV_GUIDE.md#setup)
 
 # Updating your instance
@@ -117,7 +120,8 @@ Some notes:
 | Prefork                 | PREFORK                    | false                                                                                                                                                                                                                                                    | Run multiple instances of soundcloak locally to be able to handle more requests. Each one will be a separate process, so they will have separate cache.                                                                                                                                                                                                            |
 | TrustedProxyCheck       | TRUSTED_PROXY_CHECK        | true                                                                                                                                                                                                                                                     | Use X-Forwarded-* headers if IP is in TrustedProxies list. When disabled, those headers will blindly be used.                                                                                                                                                                                                                                                      |
 | TrustedProxies          | TRUSTED_PROXIES            | []                                                                                                                                                                                                                                                       | List of IPs or IP ranges of trusted proxies                                                                                                                                                                                                                                                                                                                        |
-| CodegenConfig           | CODEGEN_CONFIG             | false                                                                                                                                                                                                                                                    | Mainly needed for the dockerfile. If you enable this, and build the container (or run `soundcloakctl config codegen`) - your current config will be parsed and embedded in the code, which allows the compiler to do some more optimizations. Keep in mind that you won't be able to change the config dynamically, you will have to rebuild the container / binary |
+| CodegenConfig           | CODEGEN_CONFIG             | false                                                                                                                                                                                                                                                    | Highly recommended to enable. Embeds the config into the binary, which helps reduce size if you aren't using certain features and generally optimize the binary better. Keep in mind that you will have to rebuild the image/binary each time you want to change config. (Note: you need to run `soundcloakctl config codegen` or use docker, as it runs it for you) |
+| EmbedFiles           | EMBED_FILES             | false                                                                                                                                                                                                                                                    | Embed files into the binary. Keep in mind that you will have to rebuild the image/binary each time you update static files (e.g. custom instance files) |
 
 </details>
 
@@ -128,17 +132,17 @@ Some notes:
 
 I will mainly talk about the static files here. Maybe about the templates too in the future
 
-The static files are stored in `assets` folder
+The static files are stored in `static/assets` folder
 
 ### Overriding files
 
-1. Create a folder named `instance`
+1. Create a folder named `instance` in `static` folder
 2. Create a file with the same name as the one you want to override
 3. Put whatever you want there
 
 ### Basic theming
 
-1. Create `instance.css` file in the `instance` folder
+1. Create `instance.css` file in the `static/instance` folder
 2. Put your CSS rules there:
 
 ```css
@@ -152,7 +156,7 @@ The static files are stored in `assets` folder
 }
 ```
 
-Refer to `assets/global.css` file for existing rules.
+Refer to `static/assets/global.css` file for existing rules.
 
 </details>
 

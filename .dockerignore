@@ -9,7 +9,7 @@ README.md
 docs
 
 *.fiber.gz
-node_modules
 *_templ.go
 regexp2_codegen.go
 main
+static/external

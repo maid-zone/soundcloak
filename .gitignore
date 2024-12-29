@@ -1,14 +1,15 @@
 # soundcloak config (and instance-specific files)
 soundcloak.json
-instance/*
+static/instance/*
+
+# external js modules
+static/external/*
 
 # other configs
 compose.yaml
 fly.toml
 
 # created by soundcloak/dependencies
-node_modules
-package-lock.json
 *.fiber.gz
 
 # codegen

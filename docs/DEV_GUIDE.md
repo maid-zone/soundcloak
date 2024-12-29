@@ -74,6 +74,8 @@ git pull
 ```
 
 2. Update dependencies/tools:
+
+You can skip some parts if the tools/dependencies have not been updated.
 ```sh
 go get # for go packages
 
@@ -87,6 +89,7 @@ soundcloakctl js download # re-download JS modules
 ```
 
 3. Clean precompressed static files
+
 Those are created by the webserver in order to more efficiently serve static files. They have the `.fiber.gz` extension. You can easily remove them from all directories like this:
 ```sh
 find . -name \*.fiber.gz -type f -delete
