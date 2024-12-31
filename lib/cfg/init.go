@@ -538,7 +538,7 @@ func init() {
 	}
 }
 
-const Debug = true
+const Debug = false
 const Commit = "unknown"
 const Repo = "unknown"
 const CommitURL = "unknown"
