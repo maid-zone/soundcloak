@@ -1,18 +1,19 @@
 package main
 
 import (
+	"io/fs"
 	"log"
 	"math/rand"
-	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"github.com/gofiber/fiber/v3"
 
 	"github.com/goccy/go-json"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/valyala/fasthttp"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
@@ -21,13 +22,81 @@ import (
 	proxystreams "git.maid.zone/stuff/soundcloak/lib/proxy_streams"
 	"git.maid.zone/stuff/soundcloak/lib/restream"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	"git.maid.zone/stuff/soundcloak/static"
+	static_files "git.maid.zone/stuff/soundcloak/static"
 	"git.maid.zone/stuff/soundcloak/templates"
 )
 
+type osfs struct{}
+
+func (osfs) Open(name string) (fs.File, error) {
+	misc.Log("osfs:", name)
+
+	if strings.HasPrefix(name, "js/") {
+		return os.Open("static/external/" + name[3:])
+	}
+
+	f, err := os.Open("static/instance/" + name)
+	if err == nil {
+		return f, nil
+	}
+
+	f, err = os.Open("static/assets/" + name)
+	return f, err
+}
+
+type staticfs struct {
+}
+
+func (staticfs) Open(name string) (fs.File, error) {
+	misc.Log("staticfs:", name)
+
+	if strings.HasPrefix(name, "js/") {
+		return static_files.External.Open("external/" + name[3:])
+	}
+
+	f, err := static_files.Instance.Open("instance/" + name)
+	if err == nil {
+		return f, nil
+	}
+
+	f, err = static_files.Assets.Open("assets/" + name)
+	return f, err
+}
+
+// stubby implementation of static middleware
+// why? mainly because of the pathrewrite
+// i hate seeing it trying to get root directory
+func ServeFromFS(r fiber.Router, path string, filesystem fs.FS, cachecontrol string, compress bool) {
+	l := len(path)
+	fs := fasthttp.FS{
+		FS: filesystem,
+		PathRewrite: func(ctx *fasthttp.RequestCtx) []byte {
+			return ctx.Path()[l:]
+		},
+		Compress:       compress,
+		CompressBrotli: compress,
+		CompressedFileSuffixes: map[string]string{
+			"gzip": ".gzip",
+			"br":   ".br",
+			"zstd": ".zstd",
+		},
+	}
+
+	handler := fs.NewRequestHandler()
+
+	r.Use(path, func(c fiber.Ctx) error {
+		handler(c.Context())
+		if c.Context().Response.StatusCode() == 200 {
+			c.Set("Cache-Control", cachecontrol)
+		}
+
+		return nil
+	})
+}
+
 func main() {
 	app := fiber.New(fiber.Config{
-		Prefork:     cfg.Prefork,
+		//Prefork: cfg.Prefork, // moved to ListenConfig in v3
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 
@@ -38,29 +107,35 @@ func main() {
 	if !cfg.Debug { // you wanna catch any possible panics as soon as possible
 		app.Use(recover.New())
 	}
-	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
+
+	app.Use(compress.New(compress.Config{
+		Next: func(c fiber.Ctx) bool {
+			return strings.HasPrefix(c.Path(), "/_/static")
+		},
+		Level: compress.LevelBestSpeed,
+	}))
 
 	// Just for easy inspection of cache in development. Since debug is constant, the compiler will just remove the code below if it's set to false, so this has no runtime overhead.
 	if cfg.Debug {
-		app.Get("/_/cachedump/tracks", func(c *fiber.Ctx) error {
+		app.Get("/_/cachedump/tracks", func(c fiber.Ctx) error {
 			return c.JSON(sc.TracksCache)
 		})
 
-		app.Get("/_/cachedump/playlists", func(c *fiber.Ctx) error {
+		app.Get("/_/cachedump/playlists", func(c fiber.Ctx) error {
 			return c.JSON(sc.PlaylistsCache)
 		})
 
-		app.Get("/_/cachedump/users", func(c *fiber.Ctx) error {
+		app.Get("/_/cachedump/users", func(c fiber.Ctx) error {
 			return c.JSON(sc.UsersCache)
 		})
 
-		app.Get("/_/cachedump/clientId", func(c *fiber.Ctx) error {
+		app.Get("/_/cachedump/clientId", func(c fiber.Ctx) error {
 			return c.JSON(sc.ClientIDCache)
 		})
 	}
 
 	{
-		mainPageHandler := func(c *fiber.Ctx) error {
+		mainPageHandler := func(c fiber.Ctx) error {
 			prefs, err := preferences.Get(c)
 			if err != nil {
 				return err
@@ -74,20 +149,25 @@ func main() {
 		app.Get("/index.html", mainPageHandler)
 	}
 
-	const InstanceMaxAge = 7200  // 2hrs
-	const AssetsMaxAge = 14400   // 4hrs
-	const ExternalMaxAge = 28800 // 8hrs
+	const AssetsCacheControl = "public, max-age=28800" // 8hrs
 	if cfg.EmbedFiles {
-		app.Use("/_/static/", filesystem.New(filesystem.Config{Root: http.FS(static.Instance), PathPrefix: "instance", MaxAge: InstanceMaxAge}))
-		app.Use("/_/static/", filesystem.New(filesystem.Config{Root: http.FS(static.Assets), PathPrefix: "assets", MaxAge: AssetsMaxAge}))
-		app.Use("/_/static/js/", filesystem.New(filesystem.Config{Root: http.FS(static.External), PathPrefix: "external", MaxAge: ExternalMaxAge}))
+		misc.Log("using embedded files")
+		ServeFromFS(app, "/_/static", staticfs{}, AssetsCacheControl, true)
 	} else {
-		app.Static("/_/static/", "static/instance", fiber.Static{Compress: true, MaxAge: InstanceMaxAge})
-		app.Static("/_/static/", "static/assets", fiber.Static{Compress: true, MaxAge: AssetsMaxAge})
-		app.Static("/_/static/js/", "static/external", fiber.Static{Compress: true, MaxAge: ExternalMaxAge})
+		misc.Log("loading files dynamically")
+		ServeFromFS(app, "/_/static", osfs{}, AssetsCacheControl, true)
 	}
 
-	app.Get("/search", func(c *fiber.Ctx) error {
+	// why? because when you load a page without link rel="icon" the browser will
+	// try to load favicon from default location,
+	// and this path loads the user "favicon.ico" by default
+	if cfg.Debug {
+		app.Get("favicon.ico", func(c fiber.Ctx) error {
+			return c.Redirect().To("/_/static/favicon.ico")
+		})
+	}
+
+	app.Get("/search", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -132,15 +212,15 @@ func main() {
 
 	// someone is trying to hit those endpoints on sc.maid.zone at like 4am lol
 	// those are authentication-only, planning to make something similar later on
-	app.Get("/stream", func(c *fiber.Ctx) error {
-		return c.Redirect("/")
+	app.Get("/stream", func(c fiber.Ctx) error {
+		return c.Redirect().To("/")
 	})
 
-	app.Get("/feed", func(c *fiber.Ctx) error {
-		return c.Redirect("/")
+	app.Get("/feed", func(c fiber.Ctx) error {
+		return c.Redirect().To("/")
 	})
 
-	app.Get("/on/:id", func(c *fiber.Ctx) error {
+	app.Get("/on/:id", func(c fiber.Ctx) error {
 		id := c.Params("id")
 		if id == "" {
 			return fiber.ErrNotFound
@@ -173,10 +253,10 @@ func main() {
 			return err
 		}
 
-		return c.Redirect(u.Path)
+		return c.Redirect().To(u.Path)
 	})
 
-	app.Get("/w/player", func(c *fiber.Ctx) error {
+	app.Get("/w/player", func(c fiber.Ctx) error {
 		u := c.Query("url")
 		if u == "" {
 			return fiber.ErrNotFound
@@ -222,7 +302,7 @@ func main() {
 		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(c.Context(), c)
 	})
 
-	app.Get("/tags/:tag", func(c *fiber.Ctx) error {
+	app.Get("/tags/:tag", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -244,7 +324,7 @@ func main() {
 		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(c.Context(), c)
 	})
 
-	app.Get("/tags/:tag/popular-tracks", func(c *fiber.Ctx) error {
+	app.Get("/tags/:tag/popular-tracks", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -266,7 +346,7 @@ func main() {
 		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(c.Context(), c)
 	})
 
-	app.Get("/tags/:tag/playlists", func(c *fiber.Ctx) error {
+	app.Get("/tags/:tag/playlists", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -289,7 +369,7 @@ func main() {
 		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.Context(), c)
 	})
 
-	app.Get("/_/featured", func(c *fiber.Ctx) error {
+	app.Get("/_/featured", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -305,7 +385,7 @@ func main() {
 		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(c.Context(), c)
 	})
 
-	app.Get("/discover", func(c *fiber.Ctx) error {
+	app.Get("/discover", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -353,7 +433,7 @@ func main() {
 			log.Fatalln("failed to marshal info: ", err)
 		}
 
-		app.Get("/_/info", func(c *fiber.Ctx) error {
+		app.Get("/_/info", func(c fiber.Ctx) error {
 			c.Set("Content-Type", "application/json")
 			return c.Send(inf)
 		})
@@ -365,7 +445,7 @@ func main() {
 
 	preferences.Load(app)
 
-	app.Get("/_/searchSuggestions", func(c *fiber.Ctx) error {
+	app.Get("/_/searchSuggestions", func(c fiber.Ctx) error {
 		q := c.Query("q")
 		if q == "" {
 			return fiber.ErrBadRequest
@@ -380,11 +460,11 @@ func main() {
 	})
 
 	// Currently, /:user is the tracks page
-	app.Get("/:user/tracks", func(c *fiber.Ctx) error {
-		return c.Redirect("/" + c.Params("user"))
+	app.Get("/:user/tracks", func(c fiber.Ctx) error {
+		return c.Redirect().To("/" + c.Params("user"))
 	})
 
-	app.Get("/:user/sets", func(c *fiber.Ctx) error {
+	app.Get("/:user/sets", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -412,7 +492,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/albums", func(c *fiber.Ctx) error {
+	app.Get("/:user/albums", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -440,7 +520,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/reposts", func(c *fiber.Ctx) error {
+	app.Get("/:user/reposts", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -468,7 +548,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/likes", func(c *fiber.Ctx) error {
+	app.Get("/:user/likes", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -496,7 +576,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/popular-tracks", func(c *fiber.Ctx) error {
+	app.Get("/:user/popular-tracks", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -524,7 +604,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/followers", func(c *fiber.Ctx) error {
+	app.Get("/:user/followers", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -552,7 +632,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/following", func(c *fiber.Ctx) error {
+	app.Get("/:user/following", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -580,7 +660,7 @@ func main() {
 		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/:track", func(c *fiber.Ctx) error {
+	app.Get("/:user/:track", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -674,7 +754,7 @@ func main() {
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track, true)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user", func(c *fiber.Ctx) error {
+	app.Get("/:user", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -702,7 +782,7 @@ func main() {
 		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/sets/:playlist", func(c *fiber.Ctx) error {
+	app.Get("/:user/sets/:playlist", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -742,7 +822,7 @@ func main() {
 		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/_/related", func(c *fiber.Ctx) error {
+	app.Get("/:user/_/related", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -771,7 +851,7 @@ func main() {
 	})
 
 	// I'd like to make this "related" but keeping it "recommended" to have the same url as soundcloud
-	app.Get("/:user/:track/recommended", func(c *fiber.Ctx) error {
+	app.Get("/:user/:track/recommended", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -799,7 +879,7 @@ func main() {
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/:track/sets", func(c *fiber.Ctx) error {
+	app.Get("/:user/:track/sets", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -827,7 +907,7 @@ func main() {
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(c.Context(), c)
 	})
 
-	app.Get("/:user/:track/albums", func(c *fiber.Ctx) error {
+	app.Get("/:user/:track/albums", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -858,5 +938,5 @@ func main() {
 	if cfg.CodegenConfig {
 		log.Println("Warning: you have CodegenConfig enabled, but the config was loaded dynamically.")
 	}
-	log.Fatal(app.Listen(cfg.Addr))
+	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork}))
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/bogem/id3v2/v2"
 	"github.com/gcottom/mp4meta"
 	"github.com/gcottom/oggmeta"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/valyala/fasthttp"
 )
 
@@ -220,7 +220,7 @@ func Load(r fiber.Router) {
 		StreamResponseBody:  true,
 	}
 
-	r.Get("/_/restream/:author/:track", func(c *fiber.Ctx) error {
+	r.Get("/_/restream/:author/:track", func(c fiber.Ctx) error {
 		p, err := preferences.Get(c)
 		if err != nil {
 			return err

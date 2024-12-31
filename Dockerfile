@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.22.10
+ARG GO_VERSION=1.23.4
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG TARGETOS
@@ -20,6 +20,7 @@ RUN soundcloakctl js download
 RUN templ generate
 RUN go generate ./lib/*
 RUN soundcloakctl config codegen
+RUN soundcloakctl -nozstd -notable precompress
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static'" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \

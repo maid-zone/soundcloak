@@ -6,7 +6,7 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/valyala/fasthttp"
 )
 
@@ -32,7 +32,7 @@ func Load(r fiber.Router) {
 		StreamResponseBody:  true,
 	}
 
-	r.Get("/_/proxy/images", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/images", func(c fiber.Ctx) error {
 		url := c.Query("url")
 		if url == "" {
 			return fiber.ErrBadRequest

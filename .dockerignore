@@ -8,7 +8,10 @@ LICENSE
 README.md
 docs
 
-*.fiber.gz
+.compression
+.br
+.gzip
+.zstd
 *_templ.go
 regexp2_codegen.go
 main

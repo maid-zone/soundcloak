@@ -8,7 +8,7 @@ import (
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/templates"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func Defaults(dst *cfg.Preferences) {
@@ -61,7 +61,7 @@ func Defaults(dst *cfg.Preferences) {
 	}
 }
 
-func Get(c *fiber.Ctx) (cfg.Preferences, error) {
+func Get(c fiber.Ctx) (cfg.Preferences, error) {
 	rawprefs := c.Cookies("prefs", "{}")
 	var p cfg.Preferences
 
@@ -94,7 +94,7 @@ type Export struct {
 }
 
 func Load(r fiber.Router) {
-	r.Get("/_/preferences", func(c *fiber.Ctx) error {
+	r.Get("/_/preferences", func(c fiber.Ctx) error {
 		p, err := Get(c)
 		if err != nil {
 			return err
@@ -104,9 +104,9 @@ func Load(r fiber.Router) {
 		return templates.Base("preferences", templates.Preferences(p), nil).Render(context.Background(), c)
 	})
 
-	r.Post("/_/preferences", func(c *fiber.Ctx) error {
+	r.Post("/_/preferences", func(c fiber.Ctx) error {
 		var p PrefsForm
-		err := c.BodyParser(&p)
+		err := c.Bind().Body(&p)
 		if err != nil {
 			return err
 		}
@@ -193,10 +193,10 @@ func Load(r fiber.Router) {
 			SameSite: "strict",
 		})
 
-		return c.Redirect("/_/preferences")
+		return c.Redirect().To("/_/preferences")
 	})
 
-	r.Get("/_/preferences/reset", func(c *fiber.Ctx) error {
+	r.Get("/_/preferences/reset", func(c fiber.Ctx) error {
 		// c.ClearCookie("prefs")
 		c.Cookie(&fiber.Cookie{ // I've had some issues with c.ClearCookie() method, so using this workaround for now
 			Name:     "prefs",
@@ -206,10 +206,10 @@ func Load(r fiber.Router) {
 			SameSite: "strict",
 		})
 
-		return c.Redirect("/_/preferences")
+		return c.Redirect().To("/_/preferences")
 	})
 
-	r.Get("/_/preferences/export", func(c *fiber.Ctx) error {
+	r.Get("/_/preferences/export", func(c fiber.Ctx) error {
 		p, err := Get(c)
 		if err != nil {
 			return err
@@ -218,7 +218,7 @@ func Load(r fiber.Router) {
 		return c.JSON(Export{Preferences: &p})
 	})
 
-	r.Post("/_/preferences/import", func(c *fiber.Ctx) error {
+	r.Post("/_/preferences/import", func(c fiber.Ctx) error {
 		f, err := c.FormFile("prefs")
 		if err != nil {
 			return err
@@ -257,6 +257,6 @@ func Load(r fiber.Router) {
 			SameSite: "strict",
 		})
 
-		return c.Redirect("/_/preferences")
+		return c.Redirect().To("/_/preferences")
 	})
 }

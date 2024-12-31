@@ -1,6 +1,6 @@
 # Setup
 ## Prerequisites
-1. [golang](https://go.dev) (I recommend version 1.22.10. Technically, you need 1.21.4 or higher)
+1. [golang](https://go.dev) (I recommend version 1.23.4)
 2. [git](https://git-scm.com)
 
 ## The setup
@@ -90,9 +90,9 @@ soundcloakctl js download # re-download JS modules
 
 3. Clean precompressed static files
 
-Those are created by the webserver in order to more efficiently serve static files. They have the `.fiber.gz` extension. You can easily remove them from all directories like this:
+Those are created by the webserver in order to more efficiently serve static files. They have the `.br` and `.gzip` extension. You can easily remove them from all directories using soundcloakctl:
 ```sh
-find . -name \*.fiber.gz -type f -delete
+soundcloakctl clean
 ```
 
 4. Run codegen and build the binary:

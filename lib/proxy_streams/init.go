@@ -7,7 +7,7 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/valyala/fasthttp"
 )
 
@@ -33,7 +33,7 @@ func Load(r fiber.Router) {
 		StreamResponseBody:  true,
 	}
 
-	r.Get("/_/proxy/streams", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/streams", func(c fiber.Ctx) error {
 		ur := c.Query("url")
 		if ur == "" {
 			return fiber.ErrBadRequest
@@ -72,7 +72,7 @@ func Load(r fiber.Router) {
 		return c.SendStream(pr)
 	})
 
-	r.Get("/_/proxy/streams/aac", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/streams/aac", func(c fiber.Ctx) error {
 		ur := c.Query("url")
 		if ur == "" {
 			return fiber.ErrBadRequest
@@ -110,7 +110,7 @@ func Load(r fiber.Router) {
 		return c.SendStream(pr)
 	})
 
-	r.Get("/_/proxy/streams/playlist", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/streams/playlist", func(c fiber.Ctx) error {
 		ur := c.Query("url")
 		if ur == "" {
 			return fiber.ErrBadRequest
@@ -161,7 +161,7 @@ func Load(r fiber.Router) {
 		return c.Send(bytes.Join(sp, []byte("\n")))
 	})
 
-	r.Get("/_/proxy/streams/playlist/aac", func(c *fiber.Ctx) error {
+	r.Get("/_/proxy/streams/playlist/aac", func(c fiber.Ctx) error {
 		ur := c.Query("url")
 		if ur == "" {
 			return fiber.ErrBadRequest

@@ -10,7 +10,10 @@ compose.yaml
 fly.toml
 
 # created by soundcloak/dependencies
-*.fiber.gz
+.compression
+*.br
+*.gzip
+*.zstd
 
 # codegen
 *_templ.go
