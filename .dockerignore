@@ -9,9 +9,9 @@ README.md
 docs
 
 .compression
-.br
-.gzip
-.zstd
+*.br
+*.gzip
+*.zstd
 *_templ.go
 regexp2_codegen.go
 main
