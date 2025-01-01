@@ -66,15 +66,16 @@ func (staticfs) Open(name string) (fs.File, error) {
 // stubby implementation of static middleware
 // why? mainly because of the pathrewrite
 // i hate seeing it trying to get root directory
-func ServeFromFS(r fiber.Router, path string, filesystem fs.FS, cachecontrol string, compress bool) {
-	l := len(path)
+func ServeFromFS(r fiber.Router, filesystem fs.FS) {
+	const path = "/_/static"
+	const l = len(path)
 	fs := fasthttp.FS{
 		FS: filesystem,
 		PathRewrite: func(ctx *fasthttp.RequestCtx) []byte {
 			return ctx.Path()[l:]
 		},
-		Compress:       compress,
-		CompressBrotli: compress,
+		Compress:       true,
+		CompressBrotli: true,
 		CompressedFileSuffixes: map[string]string{
 			"gzip": ".gzip",
 			"br":   ".br",
@@ -85,9 +86,9 @@ func ServeFromFS(r fiber.Router, path string, filesystem fs.FS, cachecontrol str
 	handler := fs.NewRequestHandler()
 
 	r.Use(path, func(c fiber.Ctx) error {
-		handler(c.Context())
-		if c.Context().Response.StatusCode() == 200 {
-			c.Set("Cache-Control", cachecontrol)
+		handler(c.RequestCtx())
+		if c.RequestCtx().Response.StatusCode() == 200 {
+			c.Set("Cache-Control", "public, max-age=28800")
 		}
 
 		return nil
@@ -100,8 +101,8 @@ func main() {
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 
-		EnableTrustedProxyCheck: cfg.TrustedProxyCheck,
-		TrustedProxies:          cfg.TrustedProxies,
+		TrustProxy:       cfg.TrustedProxyCheck,
+		TrustProxyConfig: fiber.TrustProxyConfig{Proxies: cfg.TrustedProxies},
 	})
 
 	if !cfg.Debug { // you wanna catch any possible panics as soon as possible
@@ -142,7 +143,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("", templates.MainPage(prefs), templates.MainPageHead()).Render(c.Context(), c)
+			return templates.Base("", templates.MainPage(prefs), templates.MainPageHead()).Render(c.RequestCtx(), c)
 		}
 
 		app.Get("/", mainPageHandler)
@@ -152,10 +153,10 @@ func main() {
 	const AssetsCacheControl = "public, max-age=28800" // 8hrs
 	if cfg.EmbedFiles {
 		misc.Log("using embedded files")
-		ServeFromFS(app, "/_/static", staticfs{}, AssetsCacheControl, true)
+		ServeFromFS(app, staticfs{})
 	} else {
 		misc.Log("loading files dynamically")
-		ServeFromFS(app, "/_/static", osfs{}, AssetsCacheControl, true)
+		ServeFromFS(app, osfs{})
 	}
 
 	// why? because when you load a page without link rel="icon" the browser will
@@ -184,7 +185,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(c.Context(), c)
+			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(c.RequestCtx(), c)
 
 		case "users":
 			p, err := sc.SearchUsers("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
@@ -194,7 +195,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(c.Context(), c)
+			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(c.RequestCtx(), c)
 
 		case "playlists":
 			p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
@@ -204,7 +205,7 @@ func main() {
 			}
 
 			c.Set("Content-Type", "text/html")
-			return templates.Base("playlists: "+q, templates.SearchPlaylists(p), nil).Render(c.Context(), c)
+			return templates.Base("playlists: "+q, templates.SearchPlaylists(p), nil).Render(c.RequestCtx(), c)
 		}
 
 		return c.SendStatus(404)
@@ -299,7 +300,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(c.Context(), c)
+		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/tags/:tag", func(c fiber.Ctx) error {
@@ -321,7 +322,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(c.Context(), c)
+		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/tags/:tag/popular-tracks", func(c fiber.Ctx) error {
@@ -343,7 +344,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(c.Context(), c)
+		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/tags/:tag/playlists", func(c fiber.Ctx) error {
@@ -366,7 +367,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.Context(), c)
+		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/_/featured", func(c fiber.Ctx) error {
@@ -382,7 +383,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(c.Context(), c)
+		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/discover", func(c fiber.Ctx) error {
@@ -398,7 +399,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base("Discover", templates.Discover(selections), nil).Render(c.Context(), c)
+		return templates.Base("Discover", templates.Discover(selections), nil).Render(c.RequestCtx(), c)
 	})
 
 	if cfg.ProxyImages {
@@ -489,7 +490,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/albums", func(c fiber.Ctx) error {
@@ -517,7 +518,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/reposts", func(c fiber.Ctx) error {
@@ -545,7 +546,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/likes", func(c fiber.Ctx) error {
@@ -573,7 +574,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/popular-tracks", func(c fiber.Ctx) error {
@@ -601,7 +602,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/followers", func(c fiber.Ctx) error {
@@ -629,7 +630,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/following", func(c fiber.Ctx) error {
@@ -657,7 +658,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/:track", func(c fiber.Ctx) error {
@@ -751,7 +752,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track, true)).Render(c.Context(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user", func(c fiber.Ctx) error {
@@ -779,7 +780,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(c.Context(), c)
+		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/sets/:playlist", func(c fiber.Ctx) error {
@@ -819,7 +820,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(c.Context(), c)
+		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/_/related", func(c fiber.Ctx) error {
@@ -847,7 +848,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(c.Context(), c)
+		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
 	// I'd like to make this "related" but keeping it "recommended" to have the same url as soundcloud
@@ -876,7 +877,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(c.Context(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/:track/sets", func(c fiber.Ctx) error {
@@ -904,7 +905,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(c.Context(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user/:track/albums", func(c fiber.Ctx) error {
@@ -932,7 +933,7 @@ func main() {
 		}
 
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(c.Context(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
 	if cfg.CodegenConfig {
