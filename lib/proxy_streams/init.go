@@ -14,7 +14,7 @@ import (
 var httpc *fasthttp.HostClient
 var httpc_aac *fasthttp.HostClient
 
-func Load(r fiber.Router) {
+func Load(r *fiber.App) {
 	httpc = &fasthttp.HostClient{
 		Addr:                cfg.HLSCDN + ":443",
 		IsTLS:               true,

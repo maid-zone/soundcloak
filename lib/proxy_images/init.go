@@ -13,7 +13,7 @@ import (
 var httpc *fasthttp.HostClient
 var al_httpc *fasthttp.HostClient
 
-func Load(r fiber.Router) {
+func Load(r *fiber.App) {
 	httpc = &fasthttp.HostClient{
 		Addr:                cfg.ImageCDN + ":443",
 		IsTLS:               true,

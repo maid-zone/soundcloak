@@ -93,7 +93,7 @@ type Export struct {
 	Preferences *cfg.Preferences `json:",omitempty"`
 }
 
-func Load(r fiber.Router) {
+func Load(r *fiber.App) {
 	r.Get("/_/preferences", func(c fiber.Ctx) error {
 		p, err := Get(c)
 		if err != nil {

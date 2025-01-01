@@ -66,7 +66,7 @@ func (staticfs) Open(name string) (fs.File, error) {
 // stubby implementation of static middleware
 // why? mainly because of the pathrewrite
 // i hate seeing it trying to get root directory
-func ServeFromFS(r fiber.Router, filesystem fs.FS) {
+func ServeFromFS(r *fiber.App, filesystem fs.FS) {
 	const path = "/_/static"
 	const l = len(path)
 	fs := fasthttp.FS{
@@ -161,12 +161,10 @@ func main() {
 
 	// why? because when you load a page without link rel="icon" the browser will
 	// try to load favicon from default location,
-	// and this path loads the user "favicon.ico" by default
-	if cfg.Debug {
-		app.Get("favicon.ico", func(c fiber.Ctx) error {
-			return c.Redirect().To("/_/static/favicon.ico")
-		})
-	}
+	// and this path loads the user "favicon" by default
+	app.Get("favicon.ico", func(c fiber.Ctx) error {
+		return c.Redirect().To("/_/static/favicon.ico")
+	})
 
 	app.Get("/search", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
