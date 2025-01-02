@@ -452,7 +452,7 @@ func (t Track) DownloadImage() ([]byte, string, error) {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err := DoWithRetry(httpc_image, req, resp)
+	err := DoWithRetry(misc.ImageClient, req, resp)
 	if err != nil {
 		return nil, "", err
 	}

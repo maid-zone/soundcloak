@@ -10,18 +10,9 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var httpc *fasthttp.HostClient
 var al_httpc *fasthttp.HostClient
 
 func Load(r *fiber.App) {
-	httpc = &fasthttp.HostClient{
-		Addr:                cfg.ImageCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-		StreamResponseBody:  true,
-	}
 
 	al_httpc = &fasthttp.HostClient{
 		Addr:                "al.sndcdn.com:443",
@@ -53,7 +44,7 @@ func Load(r *fiber.App) {
 		var cl *fasthttp.HostClient
 		if parsed.Host()[0] == 'i' {
 			parsed.SetHost(cfg.ImageCDN)
-			cl = httpc
+			cl = misc.ImageClient
 		} else if string(parsed.Host()[:2]) == "al" {
 			cl = al_httpc
 		}

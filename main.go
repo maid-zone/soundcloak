@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"log"
 	"math/rand"
@@ -25,6 +26,13 @@ import (
 	static_files "git.maid.zone/stuff/soundcloak/static"
 	"git.maid.zone/stuff/soundcloak/templates"
 )
+
+func boolean(b bool) string {
+	if b {
+		return "Enabled"
+	}
+	return "Disabled"
+}
 
 type osfs struct{}
 
@@ -934,8 +942,48 @@ func main() {
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
+	// cute
+	const art = `
+            ⠀⠀⠀⠀⢀⡴⣆⠀⠀⠀⠀⠀⣠⡀⠀⠀⠀⠀⠀⠀⣼⣿⡗⠀⠀⠀⠀
+            ⠀⠀⠀⣠⠟⠀⠘⠷⠶⠶⠶⠾⠉⢳⡄⠀⠀⠀⠀⠀⣧⣿⠀⠀⠀⠀⠀
+            ⠀⠀⣰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣤⣤⣤⣤⣤⣿⢿⣄⠀⠀⠀⠀
+  ___  ___  ⠀⠀⡇⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣧⠀⠀⠀⠀⠀⠀⠙⣷⡴⠶⣦
+ / __|/ __| ⠀⠀⢱⡀⠀⠉⠉⠀⠀⠀⠀⠛⠃⠀⢠⡟⠂⠀⠀⢀⣀⣠⣤⠿⠞⠛⠋
+ \__ \ (__  ⣠⠾⠋⠙⣶⣤⣤⣤⣤⣤⣀⣠⣤⣾⣿⠴⠶⠚⠋⠉⠁⠀⠀⠀⠀⠀⠀
+ |___/\___| ⠛⠒⠛⠉⠉⠀⠀⠀⣴⠟⣣⡴⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+~~~~~~~~~~~~~~~~~~~~⠛⠛~~~~~~~~~~~~~~~~~~~~~~~~`
+	fmt.Println(art)
+
+	keys := [...]string{"Built from", "ProxyStreams", "ProxyImages", "Restream", "GetWebProfiles", "Listening on"}
+	// maps in go are unordered..
+	table := map[string]string{
+		"Built from":     fmt.Sprintf("%s (%s)", cfg.Commit, cfg.CommitURL),
+		"ProxyStreams":   boolean(cfg.ProxyStreams),
+		"ProxyImages":    boolean(cfg.ProxyStreams),
+		"Restream":       boolean(cfg.Restream),
+		"GetWebProfiles": boolean(cfg.GetWebProfiles),
+		"Listening on":   cfg.Addr,
+	}
+	if cfg.Addr[0] == ':' {
+		table["Listening on"] = "127.0.0.1" + cfg.Addr
+	}
+	longest := ""
+	for key := range table {
+		if len(key) > len(longest) {
+			longest = key
+		}
+	}
+	longest += " :: "
+
+	for _, key := range keys {
+		fmt.Print(key)
+		fmt.Print(strings.Repeat(" ", len(longest)-len(key)-len(" :: ")) + " :: ")
+		fmt.Println(table[key])
+	}
+
+	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	if cfg.CodegenConfig {
 		log.Println("Warning: you have CodegenConfig enabled, but the config was loaded dynamically.")
 	}
-	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork}))
+	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork, DisableStartupMessage: true}))
 }

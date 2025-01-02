@@ -44,3 +44,40 @@ func Log(what ...any) {
 		fmt.Println(what...)
 	}
 }
+
+var ImageClient *fasthttp.HostClient
+var HlsClient *fasthttp.HostClient
+var HlsAacClient *fasthttp.HostClient
+
+func init() {
+	if cfg.Restream || cfg.ProxyImages {
+		ImageClient = &fasthttp.HostClient{
+			Addr:                cfg.ImageCDN + ":443",
+			IsTLS:               true,
+			DialDualStack:       true,
+			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+			MaxIdleConnDuration: 1<<63 - 1,
+			StreamResponseBody:  true,
+		}
+	}
+
+	if cfg.Restream || cfg.ProxyStreams {
+		HlsClient = &fasthttp.HostClient{
+			Addr:                cfg.HLSCDN + ":443",
+			IsTLS:               true,
+			DialDualStack:       true,
+			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+			MaxIdleConnDuration: 1<<63 - 1,
+			StreamResponseBody:  true,
+		}
+
+		HlsAacClient = &fasthttp.HostClient{
+			Addr:                cfg.HLSAACCDN + ":443",
+			IsTLS:               true,
+			DialDualStack:       true,
+			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+			MaxIdleConnDuration: 1<<63 - 1,
+			StreamResponseBody:  true,
+		}
+	}
+}

@@ -34,15 +34,6 @@ var httpc = &fasthttp.HostClient{
 	MaxIdleConnDuration: 1<<63 - 1,
 }
 
-var httpc_image = &fasthttp.HostClient{
-	Addr:                cfg.ImageCDN + ":443",
-	IsTLS:               true,
-	DialDualStack:       true,
-	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	MaxIdleConnDuration: 1<<63 - 1,
-	StreamResponseBody:  true,
-}
-
 var genericClient = &fasthttp.Client{
 	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 }

@@ -11,28 +11,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var httpc *fasthttp.HostClient
-var httpc_aac *fasthttp.HostClient
-
 func Load(r *fiber.App) {
-	httpc = &fasthttp.HostClient{
-		Addr:                cfg.HLSCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-		StreamResponseBody:  true,
-	}
-
-	httpc_aac = &fasthttp.HostClient{
-		Addr:                cfg.HLSAACCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-		StreamResponseBody:  true,
-	}
-
 	r.Get("/_/proxy/streams", func(c fiber.Ctx) error {
 		ur := c.Query("url")
 		if ur == "" {
@@ -61,7 +40,7 @@ func Load(r *fiber.App) {
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp)
 
-		err = sc.DoWithRetry(httpc, req, resp)
+		err = sc.DoWithRetry(misc.HlsClient, req, resp)
 		if err != nil {
 			return err
 		}
@@ -99,7 +78,7 @@ func Load(r *fiber.App) {
 
 		resp := fasthttp.AcquireResponse()
 
-		err = sc.DoWithRetry(httpc_aac, req, resp)
+		err = sc.DoWithRetry(misc.HlsAacClient, req, resp)
 		if err != nil {
 			return err
 		}
@@ -138,7 +117,7 @@ func Load(r *fiber.App) {
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
 
-		err = sc.DoWithRetry(httpc, req, resp)
+		err = sc.DoWithRetry(misc.HlsClient, req, resp)
 		if err != nil {
 			return err
 		}
@@ -189,7 +168,7 @@ func Load(r *fiber.App) {
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
 
-		err = sc.DoWithRetry(httpc_aac, req, resp)
+		err = sc.DoWithRetry(misc.HlsAacClient, req, resp)
 		if err != nil {
 			return err
 		}

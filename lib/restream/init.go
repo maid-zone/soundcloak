@@ -17,10 +17,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var httpc *fasthttp.HostClient
-var httpc_aac *fasthttp.HostClient
-var httpc_image *fasthttp.HostClient
-
 const defaultPartsCapacity = 24
 
 type reader struct {
@@ -58,9 +54,9 @@ func (r *reader) Setup(url string, aac bool) error {
 	r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	if aac {
-		r.client = httpc_aac
+		r.client = misc.HlsAacClient
 	} else {
-		r.client = httpc
+		r.client = misc.HlsClient
 	}
 
 	err := sc.DoWithRetry(r.client, r.req, r.resp)
@@ -195,31 +191,6 @@ func (c *collector) Write(data []byte) (n int, err error) {
 }
 
 func Load(r *fiber.App) {
-	httpc = &fasthttp.HostClient{
-		Addr:                cfg.HLSCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-	}
-
-	httpc_aac = &fasthttp.HostClient{
-		Addr:                cfg.HLSAACCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-	}
-
-	httpc_image = &fasthttp.HostClient{
-		Addr:                cfg.ImageCDN + ":443",
-		IsTLS:               true,
-		DialDualStack:       true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
-		StreamResponseBody:  true,
-	}
-
 	r.Get("/_/restream/:author/:track", func(c fiber.Ctx) error {
 		p, err := preferences.Get(c)
 		if err != nil {
@@ -303,7 +274,7 @@ func Load(r *fiber.App) {
 				resp := fasthttp.AcquireResponse()
 				defer fasthttp.ReleaseResponse(resp)
 
-				err = sc.DoWithRetry(httpc, req, resp)
+				err = sc.DoWithRetry(misc.HlsClient, req, resp)
 				if err != nil {
 					return err
 				}
@@ -327,7 +298,7 @@ func Load(r *fiber.App) {
 				for _, part := range parts {
 					req.SetRequestURIBytes(part)
 
-					err = sc.DoWithRetry(httpc, req, resp)
+					err = sc.DoWithRetry(misc.HlsClient, req, resp)
 					if err != nil {
 						return err
 					}
@@ -356,7 +327,7 @@ func Load(r *fiber.App) {
 					req.SetRequestURI(t.Artwork)
 					req.Header.Del("Accept-Encoding")
 
-					err := sc.DoWithRetry(httpc_image, req, resp)
+					err := sc.DoWithRetry(misc.ImageClient, req, resp)
 					if err != nil {
 						return err
 					}
@@ -382,7 +353,7 @@ func Load(r *fiber.App) {
 				resp := fasthttp.AcquireResponse()
 				defer fasthttp.ReleaseResponse(resp)
 
-				err = sc.DoWithRetry(httpc_aac, req, resp)
+				err = sc.DoWithRetry(misc.HlsAacClient, req, resp)
 				if err != nil {
 					return err
 				}
@@ -413,7 +384,7 @@ func Load(r *fiber.App) {
 				for _, part := range parts {
 					req.SetRequestURIBytes(part)
 
-					err = sc.DoWithRetry(httpc_aac, req, resp)
+					err = sc.DoWithRetry(misc.HlsAacClient, req, resp)
 					if err != nil {
 						return err
 					}
@@ -442,7 +413,7 @@ func Load(r *fiber.App) {
 					req.SetRequestURI(t.Artwork)
 					req.Header.Del("Accept-Encoding")
 
-					err := sc.DoWithRetry(httpc_image, req, resp)
+					err := sc.DoWithRetry(misc.ImageClient, req, resp)
 					if err != nil {
 						return err
 					}
