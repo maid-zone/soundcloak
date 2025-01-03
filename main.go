@@ -757,8 +757,17 @@ func main() {
 			}
 		}
 
+		var comments *sc.Paginated[*sc.Comment]
+		if q := c.Query("pagination"); q != "" {
+			comments, err = track.GetComments(cid, prefs, q)
+			if err != nil {
+				log.Printf("failed to get %s from %s comments: %s\n", c.Params("track"), c.Params("user"), err)
+				return err
+			}
+		}
+
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio, comments), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user", func(c fiber.Ctx) error {
@@ -953,11 +962,11 @@ func main() {
  |___/\___| ⠛⠒⠛⠉⠉⠀⠀⠀⣴⠟⣣⡴⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ~~~~~~~~~~~~~~~~~~~~⠛⠛~~~~~~~~~~~~~~~~~~~~~~~~`
 	fmt.Println(art)
+	const sep = " :: "
 
-	keys := [...]string{"Built from", "ProxyStreams", "ProxyImages", "Restream", "GetWebProfiles", "Listening on"}
 	// maps in go are unordered..
 	table := map[string]string{
-		"Built from":     fmt.Sprintf("%s (%s)", cfg.Commit, cfg.CommitURL),
+		"Built from":     fmt.Sprintf("%s (%s)", cfg.Commit, cfg.Repo),
 		"ProxyStreams":   boolean(cfg.ProxyStreams),
 		"ProxyImages":    boolean(cfg.ProxyStreams),
 		"Restream":       boolean(cfg.Restream),
@@ -973,11 +982,11 @@ func main() {
 			longest = key
 		}
 	}
-	longest += " :: "
+	longest += sep
 
-	for _, key := range keys {
+	for _, key := range [...]string{"Built from", "ProxyStreams", "ProxyImages", "Restream", "GetWebProfiles", "Listening on"} {
 		fmt.Print(key)
-		fmt.Print(strings.Repeat(" ", len(longest)-len(key)-len(" :: ")) + " :: ")
+		fmt.Print(strings.Repeat(" ", len(longest)-len(key)-len(sep)) + sep)
 		fmt.Println(table[key])
 	}
 

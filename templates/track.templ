@@ -145,7 +145,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, comments *sc.Paginated[*sc.Comment]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
@@ -197,6 +197,17 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
+	<h1>Comments</h1>
+	<div>
+	if comments != nil {
+		for _, c := range comments.Collection {
+			<div>
+				<h3>{c.Author.Username}</h3>
+				<p>{c.Body}</p>
+			</div>
+		}
+	}
+	</div>
 }
 
 templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {

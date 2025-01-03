@@ -82,6 +82,13 @@ type Stream struct {
 	URL string `json:"url"`
 }
 
+type Comment struct {
+	Kind      string `json:"kind"` // "comment"
+	Body      string `json:"body"`
+	Timestamp int    `json:"timestamp"`
+	Author    User   `json:"user"`
+}
+
 func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {
 	switch mode {
 	case cfg.AudioBest:
@@ -484,7 +491,7 @@ func RecentTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*T
 	return &p, nil
 }
 
-func (t *Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+func (t Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{
 		Next: "https://" + api + "/tracks/" + string(t.ID) + "/related" + args,
 	}
@@ -502,7 +509,7 @@ func (t *Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Pag
 	return &p, nil
 }
 
-func (t *Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (t Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/tracks/" + string(t.ID) + "/playlists_without_albums" + args,
 	}
@@ -520,7 +527,7 @@ func (t *Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*P
 	return &p, nil
 }
 
-func (t *Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (t Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{
 		Next: "https://" + api + "/tracks/" + string(t.ID) + "/albums" + args,
 	}
@@ -533,6 +540,24 @@ func (t *Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Pagi
 	for _, p := range p.Collection {
 		p.Fix("", false, false)
 		p.Postfix(prefs, false, false)
+	}
+
+	return &p, nil
+}
+
+func (t Track) GetComments(cid string, prefs cfg.Preferences, args string) (*Paginated[*Comment], error) {
+	p := Paginated[*Comment]{
+		Next: "https://" + api + "/tracks/" + string(t.ID) + "/comments" + args,
+	}
+
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range p.Collection {
+		p.Author.Fix(false)
+		p.Author.Postfix(prefs)
 	}
 
 	return &p, nil

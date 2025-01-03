@@ -335,7 +335,7 @@ func (u *User) GetWebProfiles(cid string) error {
 	return json.Unmarshal(data, &u.WebProfiles)
 }
 
-func (u *User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
+func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 	p := Paginated[*User]{
 		Next: "https://" + api + "/users/" + string(u.ID) + "/relatedartists?page_size=20",
 	}
@@ -353,7 +353,7 @@ func (u *User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 	return p.Collection, nil
 }
 
-func (u *User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
+func (u User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
 	p := Paginated[*Track]{
 		Next: "https://" + api + "/users/" + string(u.ID) + "/toptracks?limit=10",
 	}
