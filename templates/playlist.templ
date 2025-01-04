@@ -21,7 +21,7 @@ func playlist(t sc.Track, p sc.Playlist) string {
 }
 
 templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
-	<a class="listing" href={ templ.URL(playlist.Href()) }>
+	<a class="listing" href={ templ.SafeURL(playlist.Href()) }>
 		if playlist.Artwork != "" {
 			<img src={ playlist.Artwork }/>
 		} else {
@@ -44,7 +44,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	<h1>{ p.Title }</h1>
 	@UserItem(&p.Author)
 	<div style="display: flex;">
-		<a class="btn" href={ templ.URL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
+		<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
 	</div>
 	<br/>
 	@Description(prefs, p.Description, nil)
@@ -61,7 +61,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 		}
 	</div>
 	if len(p.MissingTracks) != 0 {
-		<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
+		<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
 	}
 	<div>
 		if p.TagList != "" {
@@ -91,7 +91,7 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.URL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
+			<a class="btn" href={ templ.SafeURL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

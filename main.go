@@ -174,6 +174,11 @@ func main() {
 		return c.Redirect().To("/_/static/favicon.ico")
 	})
 
+	app.Get("robots.txt", func(c fiber.Ctx) error {
+		return c.SendString(`User-agent: *
+Disallow: /`)
+	})
+
 	app.Get("/search", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {

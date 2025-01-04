@@ -28,12 +28,12 @@ templ TrackButtons(current string, track sc.Track) {
 				<a class="btn active">{ b.text }</a>
 			} else {
 				if b.external {
-					<a class="btn" href={ templ.URL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
+					<a class="btn" href={ templ.SafeURL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
 				} else {
 					if b.override {
-						<a class="btn" href={ templ.URL(b.href) }>{ b.text }</a>
+						<a class="btn" href={ templ.SafeURL(b.href) }>{ b.text }</a>
 					} else {
-						<a class="btn" href={ templ.URL(track.Href() + b.href) }>{ b.text }</a>
+						<a class="btn" href={ templ.SafeURL(track.Href() + b.href) }>{ b.text }</a>
 					}
 				}
 			}
@@ -129,7 +129,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 				overrideHref = track.Href()
 			}
 		}}
-		<a class="listing" href={ templ.URL(overrideHref) }>
+		<a class="listing" href={ templ.SafeURL(overrideHref) }>
 			if track.Artwork != "" {
 				<img src={ track.Artwork }/>
 			} else {
@@ -153,11 +153,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
 	if cfg.Restream {
 		<div style="display: flex; margin-bottom: 1rem;">
-			<a class="btn" href={ templ.URL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(audio) }>download</a>
+			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(audio) }>download</a>
 		</div>
 	}
 	if t.Genre != "" {
-		<a href={ templ.URL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+		<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
 	}
 	if playlist != nil {
 		<details open style="margin-bottom: 1rem;">
@@ -167,11 +167,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			<h2>Next track:</h2>
 			@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
 			<div style="display: flex; gap: 1rem">
-				<a href={ templ.URL(t.Href()) } class="btn">Stop playlist playback</a>
+				<a href={ templ.SafeURL(t.Href()) } class="btn">Stop playlist playback</a>
 				if mode != cfg.AutoplayRandom {
-					<a href={ templ.URL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
+					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
 				} else {
-					<a href={ templ.URL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
+					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
 				}
 			</div>
 		</details>
@@ -179,9 +179,9 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	@UserItem(&t.Author)
 	@TrackButtons("", t)
 	// <div style="display: flex; gap: 1rem">
-	// 	<a class="btn" href={ templ.URL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
+	// 	<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
 	// 	if cfg.Restream {
-	// 		<a class="btn" href={ templ.URL("/_/restream" + t.Href() + "?metadata=true") } download={t.Permalink + "." + toExt(audio)}>download</a>
+	// 		<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={t.Permalink + "." + toExt(audio)}>download</a>
 	// 	}
 	// </div>
 	<br/>
@@ -197,17 +197,26 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
-	<h1>Comments</h1>
-	<div>
 	if comments != nil {
-		for _, c := range comments.Collection {
-			<div>
-				<h3>{c.Author.Username}</h3>
-				<p>{c.Body}</p>
-			</div>
-		}
+		<h1>Comments</h1>
+		<div>
+			for _, c := range comments.Collection {
+				<div class="listing">
+					if c.Author.Avatar != "" {
+						<img src={ c.Author.Avatar }/>
+					} else {
+						<img src="/_/static/placeholder.jpg"/>
+					}
+					<div class="comment">
+						<h3 class="link"><a href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a></h3>
+						<p>{ c.Body }</p>
+					</div>
+				</div>
+			}
+		</div>
+	} else {
+		<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
 	}
-	</div>
 }
 
 templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {
@@ -218,7 +227,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/_/static/global.css"/>
 			<title>soundcloak</title>
-			if *prefs.Player == cfg.HLSPlayer {
+			if *prefs.Player == cfg.HLSPlayer && stream != "" {
 				<script src="/_/static/js/hls.light.js"></script>
 			}
 		</head>
@@ -244,7 +253,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 			@TrackItem(track, true, "")
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.URL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+			<a class="btn" href={ templ.SafeURL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -253,7 +262,7 @@ templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
-	<h1><a href={templ.URL(t.Href())}>{ t.Title }</a></h1>
+	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
 	@TrackButtons("related tracks", t)
 	<br/>
 	if len(p.Collection) == 0 {
@@ -263,7 +272,7 @@ templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
 			@TrackItem(track, true, "")
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/related")[1])) } rel="noreferrer">more tracks</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/related")[1])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -272,7 +281,7 @@ templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
-	<h1><a href={templ.URL(t.Href())}>{ t.Title }</a></h1>
+	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
 	@TrackButtons("in albums", t)
 	<br/>
 	if len(p.Collection) == 0 {
@@ -282,7 +291,7 @@ templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/albums")[1])) } rel="noreferrer">more albums</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/albums")[1])) } rel="noreferrer">more albums</a>
 		}
 	}
 }
@@ -291,7 +300,7 @@ templ TrackInPlaylists(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
-	<h1><a href={templ.URL(t.Href())}>{ t.Title }</a></h1>
+	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
 	@TrackButtons("in playlists", t)
 	<br/>
 	if len(p.Collection) == 0 {
@@ -301,7 +310,7 @@ templ TrackInPlaylists(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.URL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists_without_albums")[1])) } rel="noreferrer">more playlists</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists_without_albums")[1])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

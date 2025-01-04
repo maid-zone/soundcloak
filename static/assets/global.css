@@ -164,3 +164,7 @@ select:focus {
 .link:hover {
   text-decoration: underline;
 }
+
+.listing > .comment > h3 {
+  margin: 0;
+}
