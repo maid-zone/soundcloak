@@ -3,7 +3,7 @@ module git.maid.zone/stuff/soundcloak
 go 1.23.4
 
 require (
-	github.com/a-h/templ v0.2.793
+	github.com/a-h/templ v0.3.819
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/dlclark/regexp2 v1.11.5-0.20240806004527-5bbbed8ea10b
 	github.com/gcottom/mp4meta v0.0.5
@@ -32,6 +32,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 )
