@@ -142,7 +142,7 @@ func GetClientID() (string, error) {
 		data = resp.Body()
 	}
 
-	m, _ := verRegex.FindStringMatch(string(data))
+	m, _ := verRegex.FindStringMatch(cfg.B2s(data))
 	if m == nil {
 		return "", ErrVersionNotFound
 	}
@@ -160,7 +160,7 @@ func GetClientID() (string, error) {
 	}
 
 	if experimental_GetClientID {
-		m, _ = scriptRegex.FindStringMatch(string(data))
+		m, _ = scriptRegex.FindStringMatch(cfg.B2s(data))
 		if m != nil {
 			g = m.GroupByNumber(1)
 			if g != nil {
@@ -175,7 +175,7 @@ func GetClientID() (string, error) {
 					data = resp.Body()
 				}
 
-				m, _ = clientIdRegex.FindStringMatch(string(data))
+				m, _ = clientIdRegex.FindStringMatch(cfg.B2s(data))
 				if m != nil {
 					g = m.GroupByNumber(1)
 					if g != nil {
@@ -192,7 +192,7 @@ func GetClientID() (string, error) {
 		ch := make(chan string, 1)
 		wg := &sync.WaitGroup{}
 		done := false
-		m, _ = scriptsRegex.FindStringMatch(string(data))
+		m, _ = scriptsRegex.FindStringMatch(cfg.B2s(data))
 		for m != nil {
 			g = m.GroupByNumber(1)
 			if g != nil {

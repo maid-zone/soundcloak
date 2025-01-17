@@ -145,7 +145,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, comments *sc.Paginated[*sc.Comment]) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, downloadAudio *string, comments *sc.Paginated[*sc.Comment]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
@@ -153,7 +153,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
 	if cfg.Restream {
 		<div style="display: flex; margin-bottom: 1rem;">
-			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(audio) }>download</a>
+			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
 		</div>
 	}
 	if t.Genre != "" {
@@ -197,25 +197,48 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
-	if comments != nil {
-		<h1>Comments</h1>
-		<div>
-			for _, c := range comments.Collection {
-				<div class="listing">
-					if c.Author.Avatar != "" {
-						<img src={ c.Author.Avatar }/>
-					} else {
-						<img src="/_/static/placeholder.jpg"/>
-					}
-					<div class="comment">
-						<h3 class="link"><a href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a></h3>
-						<p>{ c.Body }</p>
-					</div>
-				</div>
+	<h1>Comments</h1>
+	if *prefs.DynamicLoadComments {
+		if comments != nil {
+			<div id="comments">
+				@Comments(comments)
+			</div>
+			<script async src="/_/static/comments.js"></script>
+			if comments.Next != "" {
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(comments.Next, "/comments")[1])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
 			}
-		</div>
+		} else {
+			<div id="comments"></div>
+			<script async src="/_/static/comments.js"></script>
+			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
+		}
 	} else {
-		<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
+		if comments != nil {
+			<div>
+				@Comments(comments)
+			</div>
+			if comments.Next != "" {
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(comments.Next, "/comments")[1])) } rel="noreferrer">more comments</a>
+			}
+		} else {
+			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
+		}
+	}
+}
+
+templ Comments(comments *sc.Paginated[*sc.Comment]) {
+	for _, c := range comments.Collection {
+		<div class="listing">
+			if c.Author.Avatar != "" {
+				<img src={ c.Author.Avatar }/>
+			} else {
+				<img src="/_/static/placeholder.jpg"/>
+			}
+			<div class="comment">
+				<h3 class="link"><a href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a></h3>
+				<p>{ c.Body }</p>
+			</div>
+		</div>
 	}
 }
 

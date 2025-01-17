@@ -24,15 +24,15 @@ func Load(r *fiber.App) {
 	}
 
 	r.Get("/_/proxy/images", func(c fiber.Ctx) error {
-		url := c.Query("url")
-		if url == "" {
+		url := c.RequestCtx().QueryArgs().Peek("url")
+		if len(url) == 0 {
 			return fiber.ErrBadRequest
 		}
 
 		parsed := fasthttp.AcquireURI()
 		defer fasthttp.ReleaseURI(parsed)
 
-		err := parsed.Parse(nil, []byte(url))
+		err := parsed.Parse(nil, url)
 		if err != nil {
 			return err
 		}

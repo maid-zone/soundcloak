@@ -134,6 +134,7 @@ func defaultPreferences() {
 	DefaultPreferences.ShowAudio = &False
 
 	DefaultPreferences.SearchSuggestions = &False
+	DefaultPreferences.DynamicLoadComments = &False
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -216,6 +217,12 @@ func loadDefaultPreferences(loaded Preferences) {
 	} else {
 		DefaultPreferences.SearchSuggestions = &False
 	}
+
+	if loaded.DynamicLoadComments != nil {
+		DefaultPreferences.DynamicLoadComments = loaded.DynamicLoadComments
+	} else {
+		DefaultPreferences.DynamicLoadComments = &False
+	}
 }
 
 func boolean(in string) bool {
@@ -240,7 +247,7 @@ func fromEnv() error {
 	env = os.Getenv("DEFAULT_PREFERENCES")
 	if env != "" {
 		var p Preferences
-		err := json.Unmarshal([]byte(env), &p)
+		err := json.Unmarshal(S2b(env), &p)
 		if err != nil {
 			return wrappedError{err, "DEFAULT_PREFERENCES"}
 		}
@@ -383,7 +390,7 @@ func fromEnv() error {
 	env = os.Getenv("TRUSTED_PROXIES")
 	if env != "" {
 		var p []string
-		err := json.Unmarshal([]byte(env), &p)
+		err := json.Unmarshal(S2b(env), &p)
 		if err != nil {
 			return wrappedError{err, "TRUSTED_PROXIES"}
 		}

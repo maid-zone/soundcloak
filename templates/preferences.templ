@@ -65,7 +65,7 @@ templ Preferences(prefs cfg.Preferences) {
 		<label>
 			Autoplay next track in playlists:
 			@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
-			(requires JS)
+			(requires JS; you need to allow autoplay from this domain!!)
 		</label>
 		if *prefs.AutoplayNextTrack {
 			<label>
@@ -79,6 +79,11 @@ templ Preferences(prefs cfg.Preferences) {
 		<label>
 			Fetch search suggestions:
 			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)
+			(requires JS)
+		</label>
+		<label>
+			Dynamically load comments:
+			@checkbox("DynamicLoadComments", *prefs.DynamicLoadComments)
 			(requires JS)
 		</label>
 		<label>

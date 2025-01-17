@@ -260,7 +260,7 @@ Disallow: /`)
 
 		//fmt.Println(c.Hostname(), c.Protocol(), c.IPs())
 
-		u, err := url.Parse(string(loc))
+		u, err := url.Parse(cfg.B2s(loc))
 		if err != nil {
 			return err
 		}
@@ -771,8 +771,45 @@ Disallow: /`)
 			}
 		}
 
+		var downloadAudio *string
+		if cfg.Restream {
+			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true)
+			downloadAudio = &audio
+		}
+
 		c.Set("Content-Type", "text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, c.Query("autoplay") == "true", playlist, nextTrack, c.Query("volume"), mode, audio, comments), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
+		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, downloadAudio, comments), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
+	})
+
+	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {
+		id := c.Params("id")
+		if id == "" {
+			return fiber.ErrBadRequest
+		}
+
+		pagination := c.RequestCtx().QueryArgs().Peek("pagination")
+		if len(pagination) == 0 {
+			return fiber.ErrBadRequest
+		}
+
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		t := sc.Track{ID: json.Number(id)}
+		comm, err := t.GetComments("", prefs, cfg.B2s(pagination))
+		if err != nil {
+			return err
+		}
+
+		if comm.Next != "" {
+			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.Next, "/comments")[1]))
+		} else {
+			c.Set("next", "done")
+		}
+
+		return templates.Comments(comm).Render(c.RequestCtx(), c)
 	})
 
 	app.Get("/:user", func(c fiber.Ctx) error {

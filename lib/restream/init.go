@@ -209,7 +209,7 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		var isDownload = c.Query("metadata") == "true"
+		var isDownload = string(c.RequestCtx().QueryArgs().Peek("metadata")) == "true"
 		var quality *string
 		if isDownload {
 			quality = p.DownloadAudio

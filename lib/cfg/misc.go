@@ -1,5 +1,7 @@
 package cfg
 
+import "unsafe"
+
 // seems soundcloud has 4 of these (i1, i2, i3, i4)
 // they point to the same ip from my observations, and they all serve the same files
 const ImageCDN = "i1.sndcdn.com"
@@ -67,4 +69,14 @@ type Preferences struct {
 	ShowAudio *bool // display audio (aac, opus, mpeg etc) under track player
 
 	SearchSuggestions *bool // load search suggestions on main page
+
+	DynamicLoadComments *bool // dynamic comments loader without leaving track page
+}
+
+func B2s(b []byte) string {
+	return unsafe.String(unsafe.SliceData(b), len(b))
+}
+
+func S2b(s string) []byte {
+	return unsafe.Slice(unsafe.StringData(s), len(s))
 }

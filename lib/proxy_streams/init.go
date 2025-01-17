@@ -13,15 +13,15 @@ import (
 
 func Load(r *fiber.App) {
 	r.Get("/_/proxy/streams", func(c fiber.Ctx) error {
-		ur := c.Query("url")
-		if ur == "" {
+		ur := c.RequestCtx().QueryArgs().Peek("url")
+		if len(ur) == 0 {
 			return fiber.ErrBadRequest
 		}
 
 		parsed := fasthttp.AcquireURI()
 		defer fasthttp.ReleaseURI(parsed)
 
-		err := parsed.Parse(nil, []byte(ur))
+		err := parsed.Parse(nil, ur)
 		if err != nil {
 			return err
 		}
@@ -52,15 +52,15 @@ func Load(r *fiber.App) {
 	})
 
 	r.Get("/_/proxy/streams/aac", func(c fiber.Ctx) error {
-		ur := c.Query("url")
-		if ur == "" {
+		ur := c.RequestCtx().QueryArgs().Peek("url")
+		if len(ur) == 0 {
 			return fiber.ErrBadRequest
 		}
 
 		parsed := fasthttp.AcquireURI()
 		defer fasthttp.ReleaseURI(parsed)
 
-		err := parsed.Parse(nil, []byte(ur))
+		err := parsed.Parse(nil, ur)
 		if err != nil {
 			return err
 		}
@@ -90,15 +90,15 @@ func Load(r *fiber.App) {
 	})
 
 	r.Get("/_/proxy/streams/playlist", func(c fiber.Ctx) error {
-		ur := c.Query("url")
-		if ur == "" {
+		ur := c.RequestCtx().QueryArgs().Peek("url")
+		if len(ur) == 0 {
 			return fiber.ErrBadRequest
 		}
 
 		parsed := fasthttp.AcquireURI()
 		defer fasthttp.ReleaseURI(parsed)
 
-		err := parsed.Parse(nil, []byte(ur))
+		err := parsed.Parse(nil, ur)
 		if err != nil {
 			return err
 		}
@@ -127,13 +127,13 @@ func Load(r *fiber.App) {
 			data = resp.Body()
 		}
 
-		var sp = bytes.Split(data, []byte("\n"))
+		var sp = bytes.Split(data, []byte{'\n'})
 		for i, l := range sp {
 			if len(l) == 0 || l[0] == '#' {
 				continue
 			}
 
-			l = []byte("/_/proxy/streams?url=" + url.QueryEscape(string(l)))
+			l = []byte("/_/proxy/streams?url=" + url.QueryEscape(cfg.B2s(l)))
 			sp[i] = l
 		}
 
@@ -141,15 +141,15 @@ func Load(r *fiber.App) {
 	})
 
 	r.Get("/_/proxy/streams/playlist/aac", func(c fiber.Ctx) error {
-		ur := c.Query("url")
-		if ur == "" {
+		ur := c.RequestCtx().QueryArgs().Peek("url")
+		if len(ur) == 0 {
 			return fiber.ErrBadRequest
 		}
 
 		parsed := fasthttp.AcquireURI()
 		defer fasthttp.ReleaseURI(parsed)
 
-		err := parsed.Parse(nil, []byte(ur))
+		err := parsed.Parse(nil, ur)
 		if err != nil {
 			return err
 		}
@@ -186,14 +186,14 @@ func Load(r *fiber.App) {
 
 			if l[0] == '#' {
 				if bytes.HasPrefix(l, []byte(`#EXT-X-MAP:URI="`)) {
-					l = []byte(`#EXT-X-MAP:URI="/_/proxy/streams/aac?url=` + url.QueryEscape(string(l[16:len(l)-1])) + `"`)
+					l = []byte(`#EXT-X-MAP:URI="/_/proxy/streams/aac?url=` + url.QueryEscape(cfg.B2s(l[16:len(l)-1])) + `"`)
 					sp[i] = l
 				}
 
 				continue
 			}
 
-			l = []byte("/_/proxy/streams/aac?url=" + url.QueryEscape(string(l)))
+			l = []byte("/_/proxy/streams/aac?url=" + url.QueryEscape(cfg.B2s(l)))
 			sp[i] = l
 		}
 

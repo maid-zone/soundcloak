@@ -59,13 +59,17 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.SearchSuggestions == nil {
 		dst.SearchSuggestions = cfg.DefaultPreferences.SearchSuggestions
 	}
+
+	if dst.DynamicLoadComments == nil {
+		dst.DynamicLoadComments = cfg.DefaultPreferences.DynamicLoadComments
+	}
 }
 
 func Get(c fiber.Ctx) (cfg.Preferences, error) {
 	rawprefs := c.Cookies("prefs", "{}")
 	var p cfg.Preferences
 
-	err := json.Unmarshal([]byte(rawprefs), &p)
+	err := json.Unmarshal(cfg.S2b(rawprefs), &p)
 	if err != nil {
 		return p, err
 	}
@@ -87,6 +91,7 @@ type PrefsForm struct {
 	DownloadAudio       string
 	ShowAudio           string
 	SearchSuggestions   string
+	DynamicLoadComments string
 }
 
 type Export struct {
@@ -178,6 +183,12 @@ func Load(r *fiber.App) {
 			old.SearchSuggestions = &cfg.False
 		}
 
+		if p.DynamicLoadComments == "on" {
+			old.DynamicLoadComments = &cfg.True
+		} else {
+			old.DynamicLoadComments = &cfg.False
+		}
+
 		old.Player = &p.Player
 
 		data, err := json.Marshal(old)
@@ -187,7 +198,7 @@ func Load(r *fiber.App) {
 
 		c.Cookie(&fiber.Cookie{
 			Name:     "prefs",
-			Value:    string(data),
+			Value:    cfg.B2s(data),
 			Expires:  time.Now().Add(400 * 24 * time.Hour),
 			HTTPOnly: true,
 			SameSite: "strict",
@@ -251,7 +262,7 @@ func Load(r *fiber.App) {
 
 		c.Cookie(&fiber.Cookie{
 			Name:     "prefs",
-			Value:    string(data),
+			Value:    cfg.B2s(data),
 			Expires:  time.Now().Add(400 * 24 * time.Hour),
 			HTTPOnly: true,
 			SameSite: "strict",
