@@ -16,9 +16,9 @@ function comments(self) {
         var next = xhr.getResponseHeader('next');
         if (next == 'done') {
             self.remove();
-        } else {
-            self.setAttribute('href', next);
+            return;
         }
+        self.setAttribute('href', next);
         self.textContent = 'more comments';
     }
     xhr.send();
