@@ -16,13 +16,7 @@ git clone https://git.maid.zone/stuff/soundcloak
 cd soundcloak
 ```
 
-3. Download hls.js:
-
-```sh
-npm i
-```
-
-4. Download templ:
+3. Download templ:
 
 ```sh
 go install github.com/a-h/templ/cmd/templ@latest
@@ -34,7 +28,7 @@ go install github.com/a-h/templ/cmd/templ@latest
 export PATH=${PATH}:`go env GOPATH`/bin
 ```
 
-5. Download regexp2cg:
+4. Download regexp2cg:
 
 Not really required, but helps speed up some parts of the code that use regular expressions by generating code for them instead of compiling in runtime.
 
@@ -42,7 +36,7 @@ Not really required, but helps speed up some parts of the code that use regular 
 go install github.com/dlclark/regexp2cg@main
 ```
 
-6. Download soundcloakctl:
+5. Download soundcloakctl:
 
 Soundcloakctl is helper for soundcloak.
 
@@ -50,13 +44,13 @@ Soundcloakctl is helper for soundcloak.
 go install git.maid.zone/stuff/soundcloakctl@master
 ```
 
-7. Download requried JS modules:
+6. Download requried JS modules:
 
 ```sh
 soundcloakctl js download
 ```
 
-8. Build binary:
+7. Build binary:
 
 This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
 
