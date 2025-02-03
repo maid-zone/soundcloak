@@ -1,12 +1,18 @@
 package cfg
 
-import "unsafe"
+import (
+	"time"
+	"unsafe"
+)
 
 // seems soundcloud has 4 of these (i1, i2, i3, i4)
 // they point to the same ip from my observations, and they all serve the same files
 const ImageCDN = "i1.sndcdn.com"
 const HLSCDN = "cf-hls-media.sndcdn.com"
 const HLSAACCDN = "playback.media-streaming.soundcloud.cloud"
+
+// Note: we don't need DialDualStack for clients, soundcloud has no ipv6 support and operates only over http1.1 :D
+const MaxIdleConnDuration = 4 * time.Hour
 
 var True = true
 var False = false

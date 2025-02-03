@@ -91,7 +91,7 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?type=playlists&pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists")[1])) } rel="noreferrer">more playlists</a>
+			<a class="btn" href={ templ.SafeURL("?type=playlists&pagination=" + url.QueryEscape(p.Next[sc.H+len("/search/playlists"):])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

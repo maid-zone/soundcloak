@@ -17,9 +17,8 @@ func Load(r *fiber.App) {
 	al_httpc = &fasthttp.HostClient{
 		Addr:                "al.sndcdn.com:443",
 		IsTLS:               true,
-		DialDualStack:       true,
 		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-		MaxIdleConnDuration: 1<<63 - 1,
+		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 		StreamResponseBody:  true,
 	}
 

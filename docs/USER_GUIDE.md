@@ -6,32 +6,6 @@ If the instance is in the [instances list](https://maid.zone/soundcloak/instance
 
 You can also visit `<instance>/_/info` to view some of the settings. This endpoint is only available if `InstanceInfo` is enabled by the maintainer.
 
-Example output: (from [soundcloak.fly.dev/_/info](https://soundcloak.fly.dev/_/info))
-
-```json
-{
-  "Commit": "9126705",
-  "Repo": "https://github.com/maid-zone/soundcloak",
-  "ProxyImages": true,
-  "ProxyStreams": true,
-  "Restream": true,
-  "GetWebProfiles": true,
-  "DefaultPreferences": {
-    "Player": "restream",
-    "ProxyStreams": true,
-    "FullyPreloadTrack": false,
-    "ProxyImages": true,
-    "ParseDescriptions": true,
-    "AutoplayNextTrack": false,
-    "DefaultAutoplayMode": "normal",
-    "HLSAudio": "mpeg",
-    "RestreamAudio": "mpeg",
-    "DownloadAudio": "mpeg",
-    "ShowAudio": true
-  }
-}
-```
-
 # Preferences
 
 Click the "Preferences" button on the main page, or navigate to `<instance>/_/preferences` to get started.

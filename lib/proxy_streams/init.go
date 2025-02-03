@@ -11,8 +11,10 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func Load(r *fiber.App) {
-	r.Get("/_/proxy/streams", func(c fiber.Ctx) error {
+func Load(a *fiber.App) {
+	r := a.Group("/_/proxy/streams")
+
+	r.Get("/", func(c fiber.Ctx) error {
 		ur := c.RequestCtx().QueryArgs().Peek("url")
 		if len(ur) == 0 {
 			return fiber.ErrBadRequest
@@ -51,7 +53,7 @@ func Load(r *fiber.App) {
 		return c.SendStream(pr)
 	})
 
-	r.Get("/_/proxy/streams/aac", func(c fiber.Ctx) error {
+	r.Get("/aac", func(c fiber.Ctx) error {
 		ur := c.RequestCtx().QueryArgs().Peek("url")
 		if len(ur) == 0 {
 			return fiber.ErrBadRequest
@@ -89,7 +91,7 @@ func Load(r *fiber.App) {
 		return c.SendStream(pr)
 	})
 
-	r.Get("/_/proxy/streams/playlist", func(c fiber.Ctx) error {
+	r.Get("/playlist", func(c fiber.Ctx) error {
 		ur := c.RequestCtx().QueryArgs().Peek("url")
 		if len(ur) == 0 {
 			return fiber.ErrBadRequest
@@ -140,7 +142,7 @@ func Load(r *fiber.App) {
 		return c.Send(bytes.Join(sp, []byte("\n")))
 	})
 
-	r.Get("/_/proxy/streams/playlist/aac", func(c fiber.Ctx) error {
+	r.Get("/playlist/aac", func(c fiber.Ctx) error {
 		ur := c.RequestCtx().QueryArgs().Peek("url")
 		if len(ur) == 0 {
 			return fiber.ErrBadRequest

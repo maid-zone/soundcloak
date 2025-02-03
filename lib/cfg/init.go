@@ -87,8 +87,10 @@ var TrustedProxyCheck = true
 // list of ips or ip ranges of trusted proxies (check above)
 var TrustedProxies = []string{}
 
+// generate code for config (run soundcloakctl config codegen or use docker image - it runs it for you)
 var CodegenConfig = false
 
+// use static files embedded in binary
 var EmbedFiles = false
 
 // // end of config // //
@@ -105,6 +107,8 @@ var EmbedFiles = false
 // RestreamAudio: AudioMP3
 // DownloadAudio: AudioMP3
 // ShowAudio: false
+// SearchSuggestions: false
+// DynamicLoadComments: false
 func defaultPreferences() {
 	var p string
 	if Restream {

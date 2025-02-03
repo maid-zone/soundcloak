@@ -54,9 +54,8 @@ func init() {
 		ImageClient = &fasthttp.HostClient{
 			Addr:                cfg.ImageCDN + ":443",
 			IsTLS:               true,
-			DialDualStack:       true,
 			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-			MaxIdleConnDuration: 1<<63 - 1,
+			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
 		}
 	}
@@ -65,18 +64,16 @@ func init() {
 		HlsClient = &fasthttp.HostClient{
 			Addr:                cfg.HLSCDN + ":443",
 			IsTLS:               true,
-			DialDualStack:       true,
 			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-			MaxIdleConnDuration: 1<<63 - 1,
+			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
 		}
 
 		HlsAacClient = &fasthttp.HostClient{
 			Addr:                cfg.HLSAACCDN + ":443",
 			IsTLS:               true,
-			DialDualStack:       true,
 			Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-			MaxIdleConnDuration: 1<<63 - 1,
+			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
 		}
 	}

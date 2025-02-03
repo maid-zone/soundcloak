@@ -127,6 +127,7 @@ func (r *reader) Close() error {
 
 // you could prob make this a bit faster by concurrency (make a bunch of workers => make them download the parts => temporarily add them to a map => fully assemble the result => make reader.Read() read out the result as the parts are coming in) but whatever, fine for now
 func (r *reader) Read(buf []byte) (n int, err error) {
+	misc.Log("we read")
 	if len(r.leftover) != 0 {
 		h := len(buf)
 		if h > len(r.leftover) {

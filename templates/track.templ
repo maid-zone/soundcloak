@@ -205,7 +205,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			</div>
 			<script async src="/_/static/comments.js"></script>
 			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(comments.Next, "/comments")[1])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
 			}
 		} else {
 			<div id="comments"></div>
@@ -218,7 +218,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 				@Comments(comments)
 			</div>
 			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(comments.Next, "/comments")[1])) } rel="noreferrer">more comments</a>
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer">more comments</a>
 			}
 		} else {
 			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
@@ -276,7 +276,7 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 			@TrackItem(track, true, "")
 		}
 		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?type=tracks&pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+			<a class="btn" href={ templ.SafeURL("?type=tracks&pagination=" + url.QueryEscape(p.Next[sc.H+len("/search/tracks"):])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -295,7 +295,7 @@ templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
 			@TrackItem(track, true, "")
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/related")[1])) } rel="noreferrer">more tracks</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/related"):])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -314,7 +314,7 @@ templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/albums")[1])) } rel="noreferrer">more albums</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/albums"):])) } rel="noreferrer">more albums</a>
 		}
 	}
 }
@@ -333,7 +333,7 @@ templ TrackInPlaylists(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 			@PlaylistItem(playlist, true)
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/playlists_without_albums")[1])) } rel="noreferrer">more playlists</a>
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/playlists_without_albums"):])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

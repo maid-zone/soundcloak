@@ -3,7 +3,6 @@ package templates
 import (
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
-	"strings"
 	"strconv"
 )
 
@@ -16,7 +15,7 @@ templ FeaturedTracks(p *sc.Paginated[*sc.Track]) {
 			@TrackItem(track, true, "")
 		}
 		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("/_/featured?pagination=" + url.QueryEscape(strings.Split(p.Next, "/all-music")[1])) } rel="noreferrer">more tracks</a>
+			<a class="btn" href={ templ.SafeURL("/_/featured?pagination=" + url.QueryEscape(p.Next[sc.H+len("/featured_tracks/top/all-music"):])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }

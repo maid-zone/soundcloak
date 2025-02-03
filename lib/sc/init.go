@@ -26,12 +26,13 @@ var ClientIDCache clientIdCache
 
 const api = "api-v2.soundcloud.com"
 
+const H = len("https://" + api)
+
 var httpc = &fasthttp.HostClient{
 	Addr:                api + ":443",
 	IsTLS:               true,
-	DialDualStack:       true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	MaxIdleConnDuration: 1<<63 - 1,
+	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 }
 
 var genericClient = &fasthttp.Client{
