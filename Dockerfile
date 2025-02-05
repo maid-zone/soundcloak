@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.23.4
+ARG GO_VERSION=1.23.5
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG TARGETOS
@@ -6,9 +6,8 @@ ARG TARGETARCH
 
 WORKDIR /build
 
-RUN go install github.com/a-h/templ/cmd/templ@latest
-# moved this to here, because go.lsp.dev is gone, and that's where one of the modules that templ cli needs resides, go proxy still has the module
 RUN go env -w GOPROXY=direct
+RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN go install github.com/dlclark/regexp2cg@main
 
 COPY . .

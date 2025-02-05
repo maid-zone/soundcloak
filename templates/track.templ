@@ -94,7 +94,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 			}
 			<noscript>
 				<br/>
-				JavaScript is disabled! Audio playback may not work without it enabled. 
+				JavaScript is disabled! Audio playback may not work without it enabled.
 				if cfg.Restream {
 					<br/>
 					<a class="link" href="/_/preferences">You can enable Restream player in the preferences. It works without JavaScript.</a>
@@ -146,84 +146,94 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 }
 
 templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, downloadAudio *string, comments *sc.Paginated[*sc.Comment]) {
-	if t.Artwork != "" {
-		<img src={ t.Artwork } width="300px"/>
-	}
-	<h1>{ t.Title }</h1>
-	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
-	if cfg.Restream {
-		<div style="display: flex; margin-bottom: 1rem;">
-			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
+	<div class="duopanel-container">
+		<div class="duopanel-l">
+			if t.Artwork != "" {
+				<img src={ t.Artwork } width="300px"/>
+			}
+			<h1>{ t.Title }</h1>
+			@UserItem(&t.Author)
+			@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
+			<br />
+			<br />
+			if cfg.Restream {
+				<div style="display: flex; margin-bottom: 1rem;">
+					<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
+				</div>
+			}
 		</div>
-	}
-	if t.Genre != "" {
-		<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
-	}
-	if playlist != nil {
-		<details open style="margin-bottom: 1rem;">
-			<summary>Playback info</summary>
-			<h2>In playlist:</h2>
-			@PlaylistItem(playlist, true)
-			<h2>Next track:</h2>
-			@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
-			<div style="display: flex; gap: 1rem">
-				<a href={ templ.SafeURL(t.Href()) } class="btn">Stop playlist playback</a>
-				if mode != cfg.AutoplayRandom {
-					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
+		<div class="duopanel-r">
+			if t.Genre != "" {
+				<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+			}
+
+			if playlist != nil {
+				<details open style="margin-bottom: 1rem;">
+					<summary>Playback info</summary>
+					<h2>In playlist:</h2>
+					@PlaylistItem(playlist, true)
+					<h2>Next track:</h2>
+					@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
+					<div style="display: flex; gap: 1rem">
+						<a href={ templ.SafeURL(t.Href()) } class="btn">Stop playlist playback</a>
+						if mode != cfg.AutoplayRandom {
+							<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
+						} else {
+							<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
+						}
+					</div>
+				</details>
+			}
+
+			@TrackButtons("", t)
+			// <div style="display: flex; gap: 1rem">
+			// 	<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
+			// 	if cfg.Restream {
+			// 		<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={t.Permalink + "." + toExt(audio)}>download</a>
+			// 	}
+			// </div>
+			<br/>
+			@Description(prefs, t.Description, nil)
+			<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
+			<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
+			<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
+			<p>Created: { t.CreatedAt }</p>
+			<p>Last modified: { t.LastModified }</p>
+			if t.License != "" {
+				<p>License: { t.License }</p>
+			}
+			if t.TagList != "" {
+				<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
+			}
+			<h1>Comments</h1>
+			if *prefs.DynamicLoadComments {
+				if comments != nil {
+					<div id="comments">
+						@Comments(comments)
+					</div>
+					<script async src="/_/static/comments.js"></script>
+					if comments.Next != "" {
+						<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
+					}
 				} else {
-					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
+					<div id="comments"></div>
+					<script async src="/_/static/comments.js"></script>
+					<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
 				}
-			</div>
-		</details>
-	}
-	@UserItem(&t.Author)
-	@TrackButtons("", t)
-	// <div style="display: flex; gap: 1rem">
-	// 	<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
-	// 	if cfg.Restream {
-	// 		<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={t.Permalink + "." + toExt(audio)}>download</a>
-	// 	}
-	// </div>
-	<br/>
-	@Description(prefs, t.Description, nil)
-	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
-	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
-	<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
-	<p>Created: { t.CreatedAt }</p>
-	<p>Last modified: { t.LastModified }</p>
-	if t.License != "" {
-		<p>License: { t.License }</p>
-	}
-	if t.TagList != "" {
-		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
-	}
-	<h1>Comments</h1>
-	if *prefs.DynamicLoadComments {
-		if comments != nil {
-			<div id="comments">
-				@Comments(comments)
-			</div>
-			<script async src="/_/static/comments.js"></script>
-			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
+			} else {
+				if comments != nil {
+					<div>
+						@Comments(comments)
+					</div>
+					if comments.Next != "" {
+						<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer">more comments</a>
+					}
+				} else {
+					<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
+				}
 			}
-		} else {
-			<div id="comments"></div>
-			<script async src="/_/static/comments.js"></script>
-			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
-		}
-	} else {
-		if comments != nil {
-			<div>
-				@Comments(comments)
-			</div>
-			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer">more comments</a>
-			}
-		} else {
-			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
-		}
-	}
+		</div>
+	</div>
 }
 
 templ Comments(comments *sc.Paginated[*sc.Comment]) {

@@ -17,11 +17,3 @@
 #search-suggestions > li:hover {
     cursor: pointer;
 }
-
-footer > div {
-    margin-top: 5rem;
-    gap: 1rem;
-    display: grid;
-    grid-template: auto / auto auto auto;
-    justify-content: center;
-}

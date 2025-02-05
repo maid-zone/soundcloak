@@ -38,7 +38,7 @@ templ MainPage(p cfg.Preferences) {
 	<form action="/search">
 		<div style="position: relative">
 			<div style="display: flex; gap: .5rem;">
-				<input id="q" name="q" type="text" autocomplete="off" autofill="off" style="padding: .5rem .6rem; flex-grow: 1;"/>
+				<input required id="q" name="q" type="text" autocomplete="off" autofill="off" style="flex-grow: 1;"/>
 				<select name="type">
 					<option value="tracks">Tracks</option>
 					<option value="users">Users</option>
@@ -50,10 +50,10 @@ templ MainPage(p cfg.Preferences) {
 				<script async src="/_/static/index.js"></script>
 			}
 		</div>
-		<input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;"/>
+		<input type="submit" value="Search" class="btn important" style="width: 100%; margin-top: .5rem;"/>
 	</form>
 	<footer>
-		<div>
+		<div class="btns" style="margin-top: 2rem; justify-content: center;">
 			<a class="btn" href="/_/featured">Featured Tracks</a>
 			<a class="btn" href="/discover">Discover Playlists</a>
 			<a class="btn" href="/_/preferences">Preferences</a>

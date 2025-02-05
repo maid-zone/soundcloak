@@ -17,11 +17,11 @@ templ UserHeader(u sc.User) {
 }
 
 templ UserItem(user *sc.User) {
-	<a class="listing" href={ templ.SafeURL("/" + user.Permalink) }>
+	<a class="listing user" href={ templ.SafeURL("/" + user.Permalink) }>
 		if user.Avatar != "" {
-			<img src={ user.Avatar }/>
+			<img src={ user.Avatar } />
 		} else {
-			<img src="/_/static/placeholder.jpg"/>
+			<img src="/_/static/placeholder.jpg" />
 		}
 		<div class="meta">
 			<h3>{ user.Username }</h3>
@@ -47,7 +47,7 @@ templ UserLinks(links []sc.Link) {
 templ UserBase(prefs cfg.Preferences, u sc.User) {
 	<div>
 		if u.Avatar != "" {
-			<img src={ u.Avatar } width="300px"/>
+			<img src={ u.Avatar } width="300px" style="border-radius: 50%"/>
 		}
 		<h1>{ u.Username }</h1>
 		if u.FullName != "" {
@@ -103,23 +103,29 @@ templ UserButtons(current string, user sc.User) {
 }
 
 templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
-	@UserBase(prefs, u)
-	// kinda tedious but whatever, might make it more flexible in the future
-	// ^ outdated, no longer tedious but whatever
-	@UserButtons("tracks", u)
-	<br/>
-	if len(p.Collection) != 0 {
-		<div>
-			for _, track := range p.Collection {
-				@TrackItem(track, false, "")
+	<div class="duopanel-container">
+		<div class="duopanel-l">
+			@UserBase(prefs, u)
+			// kinda tedious but whatever, might make it more flexible in the future
+			// ^ outdated, no longer tedious but whatever
+		</div>
+		<div class="duopanel-r">
+			@UserButtons("tracks", u)
+			<br/>
+			if len(p.Collection) != 0 {
+				<div>
+					for _, track := range p.Collection {
+						@TrackItem(track, false, "")
+					}
+				</div>
+				if p.Next != "" && len(p.Collection) != int(u.Tracks) {
+					<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
+				}
+			} else {
+				<span>no more tracks</span>
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(u.Tracks) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(strings.Split(p.Next, "/tracks")[1])) } rel="noreferrer">more tracks</a>
-		}
-	} else {
-		<span>no more tracks</span>
-	}
+	</div>
 }
 
 templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]) {
