@@ -73,12 +73,12 @@ var DNSCacheTTL = 60 * time.Minute
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
 
-// run soundcloak on this address (localhost:4664 by default)
-var Addr = ":4664"
-
 // where to listen
 // can be tcp4 (bind to ipv4 address), tcp6 (bind to ipv6 address) or unix (bind to unix socket)
 var Network = "tcp4"
+
+// run soundcloak on this address (localhost:4664 by default)
+var Addr = ":4664"
 
 // run multiple instances of soundcloak locally to be able to handle more requests
 // each one will be a separate process, so they will have separate cache
