@@ -76,6 +76,10 @@ var DNSCacheTTL = 60 * time.Minute
 // run soundcloak on this address (localhost:4664 by default)
 var Addr = ":4664"
 
+// where to listen
+// can be tcp4 (bind to ipv4 address), tcp6 (bind to ipv6 address) or unix (bind to unix socket)
+var Network = "tcp4"
+
 // run multiple instances of soundcloak locally to be able to handle more requests
 // each one will be a separate process, so they will have separate cache
 var Prefork = false
@@ -376,6 +380,11 @@ func fromEnv() error {
 		DNSCacheTTL = time.Duration(num) * time.Second
 	}
 
+	env = os.Getenv("NETWORK")
+	if env != "" {
+		Network = env
+	}
+
 	env = os.Getenv("ADDR")
 	if env != "" {
 		Addr = env
@@ -458,6 +467,7 @@ func init() {
 		PlaylistCacheCleanDelay *time.Duration
 		UserAgent               *string
 		DNSCacheTTL             *time.Duration
+		Network                 *string
 		Addr                    *string
 		Prefork                 *bool
 		TrustedProxyCheck       *bool
@@ -522,6 +532,9 @@ func init() {
 	}
 	if config.DNSCacheTTL != nil {
 		DNSCacheTTL = *config.DNSCacheTTL * time.Second
+	}
+	if config.Network != nil {
+		Network = *config.Network
 	}
 	if config.Addr != nil {
 		Addr = *config.Addr

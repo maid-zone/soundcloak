@@ -1036,5 +1036,5 @@ Disallow: /`)
 	if cfg.CodegenConfig {
 		log.Println("Warning: you have CodegenConfig enabled, but the config was loaded dynamically.")
 	}
-	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork, DisableStartupMessage: true}))
+	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork, DisableStartupMessage: true, ListenerNetwork: cfg.Network}))
 }
