@@ -131,9 +131,9 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 		}}
 		<a class="listing" href={ templ.SafeURL(overrideHref) }>
 			if track.Artwork != "" {
-				<img src={ track.Artwork }/>
+				<img loading="lazy" src={ track.Artwork }/>
 			} else {
-				<img src="/_/static/placeholder.jpg"/>
+				<img loading="lazy" src="/_/static/placeholder.jpg"/>
 			}
 			<div class="meta">
 				<h3>{ track.Title }</h3>
@@ -147,7 +147,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 
 templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, downloadAudio *string, comments *sc.Paginated[*sc.Comment]) {
 	if t.Artwork != "" {
-		<img src={ t.Artwork } width="300px"/>
+		<img loading="lazy" src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
