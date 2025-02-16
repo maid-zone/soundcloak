@@ -154,8 +154,8 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			<h1>{ t.Title }</h1>
 			@UserItem(&t.Author)
 			@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
-			<br />
-			<br />
+			<br/>
+			<br/>
 			if cfg.Restream {
 				<div style="display: flex; margin-bottom: 1rem;">
 					<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
@@ -166,7 +166,6 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			if t.Genre != "" {
 				<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
 			}
-
 			if playlist != nil {
 				<details open style="margin-bottom: 1rem;">
 					<summary>Playback info</summary>
@@ -184,7 +183,6 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 					</div>
 				</details>
 			}
-
 			@TrackButtons("", t)
 			// <div style="display: flex; gap: 1rem">
 			// 	<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
@@ -194,9 +192,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			// </div>
 			<br/>
 			@Description(prefs, t.Description, nil)
-			<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
-			<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
-			<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
+			<div style="display: flex; gap: 2rem;">
+				<p title="Likes">♥ { strconv.FormatInt(t.Likes, 10) }</p>
+				<p title="Plays">▶ { strconv.FormatInt(t.Played, 10) }</p>
+				<p title="Reposts">↻ { strconv.FormatInt(t.Reposted, 10) }</p>
+			</div>
 			<p>Created: { t.CreatedAt }</p>
 			<p>Last modified: { t.LastModified }</p>
 			if t.License != "" {
