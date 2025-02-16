@@ -19,9 +19,9 @@ templ UserHeader(u sc.User) {
 templ UserItem(user *sc.User) {
 	<a class="listing user" href={ templ.SafeURL("/" + user.Permalink) }>
 		if user.Avatar != "" {
-			<img src={ user.Avatar } />
+			<img loading="lazy" fetchpriority="low" src={ user.Avatar }/>
 		} else {
-			<img src="/_/static/placeholder.jpg" />
+			<img loading="lazy" fetchpriority="low" src="/_/static/placeholder.jpg"/>
 		}
 		<div class="meta">
 			<h3>{ user.Username }</h3>

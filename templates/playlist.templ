@@ -23,9 +23,9 @@ func playlist(t sc.Track, p sc.Playlist) string {
 templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 	<a class="listing" href={ templ.SafeURL(playlist.Href()) }>
 		if playlist.Artwork != "" {
-			<img src={ playlist.Artwork }/>
+			<img loading="lazy" fetchpriority="low" src={ playlist.Artwork }/>
 		} else {
-			<img src="/_/static/placeholder.jpg"/>
+			<img loading="lazy" fetchpriority="low" src="/_/static/placeholder.jpg"/>
 		}
 		<div class="meta">
 			<h3>{ playlist.Title }</h3>

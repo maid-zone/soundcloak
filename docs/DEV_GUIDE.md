@@ -1,6 +1,6 @@
 # Setup
 ## Prerequisites
-1. [golang](https://go.dev) (I recommend version 1.23.4)
+1. [golang](https://go.dev) (I recommend version 1.24.0)
 2. [git](https://git-scm.com)
 
 ## The setup
