@@ -43,7 +43,7 @@ var genericClient = &fasthttp.Client{
 var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
 var scriptsRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`, 2)
 var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
-var clientIdRegex = regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
+var clientIdRegex = regexp2.MustCompile(`{client_id:"([A-Za-z0-9]{32})"}`, 0) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")
 var ErrIDNotFound = errors.New("clientid not found")
@@ -114,7 +114,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 }
 
 // Experimental method, which asserts that the clientId is inside the file that starts with "0-"
-const experimental_GetClientID = false
+const experimental_GetClientID = true
 
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
