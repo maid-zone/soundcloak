@@ -46,8 +46,13 @@ func clone(buf []byte) []byte {
 }
 
 func (r *reader) Setup(url string, aac bool) error {
-	r.req = fasthttp.AcquireRequest()
-	r.resp = fasthttp.AcquireResponse()
+	if r.req == nil {
+		r.req = fasthttp.AcquireRequest()
+	}
+
+	if r.resp == nil {
+		r.resp = fasthttp.AcquireResponse()
+	}
 
 	r.req.SetRequestURI(url)
 	r.req.Header.SetUserAgent(cfg.UserAgent)
@@ -106,15 +111,8 @@ func (r *reader) Setup(url string, aac bool) error {
 
 func (r *reader) Close() error {
 	misc.Log("closed :D")
-	if r.req != nil {
-		fasthttp.ReleaseRequest(r.req)
-		r.req = nil
-	}
-
-	if r.resp != nil {
-		fasthttp.ReleaseResponse(r.resp)
-		r.resp = nil
-	}
+	r.req.Reset()
+	r.resp.Reset()
 
 	r.client = nil
 	r.leftover = nil
