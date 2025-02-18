@@ -114,7 +114,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 }
 
 // Experimental method, which asserts that the clientId is inside the file that starts with "0-"
-const experimental_GetClientID = true
+const experimental_GetClientID = false
 
 // inspired by github.com/imputnet/cobalt (mostly stolen lol)
 func GetClientID() (string, error) {
