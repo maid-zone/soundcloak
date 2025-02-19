@@ -1,5 +1,6 @@
 var searchSuggestions = document.getElementById('search-suggestions');
 var input = document.getElementById('q');
+var form = document.querySelector('form[action="/search"]');
 var timeout;
 
 function getSuggestions() {
@@ -26,13 +27,14 @@ function getSuggestions() {
                 e.onclick = function () {
                     input.value = this.textContent;
                     searchSuggestions.style.display = 'none';
+                    form.submit();
                 }
                 cloned.appendChild(e);
             }
 
             searchSuggestions.parentNode.replaceChild(cloned, searchSuggestions);
             searchSuggestions = cloned;
-            searchSuggestions.style.display = 'block';
+            searchSuggestions.style.display = 'flex';
         } catch {
             searchSuggestions.style.display = 'none';
         }

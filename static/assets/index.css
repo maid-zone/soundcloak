@@ -1,19 +1,37 @@
 #search-suggestions {
-    list-style: none;
+    display: flex;
     position: absolute;
-    background-color: var(--secondary);
+    flex-direction: column;
     margin: 0;
-    padding: 1rem;
-    padding-bottom: 0;
-    /* god damn this shit i hate webdev */
+    background-color: var(--secondary);
+    padding: .5rem;
     width: -moz-available;
     width: -webkit-fill-available;
+    list-style: none;
+}
+
+#search-suggestions > ul {
+    display: flex;
+    position: absolute;
+    gap: 1rem;
+    margin: 0;
+    background-color: var(--secondary);
+    padding: 1rem;
+    width: -moz-available;
+    width: -webkit-fill-available;
+    list-style: none;
 }
 
 #search-suggestions > li {
-    padding-bottom: 1rem;
-}
-
-#search-suggestions > li:hover {
     cursor: pointer;
+    padding: .5rem;
+
+    &:hover {
+        background-color:  var(--0);
+    }
+
+    &::before {
+        margin-right: .5rem;
+        content: "🔎 ";
+    }
 }
