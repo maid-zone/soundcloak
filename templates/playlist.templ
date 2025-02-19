@@ -38,43 +38,44 @@ templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 }
 
 templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
-	if p.Artwork != "" {
-		<img src={ p.Artwork } width="300px"/>
-	}
-	<h1>{ p.Title }</h1>
-	@UserItem(&p.Author)
-	<div style="display: flex;">
-		<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
-	</div>
-	<br/>
-	@Description(prefs, p.Description, nil)
-	<p>{ strconv.FormatInt(p.TracksCount(), 10) } tracks</p>
-	<br/>
-	<br/>
-	<div>
-		for _, track := range p.Tracks {
-			if *prefs.AutoplayNextTrack {
-				@TrackItem(&track, true, playlist(track, p))
-			} else {
-				@TrackItem(&track, true, "")
+	<div class="duopanel-container">
+		<div class="duopanel-l">
+			if p.Artwork != "" {
+				<img src={ p.Artwork } width="300px"/>
 			}
-		}
-	</div>
-	if len(p.MissingTracks) != 0 {
-		<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
-	}
-	<div>
-		if p.TagList != "" {
-			<p>Tags: { strings.Join(sc.TagListParser(p.TagList), ", ") }</p>
-		}
-		<p>{ strconv.FormatInt(p.Likes, 10) } likes</p>
-		<br/>
-		if p.CreatedAt != "" {
-			<p>Created: { p.CreatedAt }</p>
-		}
-		if p.LastModified != "" {
-			<p>Last modified: { p.LastModified }</p>
-		}
+			<h1>{ p.Title }</h1>
+			@UserItem(&p.Author)
+			<div style="display: flex;">
+				<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
+			</div>
+			<br/>
+			@Description(prefs, p.Description, nil)
+			if p.TagList != "" {
+				<p>Tags: { strings.Join(sc.TagListParser(p.TagList), ", ") }</p>
+			}
+			<p title="Likes">♥ { strconv.FormatInt(p.Likes, 10) }</p>
+			if p.CreatedAt != "" {
+				<p>Created: { p.CreatedAt }</p>
+			}
+			if p.LastModified != "" {
+				<p>Last modified: { p.LastModified }</p>
+			}
+		</div>
+		<div class="duopanel-r">
+			<p>{ strconv.FormatInt(p.TracksCount(), 10) } tracks</p>
+			<div>
+				for _, track := range p.Tracks {
+					if *prefs.AutoplayNextTrack {
+						@TrackItem(&track, true, playlist(track, p))
+					} else {
+						@TrackItem(&track, true, "")
+					}
+				}
+			</div>
+			if len(p.MissingTracks) != 0 {
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
+			}
+		</div>
 	</div>
 }
 

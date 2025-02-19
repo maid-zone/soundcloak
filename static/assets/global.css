@@ -26,9 +26,14 @@ body {
     color: var(--accent);
 }
 
+.duopanel-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
 @media (width > 800px) {
     .duopanel-container {
-        display: grid;
         grid-template-columns: min-content 1fr;
         gap: 3rem;
     }
