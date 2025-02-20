@@ -2,9 +2,12 @@ package restream
 
 import (
 	"bytes"
-	"image/jpeg"
+	"image"
 	"io"
 	"sync"
+
+	_ "image/jpeg"
+	_ "image/png"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
@@ -230,6 +233,10 @@ func Load(r *fiber.App) {
 		c.Set("Cache-Control", cfg.RestreamCacheControl)
 
 		if isDownload {
+			if t.Artwork != "" {
+				t.Artwork = t.Artwork[:len(t.Artwork)-len("t500x500.png")] + "original.jpg"
+			}
+
 			switch audio {
 			case cfg.AudioMP3:
 				r := acquireReader()
@@ -332,7 +339,7 @@ func Load(r *fiber.App) {
 					}
 
 					defer resp.CloseBodyStream()
-					parsed, err := jpeg.Decode(resp.BodyStream())
+					parsed, _, err := image.Decode(resp.BodyStream())
 					if err != nil {
 						return err
 					}
@@ -418,7 +425,7 @@ func Load(r *fiber.App) {
 					}
 
 					defer resp.CloseBodyStream()
-					parsed, err := jpeg.Decode(resp.BodyStream())
+					parsed, _, err := image.Decode(resp.BodyStream())
 					if err != nil {
 						return err
 					}
