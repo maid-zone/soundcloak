@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"io"
+	"strings"
 	"sync"
 
 	_ "image/jpeg"
@@ -234,7 +235,7 @@ func Load(r *fiber.App) {
 
 		if isDownload {
 			if t.Artwork != "" {
-				t.Artwork = t.Artwork[:len(t.Artwork)-len("t500x500.png")] + "original.jpg"
+				t.Artwork = strings.Replace(t.Artwork, "t500x500", "original", 1)
 			}
 
 			switch audio {
