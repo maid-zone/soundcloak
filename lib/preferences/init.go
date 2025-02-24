@@ -36,6 +36,10 @@ func Defaults(dst *cfg.Preferences) {
 		dst.AutoplayNextTrack = cfg.DefaultPreferences.AutoplayNextTrack
 	}
 
+	if dst.AutoplayNextRelatedTrack == nil {
+		dst.AutoplayNextRelatedTrack = cfg.DefaultPreferences.AutoplayNextRelatedTrack
+	}
+
 	if dst.DefaultAutoplayMode == nil {
 		dst.DefaultAutoplayMode = cfg.DefaultPreferences.DefaultAutoplayMode
 	}
@@ -79,19 +83,20 @@ func Get(c fiber.Ctx) (cfg.Preferences, error) {
 }
 
 type PrefsForm struct {
-	ProxyImages         string
-	ParseDescriptions   string
-	Player              string
-	ProxyStreams        string
-	FullyPreloadTrack   string
-	AutoplayNextTrack   string
-	DefaultAutoplayMode string
-	HLSAudio            string
-	RestreamAudio       string
-	DownloadAudio       string
-	ShowAudio           string
-	SearchSuggestions   string
-	DynamicLoadComments string
+	ProxyImages              string
+	ParseDescriptions        string
+	Player                   string
+	ProxyStreams             string
+	FullyPreloadTrack        string
+	AutoplayNextTrack        string
+	AutoplayNextRelatedTrack string
+	DefaultAutoplayMode      string
+	HLSAudio                 string
+	RestreamAudio            string
+	DownloadAudio            string
+	ShowAudio                string
+	SearchSuggestions        string
+	DynamicLoadComments      string
 }
 
 type Export struct {
@@ -129,6 +134,12 @@ func Load(r *fiber.App) {
 			old.AutoplayNextTrack = &cfg.True
 		} else {
 			old.AutoplayNextTrack = &cfg.False
+		}
+
+		if p.AutoplayNextRelatedTrack == "on" {
+			old.AutoplayNextRelatedTrack = &cfg.True
+		} else {
+			old.AutoplayNextRelatedTrack = &cfg.False
 		}
 
 		if p.ShowAudio == "on" {

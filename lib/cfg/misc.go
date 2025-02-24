@@ -64,6 +64,9 @@ type Preferences struct {
 	// Automatically play next track in playlists
 	AutoplayNextTrack *bool
 
+	// Automatically play next related track
+	AutoplayNextRelatedTrack *bool
+
 	DefaultAutoplayMode *string // "normal" or "random"
 
 	// Check above for more info

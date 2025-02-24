@@ -52,16 +52,32 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	}
 }
 
-func next(t *sc.Track, p *sc.Playlist, autoplay bool, mode string, volume string) string {
-	r := t.Href() + "?playlist=" + p.Href()[1:]
-	if autoplay {
-		r += "&autoplay=true"
+func next(c *sc.Track, t *sc.Track, p *sc.Playlist, autoplay bool, mode string, volume string) string {
+	r := t.Href()
+
+	if p != nil { 
+		r += "?playlist=" + p.Href()[1:]
 	}
+	
+	if autoplay {
+		if p == nil {
+			r += "?"
+		} else {
+			r += "&"
+		}
+		r += "autoplay=true"
+	}
+
 	if mode != "" {
 		r += "&mode=" + mode
 	}
+	
 	if volume != "" {
 		r += "&volume=" + volume
+	}
+
+	if p == nil {
+		r += "&prev=" + string(c.ID)
 	}
 	return r
 }
@@ -75,7 +91,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
 			{{ audioPref = *prefs.RestreamAudio }}
 			if nextTrack != nil {
-				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay } data-next={ next(nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
+				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay } data-next={ next(&track, nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
 				<script async src="/_/static/restream.js"></script>
 			} else {
 				<audio src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
@@ -83,7 +99,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		} else if stream != "" {
 			{{ audioPref = *prefs.HLSAudio }}
 			if nextTrack != nil {
-				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={ next(nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
+				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={ next(&track, nextTrack, playlist, true, mode, "") } volume={ volume }></audio>
 			} else {
 				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
 			}
@@ -159,20 +175,28 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.Genre != "" {
 		<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
 	}
-	if playlist != nil {
+	if nextTrack != nil {
 		<details open style="margin-bottom: 1rem;">
 			<summary>Playback info</summary>
-			<h2>In playlist:</h2>
-			@PlaylistItem(playlist, true)
+
+			if playlist != nil {
+				<h2>In playlist:</h2>
+				@PlaylistItem(playlist, true)
+			}
+
 			<h2>Next track:</h2>
-			@TrackItem(nextTrack, true, next(nextTrack, playlist, true, mode, volume))
+			@TrackItem(nextTrack, true, next(&t, nextTrack, playlist, true, mode, volume))
 			<div style="display: flex; gap: 1rem">
+			if playlist != nil {
 				<a href={ templ.SafeURL(t.Href()) } class="btn">Stop playlist playback</a>
 				if mode != cfg.AutoplayRandom {
-					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
+					<a href={ templ.SafeURL(next(nil, &t, playlist, false, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
 				} else {
-					<a href={ templ.SafeURL(next(&t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
+					<a href={ templ.SafeURL(next(nil, &t, playlist, false, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
 				}
+			} else {
+				<a href={ templ.SafeURL(t.Href() + "?playRelated=false") } class="btn">Stop playback</a>
+			}
 			</div>
 		</details>
 	}

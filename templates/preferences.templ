@@ -69,13 +69,18 @@ templ Preferences(prefs cfg.Preferences) {
 		</label>
 		if *prefs.AutoplayNextTrack {
 			<label>
-				Default autoplay mode:
+				Default autoplay mode (in playlists):
 				@sel("DefaultAutoplayMode", []option{
 					{"normal", "Normal (play songs in order)", false},
 					{"random", "Random (play random song)", false},
 				}, *prefs.DefaultAutoplayMode)
 			</label>
 		}
+		<label>
+			Autoplay next related track:
+			@checkbox("AutoplayNextRelatedTrack", *prefs.AutoplayNextRelatedTrack)
+			(requires JS; you need to allow autoplay from this domain!!)
+		</label>
 		<label>
 			Fetch search suggestions:
 			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)

@@ -130,6 +130,7 @@ func defaultPreferences() {
 
 	DefaultPreferences.ParseDescriptions = &True
 	DefaultPreferences.AutoplayNextTrack = &False
+	DefaultPreferences.AutoplayNextRelatedTrack = &False
 
 	p2 := AutoplayNormal
 	DefaultPreferences.DefaultAutoplayMode = &p2
@@ -186,6 +187,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.AutoplayNextTrack = loaded.AutoplayNextTrack
 	} else {
 		DefaultPreferences.AutoplayNextTrack = &False
+	}
+
+	if loaded.AutoplayNextRelatedTrack != nil {
+		DefaultPreferences.AutoplayNextRelatedTrack = loaded.AutoplayNextRelatedTrack
+	} else {
+		DefaultPreferences.AutoplayNextRelatedTrack = &False
 	}
 
 	if loaded.DefaultAutoplayMode != nil {

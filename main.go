@@ -52,8 +52,7 @@ func (osfs) Open(name string) (fs.File, error) {
 	return f, err
 }
 
-type staticfs struct {
-}
+type staticfs struct{}
 
 func (staticfs) Open(name string) (fs.File, error) {
 	misc.Log("staticfs:", name)
@@ -150,7 +149,7 @@ func main() {
 				return err
 			}
 
-			c.Set("Content-Type", "text/html")
+			c.Response().Header.SetContentType("text/html")
 			return templates.Base("", templates.MainPage(prefs), templates.MainPageHead()).Render(c.RequestCtx(), c)
 		}
 
@@ -158,7 +157,6 @@ func main() {
 		app.Get("/index.html", mainPageHandler)
 	}
 
-	const AssetsCacheControl = "public, max-age=28800" // 8hrs
 	if cfg.EmbedFiles {
 		misc.Log("using embedded files")
 		ServeFromFS(app, staticfs{})
@@ -171,7 +169,7 @@ func main() {
 	// try to load favicon from default location,
 	// and this path loads the user "favicon" by default
 	app.Get("favicon.ico", func(c fiber.Ctx) error {
-		return c.Redirect().To("/_/static/favicon.ico")
+		return c.Redirect().Status(fiber.StatusPermanentRedirect).To("/_/static/favicon.ico")
 	})
 
 	app.Get("robots.txt", func(c fiber.Ctx) error {
@@ -195,7 +193,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Set("Content-Type", "text/html")
+			c.Response().Header.SetContentType("text/html")
 			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(c.RequestCtx(), c)
 
 		case "users":
@@ -205,7 +203,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Set("Content-Type", "text/html")
+			c.Response().Header.SetContentType("text/html")
 			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(c.RequestCtx(), c)
 
 		case "playlists":
@@ -215,7 +213,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Set("Content-Type", "text/html")
+			c.Response().Header.SetContentType("text/html")
 			return templates.Base("playlists: "+q, templates.SearchPlaylists(p), nil).Render(c.RequestCtx(), c)
 		}
 
@@ -310,7 +308,7 @@ Disallow: /`)
 			}
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(c.RequestCtx(), c)
 	})
 
@@ -332,7 +330,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
@@ -354,7 +352,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
@@ -377,7 +375,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
@@ -393,7 +391,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(c.RequestCtx(), c)
 	})
 
@@ -409,7 +407,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("Discover", templates.Discover(selections), nil).Render(c.RequestCtx(), c)
 	})
 
@@ -446,7 +444,7 @@ Disallow: /`)
 		}
 
 		app.Get("/_/info", func(c fiber.Ctx) error {
-			c.Set("Content-Type", "application/json")
+			c.Response().Header.SetContentType("application/json")
 			return c.Send(inf)
 		})
 	}
@@ -500,7 +498,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -528,7 +526,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -556,7 +554,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -584,7 +582,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -612,7 +610,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -640,7 +638,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -668,7 +666,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -762,6 +760,17 @@ Disallow: /`)
 			}
 		}
 
+		if *prefs.AutoplayNextRelatedTrack && nextTrack == nil && string(c.RequestCtx().QueryArgs().Peek("playRelated")) != "false" {
+			rel, err := track.GetRelated(cid, prefs, "?limit=4")
+			if err == nil && len(rel.Collection) != 0 {
+				prev := c.RequestCtx().QueryArgs().Peek("prev")
+				nextTrack = &track
+				for i := len(rel.Collection) - 1; i >= 0 && (string(nextTrack.ID) == string(track.ID) || string(nextTrack.ID) == string(prev)); i-- {
+					nextTrack = rel.Collection[i]
+				}
+			}
+		}
+
 		var comments *sc.Paginated[*sc.Comment]
 		if q := c.Query("pagination"); q != "" {
 			comments, err = track.GetComments(cid, prefs, q)
@@ -777,7 +786,7 @@ Disallow: /`)
 			downloadAudio = &audio
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, downloadAudio, comments), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
 	})
 
@@ -836,7 +845,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(c.RequestCtx(), c)
 	})
 
@@ -876,7 +885,7 @@ Disallow: /`)
 			playlist.MissingTracks = strings.Join(next, ",")
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(c.RequestCtx(), c)
 	})
 
@@ -904,7 +913,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(c.RequestCtx(), c)
 	})
 
@@ -933,7 +942,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
@@ -961,7 +970,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
@@ -989,7 +998,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Set("Content-Type", "text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
 	})
 
