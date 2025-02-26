@@ -11,6 +11,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
+const on = "on"
+
 func Defaults(dst *cfg.Preferences) {
 	if dst.Player == nil {
 		dst.Player = cfg.DefaultPreferences.Player
@@ -67,6 +69,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.DynamicLoadComments == nil {
 		dst.DynamicLoadComments = cfg.DefaultPreferences.DynamicLoadComments
 	}
+
+	if dst.KeepPlayerFocus == nil {
+		dst.KeepPlayerFocus = cfg.DefaultPreferences.KeepPlayerFocus
+	}
 }
 
 func Get(c fiber.Ctx) (cfg.Preferences, error) {
@@ -97,6 +103,7 @@ type PrefsForm struct {
 	ShowAudio                string
 	SearchSuggestions        string
 	DynamicLoadComments      string
+	KeepPlayerFocus          string
 }
 
 type Export struct {
@@ -130,19 +137,19 @@ func Load(r *fiber.App) {
 			old.DefaultAutoplayMode = &p.DefaultAutoplayMode
 		}
 
-		if p.AutoplayNextTrack == "on" {
+		if p.AutoplayNextTrack == on {
 			old.AutoplayNextTrack = &cfg.True
 		} else {
 			old.AutoplayNextTrack = &cfg.False
 		}
 
-		if p.AutoplayNextRelatedTrack == "on" {
+		if p.AutoplayNextRelatedTrack == on {
 			old.AutoplayNextRelatedTrack = &cfg.True
 		} else {
 			old.AutoplayNextRelatedTrack = &cfg.False
 		}
 
-		if p.ShowAudio == "on" {
+		if p.ShowAudio == on {
 			old.ShowAudio = &cfg.True
 		} else {
 			old.ShowAudio = &cfg.False
@@ -150,14 +157,14 @@ func Load(r *fiber.App) {
 
 		if *old.Player == cfg.HLSPlayer {
 			if cfg.ProxyStreams {
-				if p.ProxyStreams == "on" {
+				if p.ProxyStreams == on {
 					old.ProxyStreams = &cfg.True
 				} else if p.ProxyStreams == "" {
 					old.ProxyStreams = &cfg.False
 				}
 			}
 
-			if p.FullyPreloadTrack == "on" {
+			if p.FullyPreloadTrack == on {
 				old.FullyPreloadTrack = &cfg.True
 			} else if p.FullyPreloadTrack == "" {
 				old.FullyPreloadTrack = &cfg.False
@@ -175,29 +182,35 @@ func Load(r *fiber.App) {
 		}
 
 		if cfg.ProxyImages {
-			if p.ProxyImages == "on" {
+			if p.ProxyImages == on {
 				old.ProxyImages = &cfg.True
 			} else if p.ProxyImages == "" {
 				old.ProxyImages = &cfg.False
 			}
 		}
 
-		if p.ParseDescriptions == "on" {
+		if p.ParseDescriptions == on {
 			old.ParseDescriptions = &cfg.True
 		} else {
 			old.ParseDescriptions = &cfg.False
 		}
 
-		if p.SearchSuggestions == "on" {
+		if p.SearchSuggestions == on {
 			old.SearchSuggestions = &cfg.True
 		} else {
 			old.SearchSuggestions = &cfg.False
 		}
 
-		if p.DynamicLoadComments == "on" {
+		if p.DynamicLoadComments == on {
 			old.DynamicLoadComments = &cfg.True
 		} else {
 			old.DynamicLoadComments = &cfg.False
+		}
+
+		if p.KeepPlayerFocus == on {
+			old.KeepPlayerFocus = &cfg.True
+		} else {
+			old.KeepPlayerFocus = &cfg.False
 		}
 
 		old.Player = &p.Player

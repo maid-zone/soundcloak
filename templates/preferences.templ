@@ -42,55 +42,13 @@ templ sel_audio(name string, selected string, noOpus bool) {
 templ Preferences(prefs cfg.Preferences) {
 	<h1>Preferences</h1>
 	<form method="post" autocomplete="off">
-		<label>
-			Parse descriptions:
-			@checkbox("ParseDescriptions", *prefs.ParseDescriptions)
-		</label>
-		<label>
-			Show current audio:
-			@checkbox("ShowAudio", *prefs.ShowAudio)
-		</label>
-		if cfg.ProxyImages {
-			<label>
-				Proxy images:
-				@checkbox("ProxyImages", *prefs.ProxyImages)
-			</label>
-		}
 		if cfg.Restream {
 			<label>
 				Download audio:
 				@sel_audio("DownloadAudio", *prefs.DownloadAudio, false)
 			</label>
 		}
-		<label>
-			Autoplay next track in playlists:
-			@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
-			(requires JS; you need to allow autoplay from this domain!!)
-		</label>
-		if *prefs.AutoplayNextTrack {
-			<label>
-				Default autoplay mode (in playlists):
-				@sel("DefaultAutoplayMode", []option{
-					{"normal", "Normal (play songs in order)", false},
-					{"random", "Random (play random song)", false},
-				}, *prefs.DefaultAutoplayMode)
-			</label>
-		}
-		<label>
-			Autoplay next related track:
-			@checkbox("AutoplayNextRelatedTrack", *prefs.AutoplayNextRelatedTrack)
-			(requires JS; you need to allow autoplay from this domain!!)
-		</label>
-		<label>
-			Fetch search suggestions:
-			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)
-			(requires JS)
-		</label>
-		<label>
-			Dynamically load comments:
-			@checkbox("DynamicLoadComments", *prefs.DynamicLoadComments)
-			(requires JS)
-		</label>
+		<h1>Player preferences</h1>
 		<label>
 			Player:
 			@sel("Player", []option{
@@ -101,7 +59,6 @@ templ Preferences(prefs cfg.Preferences) {
 		</label>
 		switch *prefs.Player {
 			case cfg.HLSPlayer:
-				<h1>Player-specific preferences</h1>
 				if cfg.ProxyStreams {
 					<label>
 						Proxy song streams:
@@ -117,12 +74,60 @@ templ Preferences(prefs cfg.Preferences) {
 					@sel_audio("HLSAudio", *prefs.HLSAudio, true)
 				</label>
 			case cfg.RestreamPlayer:
-				<h1>Player-specific preferences</h1>
 				<label>
 					Streaming audio:
 					@sel_audio("RestreamAudio", *prefs.RestreamAudio, false)
 				</label>
 		}
+		<h1>Frontend enhancements</h1>
+		if cfg.ProxyImages {
+			<label>
+				Proxy images:
+				@checkbox("ProxyImages", *prefs.ProxyImages)
+			</label>
+		}
+		<label>
+			Parse descriptions:
+			@checkbox("ParseDescriptions", *prefs.ParseDescriptions)
+		</label>
+		<label>
+			Show current audio:
+			@checkbox("ShowAudio", *prefs.ShowAudio)
+		</label>
+		<label>
+			Fetch search suggestions:
+			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)
+			(requires JS)
+		</label>
+		<label>
+			Dynamically load comments:
+			@checkbox("DynamicLoadComments", *prefs.DynamicLoadComments)
+			(requires JS)
+		</label>
+		<label>
+			Keep player focus:
+			@checkbox("KeepPlayerFocus", *prefs.KeepPlayerFocus)
+			(requires JS)
+		</label>
+		<h2 style="margin-bottom: .35rem">Autoplay</h2>
+		<i>Requires JS. You also need to allow autoplay from this domain</i>
+		<label style="margin-top: 1rem">
+			Autoplay next track in playlists:
+			@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
+		</label>
+		if *prefs.AutoplayNextTrack {
+			<label>
+				Default autoplay mode (in playlists):
+				@sel("DefaultAutoplayMode", []option{
+					{"normal", "Normal (play songs in order)", false},
+					{"random", "Random (play random song)", false},
+				}, *prefs.DefaultAutoplayMode)
+			</label>
+		}
+		<label>
+			Autoplay next related track:
+			@checkbox("AutoplayNextRelatedTrack", *prefs.AutoplayNextRelatedTrack)
+		</label>
 		<input type="submit" value="Update" class="btn" style="margin-top: 1rem;"/>
 		<p>These preferences get saved in a cookie.</p>
 	</form>
@@ -137,6 +142,5 @@ templ Preferences(prefs cfg.Preferences) {
 		<input class="btn" type="file" autocomplete="off" name="prefs"/>
 		<input type="submit" value="Import" class="btn"/>
 	</form>
-
 	<style>label{display:flex;gap:.5rem;align-items:center;margin-bottom:.35rem}</style>
 }

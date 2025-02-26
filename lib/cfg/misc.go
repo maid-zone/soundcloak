@@ -80,6 +80,8 @@ type Preferences struct {
 	SearchSuggestions *bool // load search suggestions on main page
 
 	DynamicLoadComments *bool // dynamic comments loader without leaving track page
+
+	KeepPlayerFocus *bool // keep player element in focus
 }
 
 func B2s(b []byte) string {
