@@ -2,6 +2,7 @@ package restream
 
 import (
 	"bytes"
+	"encoding/binary"
 	"image"
 	"io"
 	"strings"
@@ -27,6 +28,7 @@ type reader struct {
 	parts    [][]byte
 	leftover []byte
 	index    int
+	duration *uint32
 
 	req    *fasthttp.Request
 	resp   *fasthttp.Response
@@ -49,7 +51,21 @@ func clone(buf []byte) []byte {
 	return out
 }
 
-func (r *reader) Setup(url string, aac bool) error {
+var mvhd = []byte("mvhd")
+
+func fixDuration(data []byte, duration *uint32) {
+	i := bytes.Index(data, mvhd)
+	if i != -1 {
+		i += 20
+
+		bt := make([]byte, 4)
+		binary.BigEndian.PutUint32(bt, *duration)
+		copy(data[i:], bt)
+		// timescale is already 1000 in the files
+	}
+}
+
+func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 	if r.req == nil {
 		r.req = fasthttp.AcquireRequest()
 	}
@@ -64,6 +80,7 @@ func (r *reader) Setup(url string, aac bool) error {
 
 	if aac {
 		r.client = misc.HlsAacClient
+		r.duration = duration
 	} else {
 		r.client = misc.HlsClient
 	}
@@ -118,7 +135,6 @@ func (r *reader) Close() error {
 	r.req.Reset()
 	r.resp.Reset()
 
-	r.client = nil
 	r.leftover = nil
 	r.index = 0
 	r.parts = r.parts[:0]
@@ -166,6 +182,10 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 	data, err := r.resp.BodyUncompressed()
 	if err != nil {
 		data = r.resp.Body()
+	}
+
+	if r.index == 0 && r.duration != nil {
+		fixDuration(data, r.duration) // I'm guessing that mvhd will always be in first part
 	}
 
 	if len(data) > len(buf) {
@@ -241,7 +261,7 @@ func Load(r *fiber.App) {
 			switch audio {
 			case cfg.AudioMP3:
 				r := acquireReader()
-				if err := r.Setup(u, false); err != nil {
+				if err := r.Setup(u, false, nil); err != nil {
 					return err
 				}
 
@@ -404,6 +424,8 @@ func Load(r *fiber.App) {
 					result = append(result, data...)
 				}
 
+				fixDuration(result, &t.Duration)
+
 				tag, err := mp4meta.ReadMP4(bytes.NewReader(result))
 				if err != nil {
 					return err
@@ -439,7 +461,13 @@ func Load(r *fiber.App) {
 		}
 
 		r := acquireReader()
-		if err := r.Setup(u, audio == cfg.AudioAAC); err != nil {
+		if audio == cfg.AudioAAC {
+			err = r.Setup(u, true, &t.Duration)
+		} else {
+			err = r.Setup(u, false, nil)
+		}
+
+		if err != nil {
 			return err
 		}
 

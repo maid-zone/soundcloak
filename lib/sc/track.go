@@ -24,11 +24,11 @@ var TracksCache = map[string]cached[Track]{}
 var tracksCacheLock = &sync.RWMutex{}
 
 type Track struct {
-	Artwork     string `json:"artwork_url"`
-	Comments    int    `json:"comment_count"`
-	CreatedAt   string `json:"created_at"`
-	Description string `json:"description"`
-	//Duration      int    `json:"duration"` // there are duration and full_duration fields wtf does that mean
+	Artwork       string      `json:"artwork_url"`
+	Comments      int         `json:"comment_count"`
+	CreatedAt     string      `json:"created_at"`
+	Description   string      `json:"description"`
+	Duration      uint32      `json:"full_duration"`
 	Genre         string      `json:"genre"`
 	Kind          string      `json:"kind"` // should always be "track"!
 	LastModified  string      `json:"last_modified"`
