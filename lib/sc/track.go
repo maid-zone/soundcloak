@@ -129,7 +129,7 @@ func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {
 
 func GetTrack(cid string, permalink string) (Track, error) {
 	tracksCacheLock.RLock()
-	if cell, ok := TracksCache[permalink]; ok && cell.Expires.After(time.Now()) {
+	if cell, ok := TracksCache[permalink]; ok {
 		tracksCacheLock.RUnlock()
 		return cell.Value, nil
 	}
@@ -394,7 +394,7 @@ func (t Track) FormatDescription() string {
 func GetTrackByID(cid string, id string) (Track, error) {
 	tracksCacheLock.RLock()
 	for _, cell := range TracksCache {
-		if string(cell.Value.ID) == string(id) && cell.Expires.After(time.Now()) {
+		if string(cell.Value.ID) == string(id) {
 			tracksCacheLock.RUnlock()
 			return cell.Value, nil
 		}

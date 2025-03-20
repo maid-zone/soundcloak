@@ -37,7 +37,7 @@ type Playlist struct {
 
 func GetPlaylist(cid string, permalink string) (Playlist, error) {
 	playlistsCacheLock.RLock()
-	if cell, ok := PlaylistsCache[permalink]; ok && cell.Expires.After(time.Now()) {
+	if cell, ok := PlaylistsCache[permalink]; ok {
 		playlistsCacheLock.RUnlock()
 		return cell.Value, nil
 	}

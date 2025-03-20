@@ -94,7 +94,7 @@ func (l Like) Fix(prefs cfg.Preferences) {
 }
 func GetUser(cid string, permalink string) (User, error) {
 	usersCacheLock.RLock()
-	if cell, ok := UsersCache[permalink]; ok && cell.Expires.After(time.Now()) {
+	if cell, ok := UsersCache[permalink]; ok {
 		usersCacheLock.RUnlock()
 		return cell.Value, nil
 	}

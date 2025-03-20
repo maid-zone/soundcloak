@@ -426,8 +426,9 @@ func init() {
 		for range ticker.C {
 			usersCacheLock.Lock()
 
+			now := time.Now()
 			for key, val := range UsersCache {
-				if val.Expires.Before(time.Now()) {
+				if val.Expires.Before(now) {
 					delete(UsersCache, key)
 				}
 			}
@@ -441,8 +442,9 @@ func init() {
 		for range ticker.C {
 			tracksCacheLock.Lock()
 
+			now := time.Now()
 			for key, val := range TracksCache {
-				if val.Expires.Before(time.Now()) {
+				if val.Expires.Before(now) {
 					delete(TracksCache, key)
 				}
 			}
@@ -456,8 +458,9 @@ func init() {
 		for range ticker.C {
 			playlistsCacheLock.Lock()
 
+			now := time.Now()
 			for key, val := range PlaylistsCache {
-				if val.Expires.Before(time.Now()) {
+				if val.Expires.Before(now) {
 					delete(PlaylistsCache, key)
 				}
 			}
