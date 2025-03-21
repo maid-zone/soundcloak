@@ -1,6 +1,7 @@
 package sc
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
@@ -28,6 +29,11 @@ const api = "api-v2.soundcloud.com"
 
 const H = len("https://" + api)
 
+var newline = []byte("\n")
+
+var sc_version = []byte(`<script>window.__sc_version="`)
+var script0 = []byte(`<script crossorigin src="https://a-v2.sndcdn.com/assets/0-`)
+var script = []byte(`<script crossorigin src="https://a-v2.sndcdn.com/assets/`)
 var httpc = &fasthttp.HostClient{
 	Addr:                api + ":443",
 	IsTLS:               true,
@@ -39,10 +45,11 @@ var genericClient = &fasthttp.Client{
 	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 }
 
+// var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
+// var scriptsRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`, 2)
+// var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
+
 //go:generate regexp2cg -package sc -o regexp2_codegen.go
-var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
-var scriptsRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`, 2)
-var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
 var clientIdRegex = regexp2.MustCompile(`client_id:"([A-Za-z0-9]{32})"`, 0) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")
@@ -55,12 +62,12 @@ type cached[T any] struct {
 }
 
 // don't be spooked by misc.Log, it will be removed during compilation if cfg.Debug == false
-func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
-	misc.Log(uri)
+func processFile(wg *sync.WaitGroup, ch chan string, uri []byte, isDone *bool) {
+	misc.Log(string(uri))
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI(uri)
+	req.SetRequestURIBytes(uri)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
@@ -105,18 +112,18 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri string, isDone *bool) {
 			}
 
 			ch <- g.String()
-			misc.Log("found in", uri)
+			misc.Log("found in", string(uri))
 			return
 		}
 	}
 
-	misc.Log("not found in", uri)
+	misc.Log("not found in", string(uri))
 }
 
 // Experimental method, which asserts that the clientId is inside the file that starts with "0-"
 const experimental_GetClientID = true
 
-// inspired by github.com/imputnet/cobalt (mostly stolen lol)
+// inspired by github.com/imputnet/cobalt
 func GetClientID() (string, error) {
 	if ClientIDCache.NextCheck.After(time.Now()) {
 		misc.Log("clientidcache hit @ 1")
@@ -143,65 +150,88 @@ func GetClientID() (string, error) {
 		data = resp.Body()
 	}
 
-	m, _ := verRegex.FindStringMatch(cfg.B2s(data))
-	if m == nil {
-		return "", ErrVersionNotFound
-	}
-
-	g := m.GroupByNumber(1)
-	if g == nil {
-		return "", ErrVersionNotFound
-	}
-
-	ver := g.String()
-	if ver == ClientIDCache.Version {
-		misc.Log("clientidcache hit @ ver")
-		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		return ClientIDCache.ClientID, nil
-	}
-
 	if experimental_GetClientID {
-		m, _ = scriptRegex.FindStringMatch(cfg.B2s(data))
+		var ver string
+		var scriptUrl []byte
+		for l := range bytes.SplitSeq(data, newline) { // version usually comes earlier, but retest this sometimes !!!
+			if ver == "" && bytes.HasPrefix(l, sc_version) {
+				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
+				misc.Log("found ver:", ver)
+				// if scriptUrl != nil {
+				// 	misc.Log("we early (1)")
+				// 	break
+				// }
+			} else if bytes.HasPrefix(l, script0) {
+				scriptUrl = l[len(`<script crossorigin src="`) : len(l)-len(`"></script>`)]
+				misc.Log("found scriptUrl:", string(scriptUrl))
+				break
+			}
+		}
+
+		if ver == ClientIDCache.Version {
+			goto verCacheHit
+		}
+
+		if ver == "" {
+			return "", ErrVersionNotFound
+		}
+
+		if scriptUrl == nil {
+			return "", ErrScriptNotFound
+		}
+
+		req.SetRequestURIBytes(scriptUrl)
+		err = DoWithRetryAll(genericClient, req, resp)
+		if err != nil {
+			return "", err
+		}
+
+		data, err = resp.BodyUncompressed()
+		if err != nil {
+			data = resp.Body()
+		}
+
+		m, _ := clientIdRegex.FindStringMatch(cfg.B2s(data))
 		if m != nil {
-			g = m.GroupByNumber(1)
+			g := m.GroupByNumber(1)
 			if g != nil {
-				req.SetRequestURI(g.String())
-				err = DoWithRetryAll(genericClient, req, resp)
-				if err != nil {
-					return "", err
-				}
-
-				data, err = resp.BodyUncompressed()
-				if err != nil {
-					data = resp.Body()
-				}
-
-				m, _ = clientIdRegex.FindStringMatch(cfg.B2s(data))
-				if m != nil {
-					g = m.GroupByNumber(1)
-					if g != nil {
-						ClientIDCache.ClientID = g.String()
-						ClientIDCache.Version = ver
-						ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-						misc.Log(ClientIDCache)
-						return ClientIDCache.ClientID, nil
-					}
-				}
+				ClientIDCache.ClientID = g.String()
+				ClientIDCache.Version = ver
+				ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+				misc.Log(ClientIDCache)
+				return ClientIDCache.ClientID, nil
 			}
 		}
 	} else {
 		ch := make(chan string, 1)
 		wg := &sync.WaitGroup{}
 		done := false
-		m, _ = scriptsRegex.FindStringMatch(cfg.B2s(data))
-		for m != nil {
-			g = m.GroupByNumber(1)
-			if g != nil {
-				wg.Add(1)
-				go processFile(wg, ch, g.String(), &done)
-			}
 
-			m, _ = scriptsRegex.FindNextMatch(m)
+		var ver string
+		var scriptUrls = make([][]byte, 0, 10) // Usually only 8 chunks, so I went with jsut a bit more to be safe
+		for l := range bytes.SplitSeq(data, newline) {
+			if ver == "" && bytes.HasPrefix(l, sc_version) {
+				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
+			} else if bytes.HasPrefix(l, script) {
+				scriptUrls = append(scriptUrls, l[len(`<script crossorigin src="`):len(l)-len(`"></script>`)])
+			}
+		}
+
+		if ver == ClientIDCache.Version {
+			goto verCacheHit
+		}
+
+		if ver == "" {
+			return "", ErrVersionNotFound
+		}
+
+		if len(scriptUrls) == 0 {
+			return "", ErrScriptNotFound
+		}
+
+		for _, s := range scriptUrls {
+			wg.Add(1)
+			go processFile(wg, ch, s, &done)
 		}
 
 		go func() {
@@ -234,11 +264,16 @@ func GetClientID() (string, error) {
 	}
 
 	return "", ErrIDNotFound
+
+verCacheHit:
+	misc.Log("clientidcache hit @ ver")
+	ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+	return ClientIDCache.ClientID, nil
 }
 
 // Just retry any kind of errors, why not
 func DoWithRetryAll(httpc *fasthttp.Client, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		err = httpc.Do(req, resp)
 		if err == nil {
 			return nil
@@ -250,7 +285,7 @@ func DoWithRetryAll(httpc *fasthttp.Client, req *fasthttp.Request, resp *fasthtt
 
 // Since the http client is setup to always keep connections idle (great for speed, no need to open a new one everytime), those connections may be closed by soundcloud after some time of inactivity, this ensures that we retry those requests that fail due to the connection closing/timing out
 func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		err = httpc.Do(req, resp)
 		if err == nil {
 			return nil
