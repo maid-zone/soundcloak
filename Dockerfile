@@ -7,12 +7,12 @@ ARG TARGETARCH
 WORKDIR /build
 
 RUN go env -w GOPROXY=direct
-RUN go install github.com/a-h/templ/cmd/templ@latest
-RUN go install github.com/dlclark/regexp2cg@main
+RUN go install -v github.com/a-h/templ/cmd/templ@latest
+RUN go install -v github.com/dlclark/regexp2cg@main
 
 COPY . .
 # usually soundcloakctl updates together with soundcloak, so we should redownload it
-RUN go install git.maid.zone/stuff/soundcloakctl@master
+RUN go install -v git.maid.zone/stuff/soundcloakctl@master
 RUN soundcloakctl js download
 
 RUN templ generate
@@ -20,7 +20,7 @@ RUN go generate ./lib/*
 RUN soundcloakctl config codegen
 RUN soundcloakctl -nozstd precompress
 
-RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static'" -o ./app
+RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -v -ldflags "-s -w -extldflags '-static'" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
   echo "soundcloak:x:5000:" > /etc/minimal-group
 
