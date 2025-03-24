@@ -157,19 +157,14 @@ func GetClientID() (string, error) {
 			if ver == "" && bytes.HasPrefix(l, sc_version) {
 				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
 				misc.Log("found ver:", ver)
-				// if scriptUrl != nil {
-				// 	misc.Log("we early (1)")
-				// 	break
-				// }
+				if ClientIDCache.Version != "" && ver == ClientIDCache.Version {
+					goto verCacheHit
+				}
 			} else if bytes.HasPrefix(l, script0) {
 				scriptUrl = l[len(`<script crossorigin src="`) : len(l)-len(`"></script>`)]
 				misc.Log("found scriptUrl:", string(scriptUrl))
 				break
 			}
-		}
-
-		if ver == ClientIDCache.Version {
-			goto verCacheHit
 		}
 
 		if ver == "" {
@@ -212,13 +207,12 @@ func GetClientID() (string, error) {
 		for l := range bytes.SplitSeq(data, newline) {
 			if ver == "" && bytes.HasPrefix(l, sc_version) {
 				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
+				if ver == ClientIDCache.Version {
+					goto verCacheHit
+				}
 			} else if bytes.HasPrefix(l, script) {
 				scriptUrls = append(scriptUrls, l[len(`<script crossorigin src="`):len(l)-len(`"></script>`)])
 			}
-		}
-
-		if ver == ClientIDCache.Version {
-			goto verCacheHit
 		}
 
 		if ver == "" {

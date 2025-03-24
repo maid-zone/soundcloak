@@ -49,7 +49,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
 	if needPlayer {
 		if *prefs.Player == cfg.HLSPlayer {
-			<script src="/_/static/js/hls.light.min.js"></script>
+			<script src="/_/static/external/hls.light.min.js"></script>
 		}
 	}
 }
@@ -277,7 +277,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 			<link rel="stylesheet" href="/_/static/global.css"/>
 			<title>soundcloak</title>
 			if *prefs.Player == cfg.HLSPlayer && stream != "" {
-				<script src="/_/static/js/hls.light.js"></script>
+				<script src="/_/static/external/hls.light.min.js"></script>
 			}
 		</head>
 		<body>

@@ -4,11 +4,5 @@ package static
 
 import "embed"
 
-//go:embed assets/*
-var Assets embed.FS
-
-//go:embed instance/*
-var Instance embed.FS
-
-//go:embed external/*
-var External embed.FS
+//go:embed */*
+var All embed.FS

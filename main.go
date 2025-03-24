@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"math/rand"
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"github.com/gofiber/fiber/v3"
@@ -23,8 +26,9 @@ import (
 	proxystreams "git.maid.zone/stuff/soundcloak/lib/proxy_streams"
 	"git.maid.zone/stuff/soundcloak/lib/restream"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	static_files "git.maid.zone/stuff/soundcloak/static"
 	"git.maid.zone/stuff/soundcloak/templates"
+
+	static_files "git.maid.zone/stuff/soundcloak/static"
 )
 
 func boolean(b bool) string {
@@ -34,83 +38,223 @@ func boolean(b bool) string {
 	return "Disabled"
 }
 
-type osfs struct{}
+type compressionMap = map[string][][]byte
 
-func (osfs) Open(name string) (fs.File, error) {
-	misc.Log("osfs:", name)
+func parseCompressionMap(path string, filesystem fs.FS) compressionMap {
+	f, err := filesystem.Open(path + "/.compression")
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
 
-	if strings.HasPrefix(name, "js/") {
-		return os.Open("static/external/" + name[3:])
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil
 	}
 
-	f, err := os.Open("static/instance/" + name)
-	if err == nil {
-		return f, nil
-	}
-
-	f, err = os.Open("static/assets/" + name)
-	return f, err
-}
-
-type staticfs struct{}
-
-func (staticfs) Open(name string) (fs.File, error) {
-	misc.Log("staticfs:", name)
-
-	if strings.HasPrefix(name, "js/") {
-		return static_files.External.Open("external/" + name[3:])
-	}
-
-	f, err := static_files.Instance.Open("instance/" + name)
-	if err == nil {
-		return f, nil
-	}
-
-	f, err = static_files.Assets.Open("assets/" + name)
-	return f, err
-}
-
-// stubby implementation of static middleware
-// why? mainly because of the pathrewrite
-// i hate seeing it trying to get root directory
-func ServeFromFS(r *fiber.App, filesystem fs.FS) {
-	const path = "/_/static"
-	const l = len(path)
-	fs := fasthttp.FS{
-		FS: filesystem,
-		PathRewrite: func(ctx *fasthttp.RequestCtx) []byte {
-			return ctx.Path()[l:]
-		},
-		Compress:       true,
-		CompressBrotli: true,
-		CompressedFileSuffixes: map[string]string{
-			"gzip": ".gzip",
-			"br":   ".br",
-			"zstd": ".zstd",
-		},
-	}
-
-	handler := fs.NewRequestHandler()
-
-	r.Use(path, func(c fiber.Ctx) error {
-		handler(c.RequestCtx())
-		if c.RequestCtx().Response.StatusCode() == 200 {
-			c.Set("Cache-Control", "public, max-age=28800")
+	sp := bytes.Split(data, []byte("\n"))
+	cm := make(compressionMap, len(sp))
+	for _, h := range sp {
+		sp2 := bytes.Split(h, []byte("|"))
+		if len(sp2) != 2 || string(sp2[0]) == ".gitkeep" {
+			continue
 		}
 
-		return nil
-	})
+		h := bytes.Split(sp2[1], []byte(","))
+		if len(h) == 0 || len(h[0]) == 0 {
+			h = nil
+		}
+
+		cm[cfg.B2s(sp2[0])] = h
+	}
+
+	return cm
+}
+
+func parseCompressionMaps(filesystem fs.FS) compressionMap {
+	var (
+		external = parseCompressionMap("external", filesystem)
+		assets   = parseCompressionMap("assets", filesystem)
+		instance = parseCompressionMap("instance", filesystem)
+	)
+
+	res := make(compressionMap, len(external)+len(assets)+len(instance))
+
+	for k, v := range external {
+		res["external/"+k] = v
+	}
+	for k, v := range assets {
+		res["assets/"+k] = v
+	}
+	for k, v := range instance {
+		res["instance/"+k] = v
+	}
+
+	return res
+}
+
+type pooledReader struct {
+	handle io.ReadSeeker
+	p      *sync.Pool
+}
+
+func (pr *pooledReader) Read(data []byte) (int, error) {
+	return pr.handle.Read(data)
+}
+
+func (pr *pooledReader) Close() error {
+	pr.handle.Seek(0, io.SeekStart)
+	pr.p.Put(pr)
+	return nil
+}
+
+type pooledFs struct {
+	filesystem fs.FS
+	pools      map[string]*sync.Pool
+}
+
+func (p *pooledFs) Open(name string) (*pooledReader, error) {
+	pool := p.pools[name]
+	if pool == nil {
+		misc.Log("pool is nil for", name)
+		pool = &sync.Pool{}
+		p.pools[name] = pool
+
+		goto new
+	}
+
+	if pr := pool.Get(); pr != nil {
+		return pr.(*pooledReader), nil
+	}
+
+new:
+	h, err := p.filesystem.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pooledReader{h.(io.ReadSeeker), pool}, nil
+}
+
+func ServeFS(r *fiber.App, filesystem fs.FS) {
+	cm := parseCompressionMaps(filesystem)
+	misc.Log(cm)
+
+	pfs := &pooledFs{filesystem, make(map[string]*sync.Pool)}
+
+	const path = "/_/static/"
+
+	if len(cm) == 0 {
+		r.Use(path, func(c fiber.Ctx) error {
+			// start := time.Now()
+			// defer func() { fmt.Println("it took", time.Since(start)) }()
+			fp := cfg.B2s(c.RequestCtx().Path()[len(path):])
+
+			if strings.HasSuffix(fp, ".css") {
+				c.Response().Header.SetContentType("text/css")
+			} else if strings.HasSuffix(fp, ".js") {
+				c.Response().Header.SetContentType("text/javascript")
+			} else if strings.HasSuffix(fp, ".jpg") {
+				c.Response().Header.SetContentType("image/jpeg")
+			} else if strings.HasSuffix(fp, ".ttf") {
+				c.Response().Header.SetContentType("font/ttf")
+			}
+
+			var (
+				f   *pooledReader
+				err error
+			)
+			if !strings.HasPrefix(fp, "external/") {
+				f, err = pfs.Open("instance/" + fp)
+				if err != nil {
+					f, err = pfs.Open("assets/" + fp)
+				}
+			} else {
+				f, err = pfs.Open(fp)
+			}
+
+			if err != nil {
+				return err
+			}
+
+			c.Set("Cache-Control", "public, max-age=28800")
+			return c.SendStream(f)
+		})
+	} else {
+		r.Use(path, func(c fiber.Ctx) error {
+			// start := time.Now()
+			// defer func() { fmt.Println("it took", time.Since(start)) }()
+			fp := cfg.B2s(c.RequestCtx().Path()[len(path):])
+
+			var (
+				encs [][]byte
+				ok   bool
+			)
+			if strings.HasPrefix(fp, "external/") {
+				encs, ok = cm[fp]
+			} else {
+				encs, ok = cm["instance/"+fp]
+				if ok {
+					fp = "instance/" + fp
+				} else {
+					fp = "assets/" + fp
+					encs, ok = cm[fp]
+				}
+			}
+
+			if !ok {
+				return fiber.ErrNotFound
+			}
+
+			if strings.HasSuffix(fp, ".css") {
+				c.Response().Header.SetContentType("text/css")
+			} else if strings.HasSuffix(fp, ".js") {
+				c.Response().Header.SetContentType("text/javascript")
+			} else if strings.HasSuffix(fp, ".jpg") {
+				c.Response().Header.SetContentType("image/jpeg")
+			} else if strings.HasSuffix(fp, ".ttf") {
+				c.Response().Header.SetContentType("font/ttf")
+			}
+
+			if len(encs) != 0 {
+				ae := c.Request().Header.Peek("Accept-Encoding")
+				if len(ae) == 1 && ae[0] == '*' {
+					c.Response().Header.SetContentEncodingBytes(encs[0])
+					fp += "." + cfg.B2s(encs[0])
+				} else {
+					for _, enc := range encs {
+						if bytes.Index(ae, enc) != -1 {
+							c.Response().Header.SetContentEncodingBytes(enc)
+							fp += "." + cfg.B2s(enc)
+							break
+						}
+					}
+				}
+			}
+
+			f, err := pfs.Open(fp)
+			if err != nil {
+				return err
+			}
+
+			c.Set("Cache-Control", "public, max-age=28800")
+			return c.SendStream(f)
+		})
+	}
 }
 
 func main() {
 	app := fiber.New(fiber.Config{
-		//Prefork: cfg.Prefork, // moved to ListenConfig in v3
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
 
 		TrustProxy:       cfg.TrustedProxyCheck,
 		TrustProxyConfig: fiber.TrustProxyConfig{Proxies: cfg.TrustedProxies},
 	})
+
+	if cfg.Debug {
+		app.Server().Logger = fasthttp.Logger(log.New(os.Stdout, "", log.LstdFlags))
+	}
 
 	if !cfg.Debug { // you wanna catch any possible panics as soon as possible
 		app.Use(recover.New())
@@ -159,10 +303,14 @@ func main() {
 
 	if cfg.EmbedFiles {
 		misc.Log("using embedded files")
-		ServeFromFS(app, staticfs{})
+		ServeFS(app, static_files.All)
 	} else {
 		misc.Log("loading files dynamically")
-		ServeFromFS(app, osfs{})
+		r, err := os.OpenRoot("static")
+		if err != nil {
+			panic(err)
+		}
+		ServeFS(app, r.FS())
 	}
 
 	// why? because when you load a page without link rel="icon" the browser will

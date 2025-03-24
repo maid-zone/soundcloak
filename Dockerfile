@@ -18,7 +18,7 @@ RUN soundcloakctl js download
 RUN templ generate
 RUN go generate ./lib/*
 RUN soundcloakctl config codegen
-RUN soundcloakctl -nozstd -notable precompress
+RUN soundcloakctl -nozstd precompress
 
 RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -ldflags "-s -w -extldflags '-static'" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
