@@ -250,6 +250,7 @@ func main() {
 
 		TrustProxy:       cfg.TrustedProxyCheck,
 		TrustProxyConfig: fiber.TrustProxyConfig{Proxies: cfg.TrustedProxies},
+		ReadBufferSize:   4096 * 2,
 	})
 
 	if cfg.Debug {
