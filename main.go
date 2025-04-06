@@ -111,14 +111,20 @@ func (pr *pooledReader) Close() error {
 type pooledFs struct {
 	filesystem fs.FS
 	pools      map[string]*sync.Pool
+	mut        sync.RWMutex
 }
 
 func (p *pooledFs) Open(name string) (*pooledReader, error) {
+	p.mut.RLock()
 	pool := p.pools[name]
+	p.mut.RUnlock()
+
 	if pool == nil {
 		misc.Log("pool is nil for", name)
 		pool = &sync.Pool{}
+		p.mut.Lock()
 		p.pools[name] = pool
+		p.mut.Unlock()
 
 		goto new
 	}
@@ -140,7 +146,7 @@ func ServeFS(r *fiber.App, filesystem fs.FS) {
 	cm := parseCompressionMaps(filesystem)
 	misc.Log(cm)
 
-	pfs := &pooledFs{filesystem, make(map[string]*sync.Pool)}
+	pfs := &pooledFs{filesystem, make(map[string]*sync.Pool), sync.RWMutex{}}
 
 	const path = "/_/static/"
 
