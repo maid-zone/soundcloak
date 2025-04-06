@@ -23,3 +23,5 @@ Scroll down to the end of the preferences page. There you can see a management t
 # Redirecting from SoundCloud to soundcloak
 
 soundcloak tries to keep the URL schemes same to SoundCloud's, so you can just replace `soundcloud.com` with your instance URL. For short links: `https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `<instance>/on/boiKDP46fayYDoVK9`
+
+To automatically redirect, you can use [LibRedirect](https://libredirect.github.io/) extension. Soundcloak is supported 
