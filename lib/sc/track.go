@@ -448,30 +448,6 @@ func GetTrackByID(cid string, id string) (Track, error) {
 	return t, nil
 }
 
-func (t Track) DownloadImage() ([]byte, string, error) {
-	req := fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
-
-	req.SetRequestURI(t.Artwork)
-	req.Header.SetUserAgent(cfg.UserAgent)
-	//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
-
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(resp)
-
-	err := DoWithRetry(misc.ImageClient, req, resp)
-	if err != nil {
-		return nil, "", err
-	}
-
-	data, err := resp.BodyUncompressed()
-	if err != nil {
-		data = resp.Body()
-	}
-
-	return data, string(resp.Header.Peek("Content-Type")), nil
-}
-
 func (t Track) Href() string {
 	return "/" + t.Author.Permalink + "/" + t.Permalink
 }

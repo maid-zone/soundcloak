@@ -63,7 +63,7 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		c.Set("Content-Type", "image/jpeg")
+		c.Request().Header.SetContentType("image/jpeg")
 		c.Set("Cache-Control", cfg.ImageCacheControl)
 		//return c.Send(resp.Body())
 		pr := misc.AcquireProxyReader()
