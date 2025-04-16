@@ -534,22 +534,6 @@ Disallow: /`)
 		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.RequestCtx(), c)
 	})
 
-	app.Get("/_/featured", func(c fiber.Ctx) error {
-		prefs, err := preferences.Get(c)
-		if err != nil {
-			return err
-		}
-
-		tracks, err := sc.GetFeaturedTracks("", prefs, c.Query("pagination", "?limit=20"))
-		if err != nil {
-			log.Printf("error getting featured tracks: %s\n", err)
-			return err
-		}
-
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base("Featured Tracks", templates.FeaturedTracks(tracks), nil).Render(c.RequestCtx(), c)
-	})
-
 	app.Get("/discover", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {

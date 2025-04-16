@@ -10,24 +10,6 @@ type Selection struct {
 	Items Paginated[*Playlist] `json:"items"` // ?? why
 }
 
-func GetFeaturedTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{Next: "https://" + api + "/featured_tracks/top/all-music" + args}
-	// DO NOT UNFOLD
-	// dangerous
-	// seems to go in an infinite loop
-	err := p.Proceed(cid, false)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, t := range p.Collection {
-		t.Fix(false, false)
-		t.Postfix(prefs, false)
-	}
-
-	return &p, nil
-}
-
 func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], error) {
 	// There is no pagination
 	p := Paginated[*Selection]{Next: "https://" + api + "/mixed-selections?limit=20"}
