@@ -117,7 +117,7 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		c.Request().Header.SetContentType("text/html")
+		c.Response().Header.SetContentType("text/html")
 		return templates.Base("preferences", templates.Preferences(p), nil).Render(context.Background(), c)
 	})
 
