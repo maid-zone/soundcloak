@@ -16,6 +16,7 @@ import (
 	"github.com/gcottom/mp4meta"
 	"github.com/gcottom/oggmeta"
 	"github.com/gofiber/fiber/v3"
+	"github.com/valyala/fasthttp"
 )
 
 type collector struct {
@@ -67,7 +68,6 @@ func Load(r *fiber.App) {
 		c.Request().Header.SetContentType(tr.Format.MimeType)
 		c.Set("Cache-Control", cfg.RestreamCacheControl)
 
-		r := acquireReader()
 		if isDownload {
 			if t.Artwork != "" {
 				t.Artwork = strings.Replace(t.Artwork, "t500x500", "original", 1)
@@ -75,6 +75,7 @@ func Load(r *fiber.App) {
 
 			switch audio {
 			case cfg.AudioMP3:
+				r := acquireReader()
 				err := r.Setup(u, false, nil)
 				if err != nil {
 					return err
@@ -106,21 +107,47 @@ func Load(r *fiber.App) {
 				tag.WriteTo(&col)
 				r.leftover = col.data
 
+				c.Response().Header.SetContentType("audio/mpeg")
 				return c.SendStream(r)
-			case cfg.AudioOpus:
-				err := r.Setup(u, false, nil)
+			case cfg.AudioOpus: // might try to fuck around with metadata injection. Dynamically injecting metadata for opus wasn't really good idea as it breaks some things :P
+				req := fasthttp.AcquireRequest()
+				resp := fasthttp.AcquireResponse()
+
+				req.SetRequestURI(u)
+				req.Header.SetUserAgent(cfg.UserAgent)
+				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+				err := sc.DoWithRetry(misc.HlsClient, req, resp)
 				if err != nil {
 					return err
 				}
 
-				r.req.SetRequestURIBytes(r.parts[0])
-				err = sc.DoWithRetry(r.client, r.req, r.resp)
+				data, err := resp.BodyUncompressed()
 				if err != nil {
-					return err
+					data = resp.Body()
 				}
 
-				r.index++
-				tag, err := oggmeta.ReadOGG(bytes.NewReader(r.resp.Body()))
+				res := make([]byte, 0, 1024*1024*1)
+				for _, s := range bytes.Split(data, []byte{'\n'}) {
+					if len(s) == 0 || s[0] == '#' {
+						continue
+					}
+
+					req.SetRequestURIBytes(s)
+					err := sc.DoWithRetry(misc.HlsClient, req, resp)
+					if err != nil {
+						return err
+					}
+
+					data, err = resp.BodyUncompressed()
+					if err != nil {
+						data = resp.Body()
+					}
+
+					res = append(res, data...)
+				}
+
+				tag, err := oggmeta.ReadOGG(bytes.NewReader(res))
 				if err != nil {
 					return err
 				}
@@ -133,30 +160,27 @@ func Load(r *fiber.App) {
 				tag.SetTitle(t.Title)
 
 				if t.Artwork != "" {
-					r.req.SetRequestURI(t.Artwork)
-					r.req.Header.Del("Accept-Encoding")
+					req.SetRequestURI(t.Artwork)
+					req.Header.Del("Accept-Encoding")
 
-					err := sc.DoWithRetry(misc.ImageClient, r.req, r.resp)
+					err := sc.DoWithRetry(misc.ImageClient, req, resp)
 					if err != nil {
 						return err
 					}
 
-					parsed, _, err := image.Decode(r.resp.BodyStream())
-					r.resp.CloseBodyStream()
+					parsed, _, err := image.Decode(resp.BodyStream())
+					resp.CloseBodyStream()
 					if err != nil {
 						return err
 					}
 
 					tag.SetCoverArt(&parsed)
-					r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 				}
 
-				var col collector
-				tag.Save(&col)
-				r.leftover = col.data
-
-				return c.SendStream(r)
+				c.Response().Header.SetContentType(`audio/ogg; codecs="opus"`)
+				return tag.Save(c.Response().BodyWriter())
 			case cfg.AudioAAC:
+				r := acquireReader()
 				err := r.Setup(u, true, &t.Duration)
 				if err != nil {
 					return err
@@ -202,12 +226,15 @@ func Load(r *fiber.App) {
 
 				var col collector
 				tag.Save(&col)
+				fixDuration(col.data, &t.Duration)
 				r.leftover = col.data
 
+				c.Response().Header.SetContentType("audio/mp4")
 				return c.SendStream(r)
 			}
 		}
 
+		r := acquireReader()
 		if audio == cfg.AudioAAC {
 			err = r.Setup(u, true, &t.Duration)
 		} else {
