@@ -11,6 +11,7 @@ import (
 )
 
 var al_httpc *fasthttp.HostClient
+var sndcdn = []byte(".sndcdn.com")
 
 func Load(r *fiber.App) {
 
@@ -36,7 +37,7 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), []byte(".sndcdn.com")) {
+		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
 			return fiber.ErrBadRequest
 		}
 
@@ -63,12 +64,12 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		c.Response().Header.SetContentType("image/jpeg")
+		c.Response().Header.SetContentTypeBytes(resp.Header.ContentType())
 		c.Set("Cache-Control", cfg.ImageCacheControl)
 		//return c.Send(resp.Body())
 		pr := misc.AcquireProxyReader()
 		pr.Reader = resp.BodyStream()
 		pr.Resp = resp
-		return c.SendStream(pr)
+		return c.SendStream(pr, resp.Header.ContentLength())
 	})
 }

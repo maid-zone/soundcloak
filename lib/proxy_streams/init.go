@@ -11,6 +11,11 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var sndcdn = []byte(".sndcdn.com")
+var soundcloudcloud = []byte(".soundcloud.cloud")
+var newline = []byte{'\n'}
+var extxmap = []byte(`#EXT-X-MAP:URI="`)
+
 func Load(a *fiber.App) {
 	r := a.Group("/_/proxy/streams")
 
@@ -28,7 +33,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), []byte(".sndcdn.com")) {
+		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
 			return fiber.ErrBadRequest
 		}
 
@@ -67,7 +72,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), []byte(".soundcloud.cloud")) {
+		if !bytes.HasSuffix(parsed.Host(), soundcloudcloud) {
 			return fiber.ErrBadRequest
 		}
 
@@ -105,7 +110,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), []byte(".sndcdn.com")) {
+		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
 			return fiber.ErrBadRequest
 		}
 
@@ -129,7 +134,7 @@ func Load(a *fiber.App) {
 			data = resp.Body()
 		}
 
-		var sp = bytes.Split(data, []byte{'\n'})
+		var sp = bytes.Split(data, newline)
 		for i, l := range sp {
 			if len(l) == 0 || l[0] == '#' {
 				continue
@@ -139,7 +144,7 @@ func Load(a *fiber.App) {
 			sp[i] = l
 		}
 
-		return c.Send(bytes.Join(sp, []byte("\n")))
+		return c.Send(bytes.Join(sp, newline))
 	})
 
 	r.Get("/playlist/aac", func(c fiber.Ctx) error {
@@ -156,7 +161,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), []byte(".soundcloud.cloud")) {
+		if !bytes.HasSuffix(parsed.Host(), soundcloudcloud) {
 			return fiber.ErrBadRequest
 		}
 
@@ -180,14 +185,14 @@ func Load(a *fiber.App) {
 			data = resp.Body()
 		}
 
-		var sp = bytes.Split(data, []byte("\n"))
+		var sp = bytes.Split(data, newline)
 		for i, l := range sp {
 			if len(l) == 0 {
 				continue
 			}
 
 			if l[0] == '#' {
-				if bytes.HasPrefix(l, []byte(`#EXT-X-MAP:URI="`)) {
+				if bytes.HasPrefix(l, extxmap) {
 					l = []byte(`#EXT-X-MAP:URI="/_/proxy/streams/aac?url=` + url.QueryEscape(cfg.B2s(l[16:len(l)-1])) + `"`)
 					sp[i] = l
 				}
@@ -199,6 +204,6 @@ func Load(a *fiber.App) {
 			sp[i] = l
 		}
 
-		return c.Send(bytes.Join(sp, []byte("\n")))
+		return c.Send(bytes.Join(sp, newline))
 	})
 }

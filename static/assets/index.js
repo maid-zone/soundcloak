@@ -46,10 +46,8 @@ function getSuggestions() {
 }
 
 input.addEventListener('input', function () {
-    if (!timeout) {
-        timeout = setTimeout(getSuggestions, 250);
-    } else {
+    if (timeout) {
         clearTimeout(timeout);
-        timeout = setTimeout(getSuggestions, 250);
     }
+    timeout = setTimeout(getSuggestions, 250);
 });

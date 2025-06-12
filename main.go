@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/goccy/go-json"
@@ -249,6 +250,15 @@ func ServeFS(r *fiber.App, filesystem fs.FS) {
 	}
 }
 
+func render(c fiber.Ctx, t templ.Component) error {
+	c.Response().Header.SetContentType("text/html")
+	return t.Render(c.RequestCtx(), c.Response().BodyWriter())
+}
+
+func r(c fiber.Ctx, title string, content, head templ.Component) error {
+	return render(c, templates.Base(title, content, head))
+}
+
 func main() {
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
@@ -300,8 +310,7 @@ func main() {
 				return err
 			}
 
-			c.Response().Header.SetContentType("text/html")
-			return templates.Base("", templates.MainPage(prefs), templates.MainPageHead()).Render(c.RequestCtx(), c)
+			return r(c, "", templates.MainPage(prefs), templates.MainPageHead())
 		}
 
 		app.Get("/", mainPageHandler)
@@ -348,8 +357,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Response().Header.SetContentType("text/html")
-			return templates.Base("tracks: "+q, templates.SearchTracks(p), nil).Render(c.RequestCtx(), c)
+			return r(c, "tracks: "+q, templates.SearchTracks(p), nil)
 
 		case "users":
 			p, err := sc.SearchUsers("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
@@ -358,8 +366,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Response().Header.SetContentType("text/html")
-			return templates.Base("users: "+q, templates.SearchUsers(p), nil).Render(c.RequestCtx(), c)
+			return r(c, "users: "+q, templates.SearchUsers(p), nil)
 
 		case "playlists":
 			p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
@@ -368,8 +375,7 @@ Disallow: /`)
 				return err
 			}
 
-			c.Response().Header.SetContentType("text/html")
-			return templates.Base("playlists: "+q, templates.SearchPlaylists(p), nil).Render(c.RequestCtx(), c)
+			return r(c, "playlists: "+q, templates.SearchPlaylists(p), nil)
 		}
 
 		return c.SendStatus(404)
@@ -463,8 +469,7 @@ Disallow: /`)
 			}
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.TrackEmbed(prefs, track, stream, displayErr).Render(c.RequestCtx(), c)
+		return render(c, templates.TrackEmbed(prefs, track, stream, displayErr))
 	})
 
 	app.Get("/tags/:tag", func(c fiber.Ctx) error {
@@ -473,20 +478,14 @@ Disallow: /`)
 			return err
 		}
 
-		cid, err := sc.GetClientID()
-		if err != nil {
-			return err
-		}
-
 		tag := c.Params("tag")
-		p, err := sc.RecentTracks(cid, prefs, c.Query("pagination", tag+"?limit=20"))
+		p, err := sc.RecentTracks("", prefs, c.Query("pagination", tag+"?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tagged recent-tracks: %s\n", tag, err)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base("Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil).Render(c.RequestCtx(), c)
+		return r(c, "Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil)
 	})
 
 	app.Get("/tags/:tag/popular-tracks", func(c fiber.Ctx) error {
@@ -495,20 +494,14 @@ Disallow: /`)
 			return err
 		}
 
-		cid, err := sc.GetClientID()
-		if err != nil {
-			return err
-		}
-
 		tag := c.Params("tag")
-		p, err := sc.SearchTracks(cid, prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag+"&sort=popular"))
+		p, err := sc.SearchTracks("", prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag+"&sort=popular"))
 		if err != nil {
 			log.Printf("error getting %s tagged popular-tracks: %s\n", tag, err)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base("Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil).Render(c.RequestCtx(), c)
+		return r(c, "Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil)
 	})
 
 	app.Get("/tags/:tag/playlists", func(c fiber.Ctx) error {
@@ -517,21 +510,15 @@ Disallow: /`)
 			return err
 		}
 
-		cid, err := sc.GetClientID()
-		if err != nil {
-			return err
-		}
-
 		tag := c.Params("tag")
 		// Using a different method, since /playlists/discovery endpoint seems to be broken :P
-		p, err := sc.SearchPlaylists(cid, prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag))
+		p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag))
 		if err != nil {
 			log.Printf("error getting %s tagged playlists: %s\n", tag, err)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base("Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil).Render(c.RequestCtx(), c)
+		return r(c, "Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil)
 	})
 
 	app.Get("/discover", func(c fiber.Ctx) error {
@@ -546,8 +533,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base("Discover", templates.Discover(selections), nil).Render(c.RequestCtx(), c)
+		return r(c, "Discover", templates.Discover(selections), nil)
 	})
 
 	if cfg.ProxyImages {
@@ -637,8 +623,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/albums", func(c fiber.Ctx) error {
@@ -665,8 +650,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/reposts", func(c fiber.Ctx) error {
@@ -693,8 +677,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/likes", func(c fiber.Ctx) error {
@@ -721,8 +704,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/popular-tracks", func(c fiber.Ctx) error {
@@ -749,8 +731,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/followers", func(c fiber.Ctx) error {
@@ -777,8 +758,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/following", func(c fiber.Ctx) error {
@@ -805,8 +785,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/:track", func(c fiber.Ctx) error {
@@ -925,8 +904,7 @@ Disallow: /`)
 			downloadAudio = &audio
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, downloadAudio, comments), templates.TrackHeader(prefs, track, true)).Render(c.RequestCtx(), c)
+		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, downloadAudio, comments), templates.TrackHeader(prefs, track, true))
 	})
 
 	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {
@@ -952,12 +930,13 @@ Disallow: /`)
 		}
 
 		if comm.Next != "" {
+			fmt.Println(comm.Next)
 			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.Next, "/comments")[1]))
 		} else {
 			c.Set("next", "done")
 		}
 
-		return templates.Comments(comm).Render(c.RequestCtx(), c)
+		return render(c, templates.Comments(comm))
 	})
 
 	app.Get("/:user", func(c fiber.Ctx) error {
@@ -984,8 +963,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr)).Render(c.RequestCtx(), c)
+		return r(c, usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr))
 	})
 
 	app.Get("/:user/sets/:playlist", func(c fiber.Ctx) error {
@@ -1024,8 +1002,7 @@ Disallow: /`)
 			playlist.MissingTracks = strings.Join(next, ",")
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist)).Render(c.RequestCtx(), c)
+		return r(c, playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist))
 	})
 
 	app.Get("/:user/_/related", func(c fiber.Ctx) error {
@@ -1046,14 +1023,13 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		r, err := user.GetRelated(cid, prefs)
+		rel, err := user.GetRelated(cid, prefs)
 		if err != nil {
 			log.Printf("error getting %s related users: %s\n", c.Params("user"), err)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(user.Username, templates.UserRelated(prefs, user, r), templates.UserHeader(user)).Render(c.RequestCtx(), c)
+		return r(c, user.Username, templates.UserRelated(prefs, user, rel), templates.UserHeader(user))
 	})
 
 	// I'd like to make this "related" but keeping it "recommended" to have the same url as soundcloud
@@ -1075,14 +1051,13 @@ Disallow: /`)
 		}
 		track.Postfix(prefs, true)
 
-		r, err := track.GetRelated(cid, prefs, c.Query("pagination", "?limit=20"))
+		rel, err := track.GetRelated(cid, prefs, c.Query("pagination", "?limit=20"))
 		if err != nil {
 			log.Printf("error getting %s from %s related tracks: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, r), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
+		return r(c, track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, rel), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/sets", func(c fiber.Ctx) error {
@@ -1109,8 +1084,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
+		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/albums", func(c fiber.Ctx) error {
@@ -1137,8 +1111,7 @@ Disallow: /`)
 			return err
 		}
 
-		c.Response().Header.SetContentType("text/html")
-		return templates.Base(track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false)).Render(c.RequestCtx(), c)
+		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	// cute

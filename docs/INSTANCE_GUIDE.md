@@ -60,7 +60,7 @@ git pull
 2. Stop the container:
 
 ```sh
-docker container stop soundcloak
+docker compose down
 ```
 
 3. Build the container with updated source code:
