@@ -60,8 +60,6 @@ templ MainPage(p cfg.Preferences) {
 			<a class="btn" href="/_/static/notice.txt">Legal notice</a>
 		</div>
 
-		if cfg.Commit != "unknown" {
-			<p style="text-align: center;">Build <a class="link" href={cfg.CommitURL}>{cfg.Commit}</a></p>
-		}
+		<p style="text-align: center;">Build <a class="link" href={cfg.CommitURL}>{cfg.Commit}</a></p>
 	</footer>
 }

@@ -20,7 +20,7 @@ RUN go generate ./lib/*
 RUN soundcloakctl config codegen
 RUN soundcloakctl -nozstd precompress
 
-RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -v -ldflags "-s -w -extldflags '-static'" -o ./app
+RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} GOOS=${TARGETOS} go build -v -ldflags "-s -w -extldflags '-static' -X git.maid.zone/stuff/soundcloak/lib/cfg.Commit=`git rev-parse HEAD | head -c 7` -X git.maid.zone/stuff/soundcloak/lib/cfg.Repo=`git remote get-url origin`" -o ./app
 RUN echo "soundcloak:x:5000:5000:Soundcloak user:/:/sbin/nologin" > /etc/minimal-passwd && \
   echo "soundcloak:x:5000:" > /etc/minimal-group
 

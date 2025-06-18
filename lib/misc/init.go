@@ -1,8 +1,8 @@
 package misc
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"sync"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
@@ -41,7 +41,7 @@ func (pr *ProxyReader) Close() error {
 
 func Log(what ...any) {
 	if cfg.Debug {
-		fmt.Println(what...)
+		log.Println(what...)
 	}
 }
 

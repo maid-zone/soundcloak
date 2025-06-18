@@ -930,7 +930,6 @@ Disallow: /`)
 		}
 
 		if comm.Next != "" {
-			fmt.Println(comm.Next)
 			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.Next, "/comments")[1]))
 		} else {
 			c.Set("next", "done")
@@ -1157,5 +1156,18 @@ Disallow: /`)
 	if cfg.CodegenConfig {
 		log.Println("Warning: you have CodegenConfig enabled, but the config was loaded dynamically.")
 	}
-	log.Fatal(app.Listen(cfg.Addr, fiber.ListenConfig{EnablePrefork: cfg.Prefork, DisableStartupMessage: true, ListenerNetwork: cfg.Network}))
+
+	lc := fiber.ListenConfig{EnablePrefork: cfg.Prefork, DisableStartupMessage: true, ListenerNetwork: cfg.Network}
+	if cfg.Network == "unix" {
+		os.Remove(cfg.Addr)
+		lc.BeforeServeFunc = func(*fiber.App) error {
+			err := os.Chmod(cfg.Addr, cfg.UnixSocketPerms)
+			if err != nil {
+				log.Println("failed to chmod socket:", err)
+			}
+
+			return nil
+		}
+	}
+	log.Fatal(app.Listen(cfg.Addr, lc))
 }

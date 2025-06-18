@@ -79,6 +79,9 @@ var Network = "tcp4"
 // run soundcloak on this address (localhost:4664 by default)
 var Addr = ":4664"
 
+// unix socket perms wow
+var UnixSocketPerms os.FileMode = 0775
+
 // run multiple instances of soundcloak locally to be able to handle more requests
 // each one will be a separate process, so they will have separate cache
 var Prefork = false
@@ -394,6 +397,16 @@ func fromEnv() error {
 		Addr = env
 	}
 
+	env = os.Getenv("UNIX_SOCKET_PERMS")
+	if env != "" {
+		p, err := strconv.ParseUint(env, 0, 32)
+		if err != nil {
+			return err
+		}
+
+		UnixSocketPerms = os.FileMode(p)
+	}
+
 	env = os.Getenv("PREFORK")
 	if env != "" {
 		Prefork = boolean(env)
@@ -469,6 +482,7 @@ func init() {
 		DNSCacheTTL             *time.Duration
 		Network                 *string
 		Addr                    *string
+		UnixSocketPerms         *string
 		Prefork                 *bool
 		TrustedProxyCheck       *bool
 		TrustedProxies          *[]string
@@ -539,6 +553,14 @@ func init() {
 	if config.Addr != nil {
 		Addr = *config.Addr
 	}
+	if config.UnixSocketPerms != nil {
+		p, err := strconv.ParseUint(*config.UnixSocketPerms, 0, 32)
+		if err != nil {
+			log.Println("failed to parse UnixSocketPerms:", err)
+		} else {
+			UnixSocketPerms = os.FileMode(p)
+		}
+	}
 	if config.Prefork != nil {
 		Prefork = *config.Prefork
 	}
@@ -563,6 +585,3 @@ func init() {
 }
 
 const Debug = false
-const Commit = "unknown"
-const Repo = "unknown"
-const CommitURL = "unknown"

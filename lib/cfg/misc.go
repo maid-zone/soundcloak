@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -16,6 +17,13 @@ const MaxIdleConnDuration = 4 * time.Hour
 
 var True = true
 var False = false
+
+// embedded at buildtime
+var Commit = "unknown"
+var Repo = "unknown"
+
+// generated at runtime
+var CommitURL = "unknown"
 
 const (
 	// Downloads the HLS stream on the backend, and restreams it to frontend as a file. Requires no JS, but less stable client-side
@@ -90,4 +98,19 @@ func B2s(b []byte) string {
 
 func S2b(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
+
+func init() {
+	if Repo != "unknown" {
+		if strings.HasPrefix(Repo, "http") {
+			CommitURL = strings.TrimSuffix(Repo, "/")
+			CommitURL = strings.TrimSuffix(CommitURL, ".git")
+		} else {
+			s := strings.Split(Repo, "@")
+			s = strings.Split(s[1], ":")
+			CommitURL = "https://" + s[0] + "/" + s[1]
+		}
+
+		CommitURL += "/commit/" + Commit
+	}
 }
