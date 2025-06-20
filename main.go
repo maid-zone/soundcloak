@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"git.maid.zone/stuff/soundcloak/lib/api"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v3"
@@ -347,11 +348,16 @@ Disallow: /`)
 			return err
 		}
 
-		q := c.Query("q")
-		t := c.Query("type")
+		q := cfg.B2s(c.RequestCtx().QueryArgs().Peek("q"))
+		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
+		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
+		if args == "" {
+			args = "?q=" + url.QueryEscape(q)
+		}
+
 		switch t {
 		case "tracks":
-			p, err := sc.SearchTracks("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchTracks("", prefs, args)
 			if err != nil {
 				log.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
@@ -360,7 +366,7 @@ Disallow: /`)
 			return r(c, "tracks: "+q, templates.SearchTracks(p), nil)
 
 		case "users":
-			p, err := sc.SearchUsers("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchUsers("", prefs, args)
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
@@ -369,9 +375,9 @@ Disallow: /`)
 			return r(c, "users: "+q, templates.SearchUsers(p), nil)
 
 		case "playlists":
-			p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q="+url.QueryEscape(q)))
+			p, err := sc.SearchPlaylists("", prefs, args)
 			if err != nil {
-				log.Printf("error getting users for %s: %s\n", q, err)
+				log.Printf("error getting playlists for %s: %s\n", q, err)
 				return err
 			}
 
@@ -416,8 +422,6 @@ Disallow: /`)
 		if len(loc) == 0 {
 			return fiber.ErrNotFound
 		}
-
-		//fmt.Println(c.Hostname(), c.Protocol(), c.IPs())
 
 		u, err := url.Parse(cfg.B2s(loc))
 		if err != nil {
@@ -544,6 +548,10 @@ Disallow: /`)
 		proxystreams.Load(app)
 	}
 
+	if cfg.EnableAPI {
+		api.Load(app)
+	}
+
 	if cfg.InstanceInfo {
 		type info struct {
 			Commit             string
@@ -553,6 +561,7 @@ Disallow: /`)
 			Restream           bool
 			GetWebProfiles     bool
 			DefaultPreferences cfg.Preferences
+			EnableAPI          bool
 		}
 
 		inf, err := json.Marshal(info{
@@ -563,6 +572,7 @@ Disallow: /`)
 			Restream:           cfg.Restream,
 			GetWebProfiles:     cfg.GetWebProfiles,
 			DefaultPreferences: cfg.DefaultPreferences,
+			EnableAPI:          cfg.EnableAPI,
 		})
 		if err != nil {
 			log.Fatalln("failed to marshal info: ", err)

@@ -66,7 +66,6 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 
 	r.req.SetRequestURI(url)
 	r.req.Header.SetUserAgent(cfg.UserAgent)
-	r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	if aac {
 		r.client = misc.HlsAacClient
@@ -80,11 +79,6 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 		return err
 	}
 
-	data, err := r.resp.BodyUncompressed()
-	if err != nil {
-		data = r.resp.Body()
-	}
-
 	if r.parts == nil {
 		misc.Log("make() r.parts")
 		r.parts = make([][]byte, 0, defaultPartsCapacity)
@@ -93,7 +87,7 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 	}
 	if aac {
 		// clone needed to mitigate memory skill issues here
-		for _, s := range bytes.Split(data, []byte{'\n'}) {
+		for _, s := range bytes.Split(r.resp.Body(), []byte{'\n'}) {
 			if len(s) == 0 {
 				continue
 			}
@@ -108,7 +102,7 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 			r.parts = append(r.parts, clone(s))
 		}
 	} else {
-		for _, s := range bytes.Split(data, []byte{'\n'}) {
+		for _, s := range bytes.Split(r.resp.Body(), []byte{'\n'}) {
 			if len(s) == 0 || s[0] == '#' {
 				continue
 			}
@@ -169,11 +163,7 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 		return
 	}
 
-	data, err := r.resp.BodyUncompressed()
-	if err != nil {
-		data = r.resp.Body()
-	}
-
+	data := r.resp.Body()
 	if r.index == 0 && r.duration != nil {
 		fixDuration(data, r.duration) // I'm guessing that mvhd will always be in first part
 	}

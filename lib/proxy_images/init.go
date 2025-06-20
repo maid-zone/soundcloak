@@ -54,7 +54,6 @@ func Load(r *fiber.App) {
 
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
-		//req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd") images not big enough to be compressed
 
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp) moved to proxyreader!!!

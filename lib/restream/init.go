@@ -48,14 +48,19 @@ func Load(r *fiber.App) {
 		}
 
 		var isDownload = string(c.RequestCtx().QueryArgs().Peek("metadata")) == "true"
-		var quality *string
-		if isDownload {
-			quality = p.DownloadAudio
+		var forcedQuality = c.RequestCtx().QueryArgs().Peek("audio")
+		var quality string
+		if len(forcedQuality) != 0 {
+			quality = cfg.B2s(forcedQuality)
 		} else {
-			quality = p.RestreamAudio
+			if isDownload {
+				quality = *p.DownloadAudio
+			} else {
+				quality = *p.RestreamAudio
+			}
 		}
 
-		tr, audio := t.Media.SelectCompatible(*quality, true)
+		tr, audio := t.Media.SelectCompatible(quality, true)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -92,7 +97,6 @@ func Load(r *fiber.App) {
 
 				if t.Artwork != "" {
 					r.req.SetRequestURI(t.Artwork)
-					r.req.Header.Del("Accept-Encoding")
 
 					err := sc.DoWithRetry(misc.ImageClient, r.req, r.resp)
 					if err != nil {
@@ -100,7 +104,6 @@ func Load(r *fiber.App) {
 					}
 
 					tag.AddAttachedPicture(id3v2.PictureFrame{MimeType: cfg.B2s(r.req.Header.ContentType()), Picture: r.req.Body(), PictureType: id3v2.PTFrontCover, Encoding: id3v2.EncodingUTF8})
-					r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 				}
 
 				var col collector
@@ -115,17 +118,13 @@ func Load(r *fiber.App) {
 
 				req.SetRequestURI(u)
 				req.Header.SetUserAgent(cfg.UserAgent)
-				req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 				err := sc.DoWithRetry(misc.HlsClient, req, resp)
 				if err != nil {
 					return err
 				}
 
-				data, err := resp.BodyUncompressed()
-				if err != nil {
-					data = resp.Body()
-				}
+				data := resp.Body()
 
 				res := make([]byte, 0, 1024*1024*1)
 				for _, s := range bytes.Split(data, []byte{'\n'}) {
@@ -139,10 +138,7 @@ func Load(r *fiber.App) {
 						return err
 					}
 
-					data, err = resp.BodyUncompressed()
-					if err != nil {
-						data = resp.Body()
-					}
+					data = resp.Body()
 
 					res = append(res, data...)
 				}
@@ -161,7 +157,6 @@ func Load(r *fiber.App) {
 
 				if t.Artwork != "" {
 					req.SetRequestURI(t.Artwork)
-					req.Header.Del("Accept-Encoding")
 
 					err := sc.DoWithRetry(misc.ImageClient, req, resp)
 					if err != nil {
@@ -207,7 +202,6 @@ func Load(r *fiber.App) {
 
 				if t.Artwork != "" {
 					r.req.SetRequestURI(t.Artwork)
-					r.req.Header.Del("Accept-Encoding")
 
 					err := sc.DoWithRetry(misc.ImageClient, r.req, r.resp)
 					if err != nil {
@@ -221,7 +215,6 @@ func Load(r *fiber.App) {
 					}
 
 					tag.SetCoverArt(&parsed)
-					r.req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 				}
 
 				var col collector

@@ -42,7 +42,6 @@ func Load(a *fiber.App) {
 
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp)
@@ -81,7 +80,6 @@ func Load(a *fiber.App) {
 
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 		resp := fasthttp.AcquireResponse()
 
@@ -119,7 +117,6 @@ func Load(a *fiber.App) {
 
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
@@ -170,7 +167,6 @@ func Load(a *fiber.App) {
 
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 		resp := fasthttp.AcquireResponse()
 		defer fasthttp.ReleaseResponse(resp)
@@ -180,12 +176,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		data, err := resp.BodyUncompressed()
-		if err != nil {
-			data = resp.Body()
-		}
-
-		var sp = bytes.Split(data, newline)
+		var sp = bytes.Split(resp.Body(), newline)
 		for i, l := range sp {
 			if len(l) == 0 {
 				continue

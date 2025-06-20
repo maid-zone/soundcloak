@@ -69,6 +69,9 @@ var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (K
 // time-to-live for dns cache
 var DNSCacheTTL = 60 * time.Minute
 
+// enab;e api
+var EnableAPI = false
+
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
 
@@ -387,6 +390,11 @@ func fromEnv() error {
 		DNSCacheTTL = time.Duration(num) * time.Second
 	}
 
+	env = os.Getenv("ENABLE_API")
+	if env != "" {
+		EnableAPI = boolean(env)
+	}
+
 	env = os.Getenv("NETWORK")
 	if env != "" {
 		Network = env
@@ -480,6 +488,7 @@ func init() {
 		PlaylistCacheCleanDelay *time.Duration
 		UserAgent               *string
 		DNSCacheTTL             *time.Duration
+		EnableAPI               *bool
 		Network                 *string
 		Addr                    *string
 		UnixSocketPerms         *string
@@ -546,6 +555,9 @@ func init() {
 	}
 	if config.DNSCacheTTL != nil {
 		DNSCacheTTL = *config.DNSCacheTTL * time.Second
+	}
+	if config.EnableAPI != nil {
+		EnableAPI = *config.EnableAPI
 	}
 	if config.Network != nil {
 		Network = *config.Network
