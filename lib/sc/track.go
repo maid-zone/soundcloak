@@ -50,16 +50,20 @@ type Track struct {
 type TrackPolicy string
 
 const (
-	PolicyBlock TrackPolicy = "BLOCK" // not available (in your country)
-	PolicySnip  TrackPolicy = "SNIP"  // 30-second snippet available
-	PolicyAllow TrackPolicy = "ALLOW" // all good
+	PolicyMonetize TrackPolicy = "MONETIZE" // seems like only certain countries get this policy? sometimes protected by widevine and fairplay
+	PolicyBlock    TrackPolicy = "BLOCK"    // not available (in your country)
+	PolicySnip     TrackPolicy = "SNIP"     // 30-second snippet available
+	PolicyAllow    TrackPolicy = "ALLOW"    // all good
 )
 
 type Protocol string
 
 const (
-	ProtocolHLS         Protocol = "hls"
-	ProtocolProgressive Protocol = "progressive"
+	ProtocolHLS             Protocol = "hls"
+	ProtocolProgressive     Protocol = "progressive"
+	ProtocolEncryptedHLS    Protocol = "encrypted-hls"     // idk, haven't seen in the wild
+	ProtocolCTREncryptedHLS Protocol = "ctr-encrypted-hls" // google's widevine
+	ProtocolCBCEncryptedHLS Protocol = "cbc-encrypted-hls" // apple's fairplay
 )
 
 type Format struct {

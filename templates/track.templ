@@ -171,7 +171,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	}
 	<h1>{ t.Title }</h1>
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
-	if cfg.Restream {
+	if displayErr == "" && cfg.Restream {
 		<div style="display: flex; margin-bottom: 1rem;">
 			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
 		</div>
@@ -220,6 +220,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.License != "" {
 		<p>License: { t.License }</p>
 	}
+	<p>Policy: { t.Policy }</p>
 	if t.TagList != "" {
 		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
 	}
