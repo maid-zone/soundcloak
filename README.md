@@ -23,7 +23,7 @@ Frontend for SoundCloud
 ## [Instance Maintainer Guide](docs/INSTANCE_GUIDE.md)
 ## [Development Guide](docs/DEV_GUIDE.md)
 
-If you have any questions, or just wanna talk about soundcloak, you can join the maid.zone XMPP/Matrix chat: [public@muc.maid.zone](xmpp:public@muc.maid.zone?join) / [#maidzone:laincorp.tech](https://matrix.to/#/#maidzone:laincorp.tech)
+If you have any questions, or just wanna talk about soundcloak, you can join the maid.zone XMPP/Matrix chat: [public@muc.maid.zone](xmpp:public@muc.maid.zone?join) / [#public:maid.zone](https://matrix.to/#/#public:maid.zone)
 
 # Notice
 soundcloak is not affiliated with SoundCloud.

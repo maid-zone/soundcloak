@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"log"
 	"strings"
 	"time"
 	"unsafe"
@@ -101,15 +102,23 @@ func S2b(s string) []byte {
 }
 
 func init() {
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			log.Printf("WARNING: failed to parse repo and commit, please report this as an issue!!! repo: %s commit: %s\n", Repo, Commit)
+		}
+	}()
+
 	if Repo != "unknown" {
-		if strings.HasPrefix(Repo, "http") {
-			CommitURL = strings.TrimSuffix(Repo, "/")
-			CommitURL = strings.TrimSuffix(CommitURL, ".git")
-		} else {
+		if !strings.HasPrefix(Repo, "http") {
 			s := strings.Split(Repo, "@")
 			s = strings.Split(s[1], ":")
 			CommitURL = "https://" + s[0] + "/" + s[1]
+		} else {
+			CommitURL = strings.TrimSuffix(Repo, "/")
 		}
+
+		CommitURL = strings.TrimSuffix(CommitURL, ".git")
 
 		CommitURL += "/commit/" + Commit
 	}
