@@ -5,18 +5,16 @@ import (
 	"net/url"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
-	"git.maid.zone/stuff/soundcloak/lib/preferences"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"github.com/gofiber/fiber/v3"
+	json "github.com/goccy/go-json"
 )
 
-func Load(r *fiber.App) {
-	r.Get("/_/api/search", func(c fiber.Ctx) error {
-		prefs, err := preferences.Get(c)
-		if err != nil {
-			return err
-		}
-
+func Load(a *fiber.App) {
+	r := a.Group("/_/api")
+	
+	prefs := cfg.Preferences{ProxyImages: &cfg.False}
+	r.Get("/search", func(c fiber.Ctx) error {
 		q := cfg.B2s(c.RequestCtx().QueryArgs().Peek("q"))
 		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
 		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
@@ -54,5 +52,41 @@ func Load(r *fiber.App) {
 		}
 
 		return c.SendStatus(404)
+	})
+
+	r.Get("/track/:id/related", func(c fiber.Ctx) error {
+		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
+		if args == "" {
+			args = "?limit=20"
+		}
+
+		p, err := (sc.Track{ID: json.Number(c.Params("id"))}).GetRelated("", prefs, args)
+		if err != nil {
+			log.Printf("[API] error getting related tracks for %d: %s\n", c.Params("id"), err)
+			return err
+		}
+
+		return c.JSON(p)
+	})
+
+	r.Get("/playlistByPermalink/:author/sets/:playlist", func(c fiber.Ctx) error {
+		p, err := sc.GetPlaylist("", c.Params("author")+"/sets/"+c.Params("playlist"))
+		if err != nil {
+			log.Printf("[API] error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
+			return err
+		}
+
+		return c.JSON(p)
+	})
+
+	r.Get("/tracks", func(c fiber.Ctx) error {
+		ids := cfg.B2s(c.RequestCtx().QueryArgs().Peek("ids"))
+		t, err := sc.GetTracks("", ids)
+		if err != nil {
+			log.Printf("[API] error getting %s tracks: %s\n", ids, err)
+			return err
+		}
+
+		return c.JSON(t)
 	})
 }

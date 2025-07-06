@@ -37,7 +37,7 @@ type User struct {
 	Verified     bool        `json:"verified"`
 	Station      string      `json:"station_permalink"`
 
-	WebProfiles []Link
+	WebProfiles []Link `json:",omitempty"`
 }
 
 type Link struct {
