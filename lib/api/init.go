@@ -79,6 +79,31 @@ func Load(a *fiber.App) {
 		return c.JSON(p)
 	})
 
+	r.Get("/playlistByPermalink/:author/sets/:playlist/tracks", func(c fiber.Ctx) error {
+		p, err := sc.GetPlaylist("", c.Params("author")+"/sets/"+c.Params("playlist"))
+		if err != nil {
+			log.Printf("[API] error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
+			return err
+		}
+
+		tracks := make([]json.Number, len(p.Tracks))
+		for i, t := range p.Tracks {
+			tracks[i] = t.ID
+		}
+
+		return c.JSON(tracks)
+	})
+
+	r.Get("/track/:id", func(c fiber.Ctx) error {
+		t, err := sc.GetTrackByID("", c.Params("id"))
+		if err != nil {
+			log.Printf("[API] error getting track %s: %s\n", c.Params("id"), err)
+			return err
+		}
+
+		return c.JSON(t)
+	})
+
 	r.Get("/tracks", func(c fiber.Ctx) error {
 		ids := cfg.B2s(c.RequestCtx().QueryArgs().Peek("ids"))
 		t, err := sc.GetTracks("", ids)

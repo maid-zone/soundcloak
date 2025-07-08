@@ -26,6 +26,12 @@ Search for users, tracks or playlists. Query parameters are:
 
 For example: `/_/api/search?q=test&type=tracks` to search for `tracks` named `test`
 
+## GET `/_/api/track/:id`
+
+Get track by ID.
+
+For example: `/_/api/track/2014143543` to get track with ID `2014143543`
+
 ## GET `/_/api/track/:id/related`
 
 Get related tracks by ID. Pagination is supported here. Initial request returns upto 20 tracks
@@ -43,6 +49,12 @@ For example: `/_/api/tracks?ids=2014143543,476907846`. This will only return one
 Get playlist by permalinks. 
 
 For example: `/_/api/playlistByPermalink/lucybedroque/sets/unmusique` to get `unmusique` playlist from `lucybedroque`
+
+## GET `/_/api/playlistByPermalink/:author/sets/:playlist/tracks`
+
+Get list of track IDs in playlist.
+
+For example: `/_/api/playlistByPermalink/lucybedroque/sets/unmusique/tracks` to get all IDs of the tracks in playlist `unmusique` from `lucybedroque`
 
 # Other automation
 
