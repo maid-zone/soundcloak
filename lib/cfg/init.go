@@ -64,7 +64,10 @@ var PlaylistTTL = 20 * time.Minute
 var PlaylistCacheCleanDelay = PlaylistTTL / 4
 
 // default fasthttp one was causing connections to be stuck? todo make it cycle browser useragents or just choose random at startup
-var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.3"
+var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+
+// override the extractor
+var ClientID = ""
 
 // time-to-live for dns cache
 var DNSCacheTTL = 60 * time.Minute
@@ -100,7 +103,7 @@ var TrustedProxies = []string{}
 var CodegenConfig = false
 
 // use static files embedded in binary
-var EmbedFiles = false
+var EmbedFiles = true
 
 // // end of config // //
 
@@ -378,6 +381,11 @@ func fromEnv() error {
 	env = os.Getenv("USER_AGENT")
 	if env != "" {
 		UserAgent = env
+	}
+
+	env = os.Getenv("CLIENT_ID")
+	if env != "" {
+		ClientID = env
 	}
 
 	env = os.Getenv("DNS_CACHE_TTL")

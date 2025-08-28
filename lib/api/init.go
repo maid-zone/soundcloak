@@ -6,13 +6,13 @@ import (
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	"github.com/gofiber/fiber/v3"
 	json "github.com/goccy/go-json"
+	"github.com/gofiber/fiber/v3"
 )
 
 func Load(a *fiber.App) {
 	r := a.Group("/_/api")
-	
+
 	prefs := cfg.Preferences{ProxyImages: &cfg.False}
 	r.Get("/search", func(c fiber.Ctx) error {
 		q := cfg.B2s(c.RequestCtx().QueryArgs().Peek("q"))
@@ -62,7 +62,7 @@ func Load(a *fiber.App) {
 
 		p, err := (sc.Track{ID: json.Number(c.Params("id"))}).GetRelated("", prefs, args)
 		if err != nil {
-			log.Printf("[API] error getting related tracks for %d: %s\n", c.Params("id"), err)
+			log.Printf("[API] error getting related tracks for %s: %s\n", c.Params("id"), err)
 			return err
 		}
 

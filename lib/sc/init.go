@@ -125,6 +125,10 @@ const experimental_GetClientID = true
 
 // inspired by github.com/imputnet/cobalt
 func GetClientID() (string, error) {
+	if cfg.ClientID != "" {
+		return cfg.ClientID, nil
+	}
+
 	if ClientIDCache.NextCheck.After(time.Now()) {
 		misc.Log("clientidcache hit @ 1")
 		return ClientIDCache.ClientID, nil

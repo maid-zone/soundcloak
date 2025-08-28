@@ -8,7 +8,7 @@ import (
 templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
 	if text != "" || injected != nil {
 		<details>
-			<summary>Toggle description</summary>
+			<summary>Description</summary>
 			<p style="white-space: pre-wrap;">
 				if text != "" {
 					if *prefs.ParseDescriptions {
