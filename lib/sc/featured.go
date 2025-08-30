@@ -22,7 +22,7 @@ type PlaylistOrUser struct {
 	Title  string `json:"title"`
 	Author struct {
 		Permalink string `string:"permalink"`
-	} `json:"author"`
+	} `json:"user"`
 	Artwork    string `json:"artwork_url"`
 	TrackCount int64  `json:"track_count"`
 }
