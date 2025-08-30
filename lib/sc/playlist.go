@@ -16,23 +16,21 @@ var playlistsCacheLock = &sync.RWMutex{}
 // Functions/structures related to playlists
 
 type Playlist struct {
-	Artwork      string `json:"artwork_url"`
-	CreatedAt    string `json:"created_at"`
-	Description  string `json:"description"`
-	Kind         string `json:"kind"` // should always be "playlist"! or "system-playlist"
-	LastModified string `json:"last_modified"`
-	Likes        int64  `json:"likes_count"`
-	Permalink    string `json:"permalink"`
-	//ReleaseDate  string  `json:"release_date"`
-	TagList    string  `json:"tag_list"`
-	Title      string  `json:"title"`
-	Type       string  `json:"set_type"`
-	Album      bool    `json:"is_album"`
-	Author     User    `json:"user"`
-	Tracks     []Track `json:"tracks"`
-	TrackCount int64   `json:"track_count"`
-
-	MissingTracks string `json:"-"`
+	Artwork       string  `json:"artwork_url"`
+	CreatedAt     string  `json:"created_at"`
+	Description   string  `json:"description"`
+	Kind          string  `json:"kind"` // should always be "playlist"! or "system-playlist"
+	LastModified  string  `json:"last_modified"`
+	Permalink     string  `json:"permalink"`
+	TagList       string  `json:"tag_list"`
+	Title         string  `json:"title"`
+	Type          string  `json:"set_type"`
+	MissingTracks string  `json:"-"`
+	Tracks        []Track `json:"tracks"`
+	Author        User    `json:"user"`
+	Likes         int64   `json:"likes_count"`
+	TrackCount    int64   `json:"track_count"`
+	Album         bool    `json:"is_album"`
 }
 
 func GetPlaylist(cid string, permalink string) (Playlist, error) {

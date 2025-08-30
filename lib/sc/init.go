@@ -18,9 +18,9 @@ import (
 )
 
 type clientIdCache struct {
+	NextCheck time.Time
 	ClientID  string
 	Version   string
-	NextCheck time.Time
 }
 
 var ClientIDCache clientIdCache
@@ -342,9 +342,9 @@ func Resolve(cid string, path string, out any) error {
 }
 
 type Paginated[T any] struct {
+	Next       string `json:"next_href"`
 	Collection []T    `json:"collection"`
 	Total      int64  `json:"total_results"`
-	Next       string `json:"next_href"`
 }
 
 func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {

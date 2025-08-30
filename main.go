@@ -554,13 +554,13 @@ Disallow: /`)
 
 	if cfg.InstanceInfo {
 		type info struct {
+			DefaultPreferences cfg.Preferences
 			Commit             string
 			Repo               string
 			ProxyImages        bool
 			ProxyStreams       bool
 			Restream           bool
 			GetWebProfiles     bool
-			DefaultPreferences cfg.Preferences
 			EnableAPI          bool
 		}
 

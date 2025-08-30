@@ -105,4 +105,6 @@ If you want to add a new feature that's not in [the todo list](https://git.maid.
 
 If you have updated go dependencies or added new ones, please run `go mod tidy` before commiting.
 
+If you update structs, please run [betteralign](https://github.com/dkorunic/betteralign) to make sure memory layout is optimized.
+
 Any security vulnerabilities should first be disclosed privately to the maintainer ([different ways to contact me are listed here](https://laptopc.at))

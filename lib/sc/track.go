@@ -25,26 +25,26 @@ var tracksCacheLock = &sync.RWMutex{}
 
 type Track struct {
 	Artwork       string      `json:"artwork_url"`
-	Comments      int         `json:"comment_count"`
 	CreatedAt     string      `json:"created_at"`
 	Description   string      `json:"description"`
-	Duration      uint32      `json:"full_duration"`
 	Genre         string      `json:"genre"`
 	Kind          string      `json:"kind"` // should always be "track"!
 	LastModified  string      `json:"last_modified"`
 	License       string      `json:"license"`
-	Likes         int64       `json:"likes_count"`
 	Permalink     string      `json:"permalink"`
-	Played        int64       `json:"playback_count"`
-	Reposted      int64       `json:"reposts_count"`
 	TagList       string      `json:"tag_list"`
 	Title         string      `json:"title"`
 	ID            json.Number `json:"id"`
-	Media         Media       `json:"media"`
 	Authorization string      `json:"track_authorization"`
-	Author        User        `json:"user"`
 	Policy        TrackPolicy `json:"policy"`
 	Station       string      `json:"station_permalink"`
+	Media         Media       `json:"media"`
+	Author        User        `json:"user"`
+	Comments      int         `json:"comment_count"`
+	Likes         int64       `json:"likes_count"`
+	Played        int64       `json:"playback_count"`
+	Reposted      int64       `json:"reposts_count"`
+	Duration      uint32      `json:"full_duration"`
 }
 
 type TrackPolicy string
@@ -89,8 +89,8 @@ type Stream struct {
 type Comment struct {
 	Kind      string `json:"kind"` // "comment"
 	Body      string `json:"body"`
-	Timestamp int    `json:"timestamp"`
 	Author    User   `json:"user"`
+	Timestamp int    `json:"timestamp"`
 }
 
 func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {

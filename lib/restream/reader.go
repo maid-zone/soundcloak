@@ -15,14 +15,14 @@ import (
 const defaultPartsCapacity = 24
 
 type reader struct {
+	duration *uint32
+
+	req      *fasthttp.Request
+	resp     *fasthttp.Response
+	client   *fasthttp.HostClient
 	parts    [][]byte
 	leftover []byte
 	index    int
-	duration *uint32
-
-	req    *fasthttp.Request
-	resp   *fasthttp.Response
-	client *fasthttp.HostClient
 }
 
 var readerpool = sync.Pool{

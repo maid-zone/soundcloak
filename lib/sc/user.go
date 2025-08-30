@@ -23,21 +23,20 @@ type User struct {
 	Avatar       string      `json:"avatar_url"`
 	CreatedAt    string      `json:"created_at"`
 	Description  string      `json:"description"`
-	Followers    int64       `json:"followers_count"`
-	Following    int64       `json:"followings_count"`
 	FullName     string      `json:"full_name"`
 	Kind         string      `json:"kind"` // should always be "user"!
 	LastModified string      `json:"last_modified"`
-	Liked        int64       `json:"likes_count"`
 	Permalink    string      `json:"permalink"`
-	Playlists    int64       `json:"playlist_count"`
-	Tracks       int64       `json:"track_count"`
 	ID           json.Number `json:"id"`
 	Username     string      `json:"username"`
-	Verified     bool        `json:"verified"`
 	Station      string      `json:"station_permalink"`
-
-	WebProfiles []Link `json:",omitempty"`
+	WebProfiles  []Link      `json:",omitempty"`
+	Followers    int64       `json:"followers_count"`
+	Following    int64       `json:"followings_count"`
+	Liked        int64       `json:"likes_count"`
+	Playlists    int64       `json:"playlist_count"`
+	Tracks       int64       `json:"track_count"`
+	Verified     bool        `json:"verified"`
 }
 
 type Link struct {
@@ -54,10 +53,9 @@ const (
 
 // not worthy of its own file
 type Repost struct {
-	Type RepostType
-
 	Track    *Track    // type == track-report
 	Playlist *Playlist // type == playlist-repost
+	Type     RepostType
 }
 
 func (r Repost) Fix(prefs cfg.Preferences) {

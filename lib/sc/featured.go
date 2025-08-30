@@ -13,18 +13,18 @@ type PlaylistOrUser struct {
 	Kind      string `json:"kind"` // "playlist" or "system-playlist" or "user"
 	Permalink string `json:"permalink"`
 
-	// Playlist-specific
-	TrackCount int64  `json:"track_count"`
-	Title      string `json:"title"`
-	Author     struct {
-		Permalink string
-	} `json:"author"`
-	Artwork string `json:"artwork_url"`
-
 	// User-specific
 	Avatar   string `json:"avatar_url"`
 	Username string `json:"username"`
 	FullName string `json:"full_name"`
+
+	// Playlist-specific
+	Title  string `json:"title"`
+	Author struct {
+		Permalink string
+	} `json:"author"`
+	Artwork    string `json:"artwork_url"`
+	TrackCount int64  `json:"track_count"`
 }
 
 func (p PlaylistOrUser) Href() string {
