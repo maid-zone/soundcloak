@@ -5,6 +5,33 @@ import (
 	"strconv"
 )
 
+templ PlaylistOrUserItem(pl *sc.PlaylistOrUser) {
+	<a class="listing" href={ templ.SafeURL(pl.Href()) }>
+		{{
+			img := pl.Artwork
+			if pl.Kind == "user" {
+				img = pl.Avatar
+			}
+		}}
+		if img != "" {
+			<img loading="lazy" fetchpriority="low" src={ img }/>
+		} else {
+			<img loading="lazy" fetchpriority="low" src="/_/static/placeholder.jpg"/>
+		}
+		<div class="meta">
+			if pl.Kind == "user" {
+				<h3>{ pl.Username }</h3>
+				if pl.FullName != "" {
+					<span>{ pl.FullName }</span>
+				}
+			} else {
+				<h3>{ pl.Title }</h3>
+				<p>{ strconv.FormatInt(pl.TrackCount, 10) } tracks</p>
+			}
+		</div>
+	</a>
+}
+
 templ Discover(p *sc.Paginated[*sc.Selection]) {
 	<h1>Discover Playlists</h1> // also tracks apparently? haven't seen any
 	<span>Got { strconv.FormatInt(int64(len(p.Collection)), 10) } selections</span>
@@ -17,8 +44,7 @@ templ Discover(p *sc.Paginated[*sc.Selection]) {
 
 			<h2>{selection.Title}</h2>
 			for _, pl := range selection.Items.Collection {
-				// We don't need the username
-				@PlaylistItem(pl, false)
+				@PlaylistOrUserItem(pl)
 			}
 		}
 

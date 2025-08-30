@@ -1,13 +1,65 @@
 package sc
 
-import "git.maid.zone/stuff/soundcloak/lib/cfg"
+import (
+	"net/url"
+	"strings"
 
-// Functions/structions related to featured/suggested content
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+)
+
+// Functions/structures related to featured/suggested content
+
+type PlaylistOrUser struct {
+	Kind      string `json:"kind"` // "playlist" or "system-playlist" or "user"
+	Permalink string `json:"permalink"`
+
+	// Playlist-specific
+	TrackCount int64  `json:"track_count"`
+	Title      string `json:"title"`
+	Author     struct {
+		Permalink string
+	} `json:"author"`
+	Artwork string `json:"artwork_url"`
+
+	// User-specific
+	Avatar   string `json:"avatar_url"`
+	Username string `json:"username"`
+	FullName string `json:"full_name"`
+}
+
+func (p PlaylistOrUser) Href() string {
+	switch p.Kind {
+	case "system-playlist":
+		return "/discover/sets/" + p.Permalink
+	case "playlist":
+		return "/" + p.Author.Permalink + "/sets/" + p.Permalink
+	default:
+		return "/" + p.Permalink
+	}
+}
+
+func (p *PlaylistOrUser) Fix(prefs cfg.Preferences) {
+	switch p.Kind {
+	case "user":
+		if p.Avatar == "https://a1.sndcdn.com/images/default_avatar_large.png" {
+			p.Avatar = ""
+		} else {
+			p.Avatar = strings.Replace(p.Avatar, "-large.", "-t200x200.", 1)
+		}
+	default:
+		if p.Artwork != "" {
+			p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
+			if cfg.ProxyImages && *prefs.ProxyImages {
+				p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
+			}
+		}
+	}
+}
 
 type Selection struct {
-	Title string               `json:"title"`
-	Kind  string               `json:"kind"`  // should always be "selection"!
-	Items Paginated[*Playlist] `json:"items"` // ?? why
+	Title string                     `json:"title"`
+	Kind  string                     `json:"kind"`  // should always be "selection"!
+	Items Paginated[*PlaylistOrUser] `json:"items"` // ?? why
 }
 
 func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], error) {
@@ -27,7 +79,6 @@ func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], e
 
 func (s *Selection) Fix(prefs cfg.Preferences) {
 	for _, p := range s.Items.Collection {
-		p.Fix("", false, false)
-		p.Postfix(prefs, false, false)
+		p.Fix(prefs)
 	}
 }
