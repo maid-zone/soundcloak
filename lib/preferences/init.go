@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/valyala/fasthttp"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/templates"
@@ -110,6 +111,24 @@ type Export struct {
 	Preferences *cfg.Preferences `json:",omitempty"`
 }
 
+func setPrefs(c fiber.Ctx, p *cfg.Preferences) error {
+	data, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	cookie := fasthttp.AcquireCookie()
+	cookie.SetKey("prefs")
+	cookie.SetValueBytes(data)
+	cookie.SetExpire(time.Now().Add(400 * 24 * time.Hour))
+	cookie.SetHTTPOnly(true)
+	cookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+	c.Response().Header.SetCookie(cookie)
+	fasthttp.ReleaseCookie(cookie)
+
+	return nil
+}
+
 func Load(r *fiber.App) {
 	r.Get("/_/preferences", func(c fiber.Ctx) error {
 		p, err := Get(c)
@@ -157,16 +176,18 @@ func Load(r *fiber.App) {
 
 		if *old.Player == cfg.HLSPlayer {
 			if cfg.ProxyStreams {
-				if p.ProxyStreams == on {
+				switch p.ProxyStreams {
+				case on:
 					old.ProxyStreams = &cfg.True
-				} else if p.ProxyStreams == "" {
+				case "":
 					old.ProxyStreams = &cfg.False
 				}
 			}
 
-			if p.FullyPreloadTrack == on {
+			switch p.FullyPreloadTrack {
+			case on:
 				old.FullyPreloadTrack = &cfg.True
-			} else if p.FullyPreloadTrack == "" {
+			case "":
 				old.FullyPreloadTrack = &cfg.False
 			}
 
@@ -182,9 +203,10 @@ func Load(r *fiber.App) {
 		}
 
 		if cfg.ProxyImages {
-			if p.ProxyImages == on {
+			switch p.ProxyImages {
+			case on:
 				old.ProxyImages = &cfg.True
-			} else if p.ProxyImages == "" {
+			case "":
 				old.ProxyImages = &cfg.False
 			}
 		}
@@ -215,31 +237,22 @@ func Load(r *fiber.App) {
 
 		old.Player = &p.Player
 
-		data, err := json.Marshal(old)
-		if err != nil {
-			return err
-		}
-
-		c.Cookie(&fiber.Cookie{
-			Name:     "prefs",
-			Value:    cfg.B2s(data),
-			Expires:  time.Now().Add(400 * 24 * time.Hour),
-			HTTPOnly: true,
-			SameSite: "strict",
-		})
+		setPrefs(c, &old)
 
 		return c.Redirect().To("/_/preferences")
 	})
 
 	r.Get("/_/preferences/reset", func(c fiber.Ctx) error {
-		// c.ClearCookie("prefs")
-		c.Cookie(&fiber.Cookie{ // I've had some issues with c.ClearCookie() method, so using this workaround for now
-			Name:     "prefs",
-			Value:    "{}",
-			Expires:  time.Now().Add(400 * 24 * time.Hour),
-			HTTPOnly: true,
-			SameSite: "strict",
-		})
+		// do not use (fiber.Ctx).Cookie() ts pmo icl
+
+		cookie := fasthttp.AcquireCookie()
+		cookie.SetKey("prefs")
+		cookie.SetValue("{}")
+		cookie.SetExpire(time.Now().Add(400 * 24 * time.Hour))
+		cookie.SetHTTPOnly(true)
+		cookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+		c.Response().Header.SetCookie(cookie)
+		fasthttp.ReleaseCookie(cookie)
 
 		return c.Redirect().To("/_/preferences")
 	})
@@ -279,18 +292,7 @@ func Load(r *fiber.App) {
 
 		Defaults(p.Preferences)
 
-		data, err := json.Marshal(p.Preferences)
-		if err != nil {
-			return err
-		}
-
-		c.Cookie(&fiber.Cookie{
-			Name:     "prefs",
-			Value:    cfg.B2s(data),
-			Expires:  time.Now().Add(400 * 24 * time.Hour),
-			HTTPOnly: true,
-			SameSite: "strict",
-		})
+		setPrefs(c, p.Preferences)
 
 		return c.Redirect().To("/_/preferences")
 	})

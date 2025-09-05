@@ -1,6 +1,6 @@
 # Setup
 ## Prerequisites
-1. [golang](https://go.dev) (I recommend version 1.24.0)
+1. [golang](https://go.dev) (I recommend version 1.25.1)
 2. [git](https://git-scm.com)
 
 ## The setup
@@ -16,41 +16,15 @@ git clone https://git.maid.zone/stuff/soundcloak
 cd soundcloak
 ```
 
-3. Download templ:
+3. Download required JS modules:
+
+Currently it's just HLS.js
 
 ```sh
-go install github.com/a-h/templ/cmd/templ@latest
+go tool soundcloakctl js download
 ```
 
-*You might need to add go binaries to your PATH (add this line to your .bashrc / .zshrc / whatever)*
-
-```sh
-export PATH=${PATH}:`go env GOPATH`/bin
-```
-
-4. Download regexp2cg:
-
-Not really required, but helps speed up some parts of the code that use regular expressions by generating code for them instead of compiling in runtime.
-
-```sh
-go install github.com/dlclark/regexp2cg@main
-```
-
-5. Download soundcloakctl:
-
-Soundcloakctl is helper for soundcloak.
-
-```sh
-go install git.maid.zone/stuff/soundcloakctl@master
-```
-
-6. Download requried JS modules:
-
-```sh
-soundcloakctl js download
-```
-
-7. Build binary:
+4. Build binary:
 
 This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
 
@@ -69,27 +43,13 @@ git pull
 
 2. Update dependencies/tools:
 
-You can skip some parts if the tools/dependencies have not been updated.
 ```sh
-go get # for go packages
+go mod download # update tools and dependencies
 
-go install github.com/a-h/templ/cmd/templ@latest # templ cli
-
-go install github.com/dlclark/regexp2cg@main # regexp2 codegen cli. not required unless you've installed it
-
-go install git.maid.zone/stuff/soundcloakctl@master # soundcloakctl
-
-soundcloakctl js download # re-download JS modules
+go tool soundcloakctl js download # re-download JS modules
 ```
 
-3. Clean precompressed static files
-
-Those are created by the webserver in order to more efficiently serve static files. They have the `.br` and `.gzip` extension. You can easily remove them from all directories using soundcloakctl:
-```sh
-soundcloakctl clean
-```
-
-4. Run codegen and build the binary:
+3. Run codegen and build the binary:
 ```sh
 ./build
 ```

@@ -49,7 +49,7 @@ var genericClient = &fasthttp.Client{
 // var scriptsRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/.+\.js)"></script>$`, 2)
 // var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
 
-//go:generate regexp2cg -package sc -o regexp2_codegen.go
+//go:generate go tool regexp2cg -package sc -o regexp2_codegen.go
 var clientIdRegex = regexp2.MustCompile(`client_id:"([A-Za-z0-9]{32})"`, 0) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")

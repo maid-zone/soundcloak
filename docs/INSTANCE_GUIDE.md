@@ -42,9 +42,23 @@ Soundcloak will now be up at `127.0.0.1:4664` (or the address you specified in y
 
 ## Regular method
 
-** Not recommended for deployment. **
-
 Refer to the [developer guide](DEV_GUIDE.md#setup)
+
+### Extras
+
+Not required but can help. If using docker, it already does this stuff for you.
+
+- Precompressing static files
+
+For more effective file serving: `go tool soundcloakctl -nozstd precompress`
+
+You will have to run `go tool soundcloakctl clean` and re-run the above command each time static files change.
+
+- Config codegen
+
+Can help reduce binary size (if you don't use certain features) and performance (not by much): `go tool soundcloakctl config codegen`
+
+You will have to re-run this each time you change config or config structure changes
 
 # Updating your instance
 
@@ -57,22 +71,9 @@ git fetch origin
 git pull
 ```
 
-2. Stop the container:
-
+2. Rebuild and restart the container:
 ```sh
-docker compose down
-```
-
-3. Build the container with updated source code:
-
-```sh
-docker compose build
-```
-
-4. Start the container:
-
-```sh
-docker compose up -d
+docker compose up --build -d
 ```
 
 Use `docker-compose` instead of `docker compose` if that fails.

@@ -1,3 +1,3 @@
-templ generate
+go tool templ generate
 go generate ./lib/*
-go build -ldflags "-X git.maid.zone/stuff/soundcloak/lib/cfg.Commit=`git rev-parse HEAD | head -c 7` -X git.maid.zone/stuff/soundcloak/lib/cfg.Repo=`git remote get-url origin`" main.go
+go build -ldflags "-X git.maid.zone/stuff/soundcloak/lib/cfg.Commit=`git rev-parse --short HEAD` -X git.maid.zone/stuff/soundcloak/lib/cfg.Repo=`git remote get-url origin`" main.go

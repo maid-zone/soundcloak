@@ -495,6 +495,7 @@ func init() {
 		PlaylistTTL             *time.Duration
 		PlaylistCacheCleanDelay *time.Duration
 		UserAgent               *string
+		ClientID                *string
 		DNSCacheTTL             *time.Duration
 		EnableAPI               *bool
 		Network                 *string
@@ -560,6 +561,9 @@ func init() {
 	}
 	if config.UserAgent != nil {
 		UserAgent = *config.UserAgent
+	}
+	if config.ClientID != nil {
+		ClientID = *config.ClientID
 	}
 	if config.DNSCacheTTL != nil {
 		DNSCacheTTL = *config.DNSCacheTTL * time.Second
