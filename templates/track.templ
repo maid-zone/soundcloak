@@ -24,19 +24,23 @@ func toExt(audio string) string {
 templ TrackButtons(current string, track sc.Track) {
 	<div class="btns">
 		for _, b := range [...]btn{{"related tracks", "/recommended", false, false},{"in albums", "/albums", false, false},{"in playlists", "/sets", false, false},{"track station", "/discover/sets/"+track.Station, true, false},{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true}} {
+			<a
 			if b.text == current {
-				<a class="btn active">{ b.text }</a>
+				class="btn active"
 			} else {
-				if b.external {
-					<a class="btn" href={ templ.SafeURL(b.href) } referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank">{ b.text }</a>
+				class="btn"
+				if b.override {
+					href={ templ.SafeURL(b.href) }
 				} else {
-					if b.override {
-						<a class="btn" href={ templ.SafeURL(b.href) }>{ b.text }</a>
-					} else {
-						<a class="btn" href={ templ.SafeURL(track.Href() + b.href) }>{ b.text }</a>
-					}
+					href={ templ.SafeURL(track.Href() + b.href) }
+				}
+				if b.external {
+					referrerpolicy="no-referrer" 
+					rel="external nofollow noopener noreferrer" 
+					target="_blank"
 				}
 			}
+			>{ b.text }</a>
 		}
 	</div>
 }
@@ -47,10 +51,8 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
-	if needPlayer {
-		if *prefs.Player == cfg.HLSPlayer {
-			<script src="/_/static/external/hls.light.min.js"></script>
-		}
+	if needPlayer && *prefs.Player == cfg.HLSPlayer {
+		<script src="/_/static/external/hls.light.min.js"></script>
 	}
 }
 
@@ -88,27 +90,42 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		{{ var audioPref *string }}
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
 			{{ audioPref = prefs.RestreamAudio }}
+			<audio 
+				id="track" 
+				src={ "/_/restream" + track.Href() } 
+				controls 
+				autoplay?={ autoplay }
 			if nextTrack != nil {
-				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay } data-next={ next(&track, nextTrack, playlist, mode, "") } volume={ volume }></audio>
+				data-next={ next(&track, nextTrack, playlist, mode, "") } 
+				volume={ volume }	
+			}
+			></audio>
+			if nextTrack != nil {
 				<script async src="/_/static/restream.js"></script>
-			} else {
-				<audio id="track" src={ "/_/restream" + track.Href() } controls autoplay?={ autoplay }></audio>
 			}
 			if *prefs.KeepPlayerFocus {
 				<script async src="/_/static/keepfocus.js"></script>
 			}
 		} else if stream != "" {
 			{{ audioPref = prefs.HLSAudio }}
+			<audio 
+				id="track" 
+				src={ stream } 
+				controls 
+				autoplay?={ autoplay }
 			if nextTrack != nil {
-				<audio id="track" src={ stream } controls autoplay?={ autoplay } data-next={ next(&track, nextTrack, playlist, mode, "") } volume={ volume }></audio>
-			} else {
-				<audio id="track" src={ stream } controls autoplay?={ autoplay }></audio>
+				data-next={ next(&track, nextTrack, playlist, mode, "") } 
+				volume={ volume }	
 			}
+			></audio>
+			<script
+				async
 			if *prefs.FullyPreloadTrack {
-				<script async src="/_/static/player_preload.js"></script>
+				src="/_/static/player_preload.js"
 			} else {
-				<script async src="/_/static/player.js"></script>
+				src="/_/static/player.js"
 			}
+			></script>
 			if *prefs.KeepPlayerFocus {
 				<script async src="/_/static/keepfocus.js"></script>
 			}
@@ -150,11 +167,15 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 			}
 		}}
 		<a class="listing" href={ templ.SafeURL(overrideHref) }>
+			<img 
+				loading="lazy" 
+				fetchpriority="low"
 			if track.Artwork != "" {
-				<img loading="lazy" fetchpriority="low" src={ track.Artwork }/>
+				src={ track.Artwork }
 			} else {
-				<img loading="lazy" fetchpriority="low" src="/_/static/placeholder.jpg"/>
+				src="/_/static/placeholder.jpg"
 			}
+			/>
 			<div class="meta">
 				<h3>{ track.Title }</h3>
 				if showUsername {
@@ -256,11 +277,13 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 templ Comments(comments *sc.Paginated[*sc.Comment]) {
 	for _, c := range comments.Collection {
 		<div class="listing">
+			<img
 			if c.Author.Avatar != "" {
-				<img src={ c.Author.Avatar }/>
+				src={ c.Author.Avatar }
 			} else {
-				<img src="/_/static/placeholder.jpg"/>
+				src="/_/static/placeholder.jpg"
 			}
+			/>
 			<div class="comment">
 				<h3 class="link"><a href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a></h3>
 				<p>{ c.Body }</p>

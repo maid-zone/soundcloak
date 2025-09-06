@@ -123,6 +123,7 @@ func setPrefs(c fiber.Ctx, p *cfg.Preferences) error {
 	cookie.SetExpire(time.Now().Add(400 * 24 * time.Hour))
 	cookie.SetHTTPOnly(true)
 	cookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+	cookie.SetPath("/")
 	c.Response().Header.SetCookie(cookie)
 	fasthttp.ReleaseCookie(cookie)
 
@@ -251,6 +252,7 @@ func Load(r *fiber.App) {
 		cookie.SetExpire(time.Now().Add(400 * 24 * time.Hour))
 		cookie.SetHTTPOnly(true)
 		cookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+		cookie.SetPath("/")
 		c.Response().Header.SetCookie(cookie)
 		fasthttp.ReleaseCookie(cookie)
 

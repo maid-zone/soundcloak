@@ -3,11 +3,7 @@ package templates
 import "git.maid.zone/stuff/soundcloak/lib/cfg"
 
 templ checkbox(name string, checked bool) {
-	if checked {
-		<input name={ name } type="checkbox" autocomplete="off" checked/>
-	} else {
-		<input name={ name } type="checkbox" autocomplete="off"/>
-	}
+	<input name={ name } type="checkbox" autocomplete="off" checked?={ checked }/>
 }
 
 type option struct {
@@ -21,11 +17,11 @@ type option struct {
 templ sel(name string, options []option, selected string) {
 	<select name={ name } autocomplete="off">
 		for _, opt := range options {
-			if opt.value == selected {
-				<option value={ opt.value } selected>{ opt.desc }</option>
-			} else {
-				<option value={ opt.value } disabled?={ opt.disabled }>{ opt.desc }</option>
-			}
+			<option 
+				value={ opt.value }
+				selected?={ opt.value==selected }
+				disabled?={ opt.disabled }
+			>{ opt.desc }</option>
 		}
 	</select>
 }

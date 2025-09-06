@@ -9,11 +9,14 @@ import (
 templ TagsButtons(current string, tag string) {
 	<div class="btns">
 		for _, b := range [...]btn{{"recent tracks", "", false, false},{"popular tracks", "/popular-tracks", false, false},{"playlists", "/playlists", false, false}} {
+			<a
 			if b.text == current {
-				<a class="btn active">{ b.text }</a>
+				class="btn active"
 			} else {
-				<a class="btn" href={ templ.SafeURL("/tags/" + tag + b.href) }>{ b.text }</a>
+				class="btn"
+				href={ templ.SafeURL("/tags/"+tag+b.href) }
 			}
+			>{ b.text }</a>
 		}
 	</div>
     <br/>

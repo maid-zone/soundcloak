@@ -12,12 +12,11 @@ templ PlaylistOrUserItem(pl *sc.PlaylistOrUser) {
 			if pl.Kind == "user" {
 				img = pl.Avatar
 			}
+			if img == "" {
+				img = "/_/static/placeholder.jpg"
+			}
 		}}
-		if img != "" {
-			<img loading="lazy" fetchpriority="low" src={ img }/>
-		} else {
-			<img loading="lazy" fetchpriority="low" src="/_/static/placeholder.jpg"/>
-		}
+		<img loading="lazy" fetchpriority="low" src={ img }/>
 		<div class="meta">
 			if pl.Kind == "user" {
 				<h3>{ pl.Username }</h3>
