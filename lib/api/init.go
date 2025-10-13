@@ -114,4 +114,14 @@ func Load(a *fiber.App) {
 
 		return c.JSON(t)
 	})
+
+	r.Get("/trackByPermalink/:user/:track", func(c fiber.Ctx) error {
+		t, err := sc.GetTrack("", c.Params("user")+"/"+c.Params("track"))
+		if err != nil {
+			log.Printf("[API] error getting track %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
+			return err
+		}
+
+		return c.JSON(t)
+	})
 }
