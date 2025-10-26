@@ -23,3 +23,6 @@ regexp2_codegen.go
 main
 
 !.gitkeep
+
+# for development/testing
+Caddyfile

@@ -1,0 +1,20 @@
+package sc
+
+import "git.maid.zone/stuff/soundcloak/lib/cfg"
+import "git.maid.zone/stuff/soundcloak/lib/textparsing"
+
+templ TrackDescription(prefs cfg.Preferences, t *Track, href string) {
+	if t.Artwork != "" {
+		<img src={ t.Artwork } width="300px"/>
+	}
+	<h1><a href={ templ.SafeURL(href) }>{ t.Title }</a></h1>
+	<p style="white-space: pre-wrap;">
+		if t.Description != "" {
+			if *prefs.ParseDescriptions {
+				@templ.Raw(textparsing.Format(t.Description))
+			} else {
+				{ t.Description }
+			}
+		}
+	</p>
+}

@@ -95,7 +95,7 @@ type btn struct {
 templ UserButtons(current string, user sc.User) {
 	<div class="btns">
 		//       this part is the tedious one now, because formatting breaks if i space the list out with newlines
-		for _, b := range [...]btn{{"tracks", "", false, false},{"popular tracks", "/popular-tracks", false, false},{"playlists", "/sets", false, false},{"albums", "/albums", false, false},{"reposts","/reposts", false, false},{"related", "/_/related", false, false},{"user station", "/discover/sets/"+user.Station, true, false},{"view on soundcloud", "https://soundcloud.com/"+user.Permalink, true, true}} {
+		for _, b := range [...]btn{{"tracks", "", false, false},{"popular tracks", "/popular-tracks", false, false},{"playlists", "/sets", false, false},{"albums", "/albums", false, false},{"reposts","/reposts", false, false},{"related", "/_/related", false, false},{"user station", "/discover/sets/"+user.Station, true, false},{"rss feed", "/_/rss/"+user.Permalink, true, false},{"view on soundcloud", "https://soundcloud.com/"+user.Permalink, true, true}} {
 			<a
 			if b.text == current {
 				class="btn active"

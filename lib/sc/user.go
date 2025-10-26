@@ -1,7 +1,10 @@
 package sc
 
 import (
+	"context"
+	"encoding/xml"
 	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,6 +14,7 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 	"github.com/goccy/go-json"
+	"github.com/gorilla/feeds"
 	"github.com/valyala/fasthttp"
 )
 
@@ -403,4 +407,71 @@ func (u User) GetFollowing(cid string, prefs cfg.Preferences, args string) (*Pag
 	}
 
 	return &p, nil
+}
+
+func t(s string) string {
+	parsed, err := time.Parse(time.RFC3339, s)
+	if err == nil {
+		return parsed.Format(time.RFC1123Z)
+	}
+
+	return ""
+}
+
+// TODO: maybe add option for caching generated feeds? could benefit when many people follow same artists
+func (u *User) GenerateFeed(ctx context.Context, cid string, prefs cfg.Preferences, base string) ([]byte, error) {
+	tracks, err := u.GetTracks(cid, prefs, "?limit=20")
+	if err != nil {
+		return nil, err
+	}
+
+	f := feeds.RssFeed{
+		Title:          "Tracks from " + u.Username,
+		Link:           base + "/" + u.Permalink,
+		ManagingEditor: u.Username + " (@" + u.Permalink + ")",
+
+		Category:  "Music",
+		Generator: "soundcloak",
+		Ttl:       int(cfg.UserTTL / time.Second),
+	}
+	f.Description = "Recently released tracks by " + f.ManagingEditor
+
+	if len(tracks.Collection) != 0 {
+		f.LastBuildDate = t(tracks.Collection[0].LastModified)
+		for _, track := range tracks.Collection {
+			item := feeds.RssItem{
+				Title: track.Title,
+				Link:  base + "/" + u.Permalink + "/" + track.Permalink,
+
+				Category: track.Genre,
+				Guid:     &feeds.RssGuid{Id: string(track.ID), IsPermaLink: "false"},
+				PubDate:  t(track.LastModified),
+			}
+
+			if cfg.ProxyImages && *prefs.ProxyImages {
+				track.Artwork = base + track.Artwork
+			}
+
+			track.Artwork = strings.Replace(track.Artwork, "-t200x200.", "-original.", 1)
+
+			buf := strings.Builder{}
+			err = TrackDescription(prefs, track, item.Link).Render(ctx, &buf)
+			if err != nil {
+				log.Printf("error generating %s (%s) feed: %s\n", u.Permalink, track.Permalink, err)
+				continue
+			}
+
+			item.Description = buf.String()
+			f.Items = append(f.Items, &item)
+		}
+	} else {
+		f.LastBuildDate = t(u.LastModified)
+	}
+	f.PubDate = f.LastBuildDate
+
+	return xml.Marshal(feeds.RssFeedXml{
+		Version:          "2.0",
+		Channel:          &f,
+		ContentNamespace: "http://purl.org/rss/1.0/modules/content/",
+	})
 }

@@ -40,6 +40,14 @@ func boolean(b bool) string {
 	return "Disabled"
 }
 
+func boolean2(s []byte) *bool {
+	if string(s) == "true" {
+		return &cfg.True
+	} else {
+		return &cfg.False
+	}
+}
+
 type compressionMap = map[string][][]byte
 
 func parseCompressionMap(path string, filesystem fs.FS) compressionMap {
@@ -946,6 +954,40 @@ Disallow: /`)
 		}
 
 		return render(c, templates.Comments(comm))
+	})
+
+	app.Get("/_/rss/:user", func(c fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		if cfg.ProxyImages {
+			q := c.RequestCtx().QueryArgs()
+			b := q.Peek("proxy_images")
+			if b != nil {
+				prefs.ProxyImages = boolean2(b)
+			}
+		}
+
+		cid, err := sc.GetClientID()
+		if err != nil {
+			return err
+		}
+
+		usr, err := sc.GetUser(cid, c.Params("user"))
+		if err != nil {
+			log.Printf("error getting %s (rss): %s\n", c.Params("user"), err)
+			return err
+		}
+
+		feed, err := usr.GenerateFeed(c.RequestCtx(), cid, prefs, c.BaseURL())
+		if err != nil {
+			return err
+		}
+
+		c.RequestCtx().SetContentType("application/rss+xml")
+		return c.Send(feed)
 	})
 
 	app.Get("/:user", func(c fiber.Ctx) error {

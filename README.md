@@ -7,6 +7,7 @@ Frontend for SoundCloud
 - Works without JavaScript (for most of the functionality)
 - Pretty configurable. Both for instance maintainers, and for regular users
 - URL scheme similar to SoundCloud's in most places
+- RSS Feeds available to follow artists
 - It's also possible to download tracks, together with metadata
 
 # Screenshots
