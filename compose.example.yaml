@@ -12,3 +12,11 @@ services:
       - no-new-privileges:true
     volumes:
       - ./soundcloak.json:/soundcloak.json
+    # Or configure with env variables:
+    #environment:
+    #  SOUNDCLOAK_CONFIG: 'FROM_ENV' # important to have this, otherwise config loads from json file
+    #  CODEGEN_CONFIG: 'true'
+    #  DEFAULT_PREFERENCES: '{"ShowAudio": true}'
+    #  PROXY_IMAGES: 'true'
+    #  PROXY_STREAMS: 'true'
+    #  RESTREAM: 'true'

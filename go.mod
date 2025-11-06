@@ -1,6 +1,6 @@
 module git.maid.zone/stuff/soundcloak
 
-go 1.25.3
+go 1.25.4
 
 require (
 	github.com/a-h/templ v0.3.960
@@ -35,7 +35,7 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sunfish-shogi/bufseekio v0.1.0 // indirect
-	github.com/tinylib/msgp v1.4.0 // indirect
+	github.com/tinylib/msgp v1.5.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/mod v0.28.0 // indirect
