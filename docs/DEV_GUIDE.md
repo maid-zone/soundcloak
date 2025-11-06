@@ -16,20 +16,20 @@ git clone https://git.maid.zone/stuff/soundcloak
 cd soundcloak
 ```
 
-3. Build binary:
-
-This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
-
-```sh
-./build
-```
-
-4. Download required JS modules:
+3. Download required JS modules:
 
 Currently it's just HLS.js. This is what powers the HLS player
 
 ```sh
 go tool soundcloakctl js download
+```
+
+4. Build binary:
+
+This uses the `build` script, which generates code from templates, generates code for regular expiressions, and then builds the binary.
+
+```sh
+./build
 ```
 
 Now, you can run soundcloak with the `./main` binary. By default, it is listening on `127.0.0.1:4664`. For a configuration guide, [refer to here](INSTANCE_GUIDE.md#configuration-guide)

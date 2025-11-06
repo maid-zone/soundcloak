@@ -17,6 +17,7 @@ fly.toml
 
 # codegen
 *_templ.go
+!rss_templ.go
 regexp2_codegen.go
 
 # built binary
@@ -26,3 +27,4 @@ main
 
 # for development/testing
 Caddyfile
+misc/
