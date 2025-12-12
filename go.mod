@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	github.com/a-h/templ v0.3.960
 	github.com/bogem/id3v2/v2 v2.1.4
-	github.com/dlclark/regexp2 v1.11.5
+	github.com/dlclark/regexp2 v1.11.5-0.20240806004527-5bbbed8ea10b
 	github.com/gcottom/mp4meta v0.0.5
 	github.com/gcottom/oggmeta v0.0.8
 	github.com/goccy/go-json v0.10.5
