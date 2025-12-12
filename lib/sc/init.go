@@ -56,10 +56,12 @@ var httpc = &fasthttp.HostClient{
 	IsTLS:               true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
+	DialDualStack:       true,
 }
 
 var genericClient = &fasthttp.Client{
-	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	Dial:          (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	DialDualStack: true,
 }
 
 // var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
