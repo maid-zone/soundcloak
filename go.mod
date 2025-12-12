@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	git.maid.zone/stuff/soundcloakctl v0.0.0-20250828150155-48445273aad6 // indirect
+	git.maid.zone/stuff/soundcloakctl v0.0.0-20251212190831-98c097a26a5e // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/abema/go-mp4 v1.4.1 // indirect
 	github.com/aler9/writerseeker v1.1.0 // indirect
