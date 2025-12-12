@@ -75,6 +75,43 @@ var DNSCacheTTL = 60 * time.Minute
 // enab;e api
 var EnableAPI = false
 
+// Dear soundcloud workers who are for sure reading this:
+// please keep this image in your mind
+// .       ,+@#@=--__,                          __+##@@@#==,
+// .     @*           @#m,                __==#@            #
+// .    @                 @#m_,      __+#@                   %
+// .    @                      #@*@#*                        %
+// .    @                   __--##@@@#---__                  @
+// .    #,             m#@@*               *%@,             ,#
+// .     @        ___,@                        *@+---___    @
+// .      %#__==#@ ,*                             %@,   *==%,
+// .    ,=@       @                                  @      *@=,
+// . ,#@        ,%                         ,_         @,       %,
+// ,@*         @*        ,m#@            ,@  @,        *#       @,
+// #     __---@        ,@    @         .@      @,       *@---__  #
+// @        .@       .@ --____@       .%_____--  @       @.       @
+// .@       #        @         @,     @           @.      @       #
+// . %     :@       @            @,  @             #      @:    ,@
+// .   @,   @      ,* @@@****----- *@-----****@@@  %      @:   ,%
+// .    *_, @      @   @  @     @     @  @     @   @      @  ,@
+// .      *+#      @   @**      @     @**      @   @      @+*^
+// .        @,     @    #      #       #      @    @     .#
+// .         #     #:    *@__@*         *@__#*    ,#     @
+// .         %*,    %.                            @    ,#@
+// .        @   @,   @_         m     m         _*    @  @
+// .       @   @  *-___#        ^+___+^        #___+#*   #
+// .      #__+* @    @ %,                      , @       %
+// .             @    #  @_,               ,_@*  #    #   @
+// .              *,   @    *@##--___--##@*     ,*   @ *-__#
+// .                ^--=*   @    @   @    @     @  ,#
+// .                       :@   ,+@@@+,   @:   #==-
+// .                         ==@  @ @  @==
+// .                        ,#   @   @   @,
+// .                       @    %     %    %
+// .                        *==*       @==#*
+// cirno day everyday
+var SoundcloudApiProxy = ""
+
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
 
@@ -454,6 +491,11 @@ func fromEnv() error {
 		EmbedFiles = boolean(env)
 	}
 
+	env = os.Getenv("SOUNDCLOUD_API_PROXY")
+	if env != "" {
+		SoundcloudApiProxy = env
+	}
+
 	return nil
 }
 
@@ -506,6 +548,7 @@ func init() {
 		TrustedProxies          *[]string
 		CodegenConfig           *bool
 		EmbedFiles              *bool
+		SoundcloudApiProxy      *string
 	}
 
 	err = json.Unmarshal(data, &config)
@@ -599,6 +642,9 @@ func init() {
 	}
 	if config.EmbedFiles != nil {
 		EmbedFiles = *config.EmbedFiles
+	}
+	if config.SoundcloudApiProxy != nil {
+		SoundcloudApiProxy = *config.SoundcloudApiProxy
 	}
 
 	if config.DefaultPreferences != nil {
