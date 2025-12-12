@@ -55,12 +55,12 @@ var script = []byte(`<script crossorigin src="https://a-v2.sndcdn.com/assets/`)
 var httpc = &fasthttp.HostClient{
 	Addr:                api + ":443",
 	IsTLS:               true,
-	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
+	DialDualStack:       cfg.DialDualStack,
 }
 
 var genericClient = &fasthttp.Client{
-	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
+	DialDualStack: cfg.DialDualStack,
 }
 
 // var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
@@ -478,7 +478,7 @@ func GetSearchSuggestions(cid string, query string) ([]string, error) {
 // could probably make a generic function, whatever
 func init() {
 	if cfg.SoundcloudApiProxy != "" {
-		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, TCPDialer: fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}, DialDualStack: true}
+		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, DialDualStack: cfg.DialDualStack}
 		dialer, err := d.GetDialFunc(false)
 		if err != nil {
 			log.Println("[warning] failed to get dialer for proxy", err)

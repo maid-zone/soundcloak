@@ -69,9 +69,6 @@ var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (K
 // override the extractor
 var ClientID = ""
 
-// time-to-live for dns cache
-var DNSCacheTTL = 60 * time.Minute
-
 // enab;e api
 var EnableAPI = false
 
@@ -111,6 +108,8 @@ var EnableAPI = false
 // .                        *==*       @==#*
 // cirno day everyday
 var SoundcloudApiProxy = ""
+
+var DialDualStack = false
 
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
@@ -425,19 +424,19 @@ func fromEnv() error {
 		ClientID = env
 	}
 
-	env = os.Getenv("DNS_CACHE_TTL")
-	if env != "" {
-		num, err := strconv.ParseInt(env, 10, 64)
-		if err != nil {
-			return err
-		}
-
-		DNSCacheTTL = time.Duration(num) * time.Second
-	}
-
 	env = os.Getenv("ENABLE_API")
 	if env != "" {
 		EnableAPI = boolean(env)
+	}
+
+	env = os.Getenv("SOUNDCLOUD_API_PROXY")
+	if env != "" {
+		SoundcloudApiProxy = env
+	}
+
+	env = os.Getenv("DIAL_DUAL_STACK")
+	if env != "" {
+		DialDualStack = boolean(env)
 	}
 
 	env = os.Getenv("NETWORK")
@@ -491,11 +490,6 @@ func fromEnv() error {
 		EmbedFiles = boolean(env)
 	}
 
-	env = os.Getenv("SOUNDCLOUD_API_PROXY")
-	if env != "" {
-		SoundcloudApiProxy = env
-	}
-
 	return nil
 }
 
@@ -540,6 +534,8 @@ func init() {
 		ClientID                *string
 		DNSCacheTTL             *time.Duration
 		EnableAPI               *bool
+		SoundcloudApiProxy      *string
+		DialDualStack           *bool
 		Network                 *string
 		Addr                    *string
 		UnixSocketPerms         *string
@@ -548,7 +544,6 @@ func init() {
 		TrustedProxies          *[]string
 		CodegenConfig           *bool
 		EmbedFiles              *bool
-		SoundcloudApiProxy      *string
 	}
 
 	err = json.Unmarshal(data, &config)
@@ -608,11 +603,14 @@ func init() {
 	if config.ClientID != nil {
 		ClientID = *config.ClientID
 	}
-	if config.DNSCacheTTL != nil {
-		DNSCacheTTL = *config.DNSCacheTTL * time.Second
-	}
 	if config.EnableAPI != nil {
 		EnableAPI = *config.EnableAPI
+	}
+	if config.SoundcloudApiProxy != nil {
+		SoundcloudApiProxy = *config.SoundcloudApiProxy
+	}
+	if config.DialDualStack != nil {
+		DialDualStack = *config.DialDualStack
 	}
 	if config.Network != nil {
 		Network = *config.Network
@@ -642,9 +640,6 @@ func init() {
 	}
 	if config.EmbedFiles != nil {
 		EmbedFiles = *config.EmbedFiles
-	}
-	if config.SoundcloudApiProxy != nil {
-		SoundcloudApiProxy = *config.SoundcloudApiProxy
 	}
 
 	if config.DefaultPreferences != nil {

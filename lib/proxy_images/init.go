@@ -18,9 +18,9 @@ func Load(r *fiber.App) {
 	al_httpc = &fasthttp.HostClient{
 		Addr:                "al.sndcdn.com:443",
 		IsTLS:               true,
-		Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 		StreamResponseBody:  true,
+		DialDualStack:       cfg.DialDualStack,
 	}
 
 	r.Get("/_/proxy/images", func(c fiber.Ctx) error {
