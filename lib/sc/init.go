@@ -479,6 +479,8 @@ func init() {
 	if cfg.SoundcloudApiProxy != "" {
 		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, TCPDialer: fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}}
 		httpc.Dial, _ = d.GetDialFunc(false)
+
+		genericClient.Dial = httpc.Dial
 	}
 	go func() {
 		ticker := time.NewTicker(cfg.UserCacheCleanDelay)
