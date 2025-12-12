@@ -56,6 +56,7 @@ func init() {
 			IsTLS:               true,
 			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
+			DialDualStack:       cfg.DialDualStack,
 		}
 	}
 
@@ -65,6 +66,7 @@ func init() {
 			IsTLS:               true,
 			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
+			DialDualStack:       cfg.DialDualStack,
 		}
 
 		HlsAacClient = &fasthttp.HostClient{
@@ -72,6 +74,7 @@ func init() {
 			IsTLS:               true,
 			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
+			DialDualStack:       cfg.DialDualStack,
 		}
 	}
 }
