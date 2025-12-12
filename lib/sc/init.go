@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -56,12 +57,10 @@ var httpc = &fasthttp.HostClient{
 	IsTLS:               true,
 	Dial:                (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
-	DialDualStack:       true,
 }
 
 var genericClient = &fasthttp.Client{
-	Dial:          (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
-	DialDualStack: true,
+	Dial: (&fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}).Dial,
 }
 
 // var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
@@ -479,10 +478,14 @@ func GetSearchSuggestions(cid string, query string) ([]string, error) {
 // could probably make a generic function, whatever
 func init() {
 	if cfg.SoundcloudApiProxy != "" {
-		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, TCPDialer: fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}}
-		httpc.Dial, _ = d.GetDialFunc(false)
+		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, TCPDialer: fasthttp.TCPDialer{DNSCacheDuration: cfg.DNSCacheTTL}, DialDualStack: true}
+		dialer, err := d.GetDialFunc(false)
+		if err != nil {
+			log.Println("[warning] failed to get dialer for proxy", err)
+		}
 
-		genericClient.Dial = httpc.Dial
+		genericClient.Dial = dialer
+		httpc.Dial = dialer
 	}
 	go func() {
 		ticker := time.NewTicker(cfg.UserCacheCleanDelay)
