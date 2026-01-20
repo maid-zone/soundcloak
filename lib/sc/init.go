@@ -386,6 +386,7 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 	req.SetRequestURI(p.Next + "&client_id=" + cid)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5") // you get captcha without it :)
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
