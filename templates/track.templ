@@ -37,7 +37,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:title" content={ t.Title }/>
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
-	<link rel="icon" href={ t.Artwork }/>
+	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
 	if needPlayer && *prefs.Player == cfg.HLSPlayer {
 		<script src="/_/static/external/hls.light.min.js"></script>
 	}

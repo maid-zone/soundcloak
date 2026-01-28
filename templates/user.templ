@@ -12,7 +12,7 @@ templ UserHeader(u sc.User) {
 	<meta name="og:title" content={ u.FormatUsername() }/>
 	<meta name="og:description" content={ u.FormatDescription() }/>
 	<meta name="og:image" content={ u.Avatar }/>
-	<link rel="icon" href={ u.Avatar }/>
+	<link rel="icon" type="image/x-icon" href={ u.Avatar }/>
 }
 
 templ UserItem(user *sc.User) {
