@@ -2,6 +2,7 @@ package sc
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -22,12 +23,21 @@ import (
 )
 
 var ProxyErr = errors.New("could not connect to proxy")
+var parsedproxy string
 
 // don't jus leak the proxy like that lol
 func scrub(err error) error {
 	if cfg.SoundcloudApiProxy != "" && err != nil {
+		if parsedproxy == "" {
+			u, err := url.Parse(cfg.SoundcloudApiProxy)
+			if err == nil {
+				parsedproxy = u.Host
+			} else {
+				parsedproxy = cfg.SoundcloudApiProxy
+			}
+		}
 		s := err.Error()
-		if strings.HasPrefix(s, "could not connect to proxyAddr") || strings.HasPrefix(s, "socks connect") {
+		if strings.HasPrefix(s, "could not connect to proxyAddr") || strings.HasPrefix(s, "socks connect") || strings.Contains(s, parsedproxy) {
 			return ProxyErr
 		}
 	}
@@ -49,18 +59,44 @@ const H = len("https://" + api)
 
 var newline = []byte("\n")
 
-var sc_version = []byte(`<script>window.__sc_version="`)
-var script0 = []byte(`<script crossorigin src="https://a-v2.sndcdn.com/assets/0-`)
-var script = []byte(`<script crossorigin src="https://a-v2.sndcdn.com/assets/`)
+const sc_version = `<script>window.__sc_version="`
+const sc_hydration = `<script>window.__sc_hydration = `
+const script0 = `<script crossorigin src="https://a-v2.sndcdn.com/assets/0-`
+const script = `<script crossorigin src="https://a-v2.sndcdn.com/assets/`
+
+var tlsConfig = &tls.Config{
+	CipherSuites: []uint16{
+		tls.TLS_AES_128_GCM_SHA256,
+		tls.TLS_CHACHA20_POLY1305_SHA256,
+		tls.TLS_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+	},
+}
+
 var httpc = &fasthttp.HostClient{
 	Addr:                api + ":443",
 	IsTLS:               true,
 	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 	DialDualStack:       cfg.DialDualStack,
+	TLSConfig:           tlsConfig,
 }
 
 var genericClient = &fasthttp.Client{
 	DialDualStack: cfg.DialDualStack,
+	TLSConfig:     tlsConfig,
 }
 
 // var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
@@ -69,6 +105,7 @@ var genericClient = &fasthttp.Client{
 
 //go:generate go tool regexp2cg -package sc -o regexp2_codegen.go
 var clientIdRegex = regexp2.MustCompile(`client_id:"([A-Za-z0-9]{32})"`, 0) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
+var hydrationClientIdRegex = regexp2.MustCompile(`{"hydratable":"apiClient","data":{"id":"([A-Za-z0-9]{32})"`, 0)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")
 var ErrIDNotFound = errors.New("clientid not found")
@@ -120,7 +157,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri []byte, isDone *bool) {
 		return
 	}
 
-	m2, _ := clientIdRegex.FindStringMatch(string(data))
+	m2, _ := clientIdRegex.FindStringMatch(cfg.B2s(data))
 	if m2 != nil {
 		g := m2.GroupByNumber(1)
 		if g != nil {
@@ -138,10 +175,7 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri []byte, isDone *bool) {
 	misc.Log("not found in", string(uri))
 }
 
-// Experimental method, which asserts that the clientId is inside the file that starts with "0-"
-const experimental_GetClientID = false
-
-// inspired by github.com/imputnet/cobalt
+// now faster and more error-prone (?)
 func GetClientID() (string, error) {
 	if cfg.ClientID != "" {
 		return cfg.ClientID, nil
@@ -155,7 +189,8 @@ func GetClientID() (string, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://soundcloud.com")
+	req.URI().SetScheme("https")
+	req.URI().SetHost("soundcloud.com")
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
@@ -172,46 +207,35 @@ func GetClientID() (string, error) {
 		data = resp.Body()
 	}
 
-	if experimental_GetClientID {
-		var ver string
-		var scriptUrl []byte
-		for l := range bytes.SplitSeq(data, newline) { // version usually comes earlier, but retest this sometimes !!!
-			if ver == "" && bytes.HasPrefix(l, sc_version) {
-				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
-				misc.Log("found ver:", ver)
-				if ClientIDCache.Version != "" && ver == ClientIDCache.Version {
-					goto verCacheHit
-				}
-			} else if bytes.HasPrefix(l, script0) {
-				scriptUrl = l[len(`<script crossorigin src="`) : len(l)-len(`"></script>`)]
-				misc.Log("found scriptUrl:", string(scriptUrl))
-				break
+	var ver string
+	var hydration []byte
+	for l := range bytes.SplitSeq(data, newline) { // version usually comes earlier, but retest this sometimes !!!
+		if ver == "" && len(l) > len(sc_version)+len(`"</script>`) && string(l[:len(sc_version)]) == sc_version {
+			ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
+			misc.Log("found ver:", ver)
+			if ClientIDCache.Version != "" && ver == ClientIDCache.Version {
+				misc.Log("clientidcache hit @ ver")
+				ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+				return ClientIDCache.ClientID, nil
 			}
+		} else if len(l) > len(sc_hydration)+len(`;</script>`) && string(l[:len(sc_hydration)]) == sc_hydration {
+			hydration = l[len(sc_hydration) : len(l)-len(`;</script>`)]
+			misc.Log("found hydration:", cfg.B2s(hydration))
+			break
 		}
+	}
 
-		if ver == "" {
-			return "", ErrVersionNotFound
-		}
+	if ver == "" {
+		return "", ErrVersionNotFound
+	}
 
-		if scriptUrl == nil {
-			return "", ErrScriptNotFound
-		}
-
-		req.SetRequestURIBytes(scriptUrl)
-		err = DoWithRetryAll(genericClient, req, resp)
-		if err != nil {
-			return "", err
-		}
-
-		data, err = resp.BodyUncompressed()
-		if err != nil {
-			data = resp.Body()
-		}
-
-		m, _ := clientIdRegex.FindStringMatch(cfg.B2s(data))
+	// inspired a bit by 4get
+	if hydration != nil {
+		m, _ := hydrationClientIdRegex.FindStringMatch(cfg.B2s(hydration))
 		if m != nil {
 			g := m.GroupByNumber(1)
 			if g != nil {
+				misc.Log("found using sc_hydration")
 				ClientIDCache.ClientID = g.String()
 				ClientIDCache.Version = ver
 				ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
@@ -219,72 +243,60 @@ func GetClientID() (string, error) {
 				return ClientIDCache.ClientID, nil
 			}
 		}
-	} else {
-		ch := make(chan string, 1)
-		wg := &sync.WaitGroup{}
-		done := false
-
-		var ver string
-		var scriptUrls = make([][]byte, 0, 10) // Usually only 8 chunks, so I went with jsut a bit more to be safe
-		for l := range bytes.SplitSeq(data, newline) {
-			if ver == "" && bytes.HasPrefix(l, sc_version) {
-				ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
-				if ver == ClientIDCache.Version {
-					goto verCacheHit
-				}
-			} else if bytes.HasPrefix(l, script) {
-				scriptUrls = append(scriptUrls, l[len(`<script crossorigin src="`):len(l)-len(`"></script>`)])
-			}
-		}
-
-		if ver == "" {
-			return "", ErrVersionNotFound
-		}
-
-		if len(scriptUrls) == 0 {
-			return "", ErrScriptNotFound
-		}
-
-		for _, s := range scriptUrls {
-			wg.Add(1)
-			go processFile(wg, ch, s, &done)
-		}
-
-		go func() {
-			defer func() {
-				err := recover()
-				misc.Log("-- GetClientID recovered:", err)
-			}()
-
-			wg.Wait()
-
-			//time.Sleep(time.Millisecond) // maybe race?
-			if !done {
-				ch <- ""
-			}
-		}()
-
-		res := <-ch
-		done = true
-		close(ch)
-		if res == "" {
-			err = ErrIDNotFound
-		} else {
-			ClientIDCache.ClientID = res
-			ClientIDCache.Version = ver
-			ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-			misc.Log(ClientIDCache)
-		}
-
-		return res, err
 	}
 
-	return "", ErrIDNotFound
+	// fallback to searching inside JS scripts, inspired by cobalt
+	ch := make(chan string, 1)
+	wg := &sync.WaitGroup{}
+	done := false
 
-verCacheHit:
-	misc.Log("clientidcache hit @ ver")
-	ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-	return ClientIDCache.ClientID, nil
+	var scriptUrls = make([][]byte, 0, 9)
+	for l := range bytes.SplitSeq(data, newline) {
+		if len(l) > len(script)+len(`"></script>`) && string(l[:len(script)]) == script {
+			scriptUrls = append(scriptUrls, l[len(`<script crossorigin src="`):len(l)-len(`"></script>`)])
+		}
+	}
+
+	if ver == "" {
+		return "", ErrVersionNotFound
+	}
+
+	if len(scriptUrls) == 0 {
+		return "", ErrScriptNotFound
+	}
+
+	for _, s := range scriptUrls {
+		wg.Add(1)
+		go processFile(wg, ch, s, &done)
+	}
+
+	go func() {
+		defer func() {
+			err := recover()
+			misc.Log("-- GetClientID recovered:", err)
+		}()
+
+		wg.Wait()
+
+		//time.Sleep(time.Millisecond) // maybe race?
+		if !done {
+			ch <- ""
+		}
+	}()
+
+	res := <-ch
+	done = true
+	close(ch)
+	if res == "" {
+		err = ErrIDNotFound
+	} else {
+		ClientIDCache.ClientID = res
+		ClientIDCache.Version = ver
+		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
+		misc.Log(ClientIDCache)
+	}
+
+	return res, err
 }
 
 // Just retry any kind of errors, why not
@@ -340,7 +352,11 @@ func Resolve(cid string, path string, out any) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://" + api + "/resolve?url=https%3A%2F%2Fsoundcloud.com%2F" + url.QueryEscape(path) + "&client_id=" + cid)
+	req.URI().SetScheme("https")
+	req.URI().SetHost(api)
+	req.URI().SetPath("/resolve")
+	req.URI().QueryArgs().Set("url", "https://soundcloud.com/"+path)
+	req.URI().QueryArgs().Set("client_id", cid)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
@@ -365,9 +381,10 @@ func Resolve(cid string, path string, out any) error {
 }
 
 type Paginated[T any] struct {
-	Next       string `json:"next_href"`
-	Collection []T    `json:"collection"`
-	Total      int64  `json:"total_results"`
+	NextHref   string        `json:"next_href"`
+	Next       *fasthttp.URI `json:"-"`
+	Collection []T           `json:"collection"`
+	Total      int64         `json:"total_results"`
 }
 
 func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
@@ -382,12 +399,17 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	oldNext := p.Next
-	req.SetRequestURI(p.Next + "&client_id=" + cid)
+	oldNext := p.NextHref
+	if p.NextHref == "" {
+		oldNext = p.Next.String()
+		req.SetURI(p.Next)
+	} else {
+		req.SetRequestURI(p.NextHref)
+	}
+	req.URI().QueryArgs().Set("client_id", cid)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5") // you get captcha without it :)
-
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
@@ -410,8 +432,8 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 		return err
 	}
 
-	if p.Next == oldNext { // prevent loops of nothingness
-		p.Next = ""
+	if p.NextHref == oldNext { // prevent loops of nothingness
+		p.NextHref = ""
 	}
 
 	// in soundcloud api, pagination may not immediately return you something!
@@ -419,7 +441,7 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 	// maybe there could be a way to cache the last useless layer of pagination so soundcloak can start loading from there? might be a bit complicated, but would be great
 
 	// another note: in featured tracks it seems to just be forever stuck after 2-3~ pages so i added a way to disable this behaviour
-	if shouldUnfold && len(p.Collection) == 0 && p.Next != "" {
+	if shouldUnfold && len(p.Collection) == 0 && p.NextHref != "" {
 		// this will make sure that we actually proceed to something useful and not emptiness
 		return p.Proceed(cid, true)
 	}
@@ -429,8 +451,8 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 
 func TagListParser(taglist string) (res []string) {
 	inString := false
-	cur := []rune{}
-	for i, c := range taglist {
+	cur := []byte{}
+	for i, c := range cfg.S2b(taglist) {
 		if c == '"' {
 			if i == len(taglist)-1 {
 				res = append(res, string(cur))
@@ -443,7 +465,7 @@ func TagListParser(taglist string) (res []string) {
 
 		if !inString && c == ' ' {
 			res = append(res, string(cur))
-			cur = []rune{}
+			cur = cur[:0]
 			continue
 		}
 
@@ -462,7 +484,12 @@ type SearchSuggestion struct {
 }
 
 func GetSearchSuggestions(cid string, query string) ([]string, error) {
-	p := Paginated[SearchSuggestion]{Next: "https://" + api + "/search/queries?limit=10&q=" + url.QueryEscape(query)}
+	uri := baseUri()
+	uri.SetPath("/search/queries")
+	uri.QueryArgs().Set("limit", "10")
+	uri.QueryArgs().Set("q", query)
+
+	p := Paginated[SearchSuggestion]{Next: uri}
 	err := p.Proceed(cid, false)
 	if err != nil {
 		return nil, err
@@ -474,6 +501,89 @@ func GetSearchSuggestions(cid string, query string) ([]string, error) {
 	}
 
 	return l, nil
+}
+
+// polyglot type struct lol
+type UserPlaylistTrack struct {
+	Kind      string `json:"kind"` // "playlist" or "system-playlist" or "user" or "track"
+	Permalink string `json:"permalink"`
+
+	// User
+	Avatar   string `json:"avatar_url"`
+	Username string `json:"username"`
+	FullName string `json:"full_name"`
+
+	// Playlist/track
+	Title  string `json:"title"`
+	Author struct {
+		Permalink string `string:"permalink"`
+		Username  string `json:"username"`
+	} `json:"user"`
+	Artwork string `json:"artwork_url"`
+
+	// Playlist
+	Tracks     []struct{} `json:"tracks"` // stub
+	TrackCount int64      `json:"track_count"`
+}
+
+func (p UserPlaylistTrack) Href() string {
+	switch p.Kind {
+	case "system-playlist":
+		return "/discover/sets/" + p.Permalink
+	case "playlist":
+		return "/" + p.Author.Permalink + "/sets/" + p.Permalink
+	case "track":
+		return "/" + p.Author.Permalink + "/" + p.Permalink
+	default:
+		return "/" + p.Permalink
+	}
+}
+
+func (p *UserPlaylistTrack) Fix(prefs cfg.Preferences) {
+	switch p.Kind {
+	case "user":
+		if p.Avatar == "https://a1.sndcdn.com/images/default_avatar_large.png" {
+			p.Avatar = ""
+		} else {
+			p.Avatar = strings.Replace(p.Avatar, "-large.", "-t200x200.", 1)
+		}
+
+		if p.Avatar != "" && cfg.ProxyImages && *prefs.ProxyImages {
+			p.Avatar = "/_/proxy/images?url=" + url.QueryEscape(p.Avatar)
+		}
+	default:
+		if p.Artwork != "" {
+			p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
+			if cfg.ProxyImages && *prefs.ProxyImages {
+				p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
+			}
+		}
+	}
+}
+
+func (p UserPlaylistTrack) TracksCount() int64 {
+	if p.TrackCount != 0 {
+		return p.TrackCount
+	}
+
+	return int64(len(p.Tracks))
+}
+
+func Search(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*UserPlaylistTrack], error) {
+	uri := baseUri()
+	uri.SetPath("/search")
+	uri.SetQueryStringBytes(args)
+	p := Paginated[*UserPlaylistTrack]{Next: uri}
+	err := p.Proceed(cid, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range p.Collection {
+		t.Fix(prefs)
+	}
+
+	return &p, nil
 }
 
 // could probably make a generic function, whatever
@@ -535,4 +645,12 @@ func init() {
 			playlistsCacheLock.Unlock()
 		}
 	}()
+}
+
+func baseUri() *fasthttp.URI {
+	uri := fasthttp.AcquireURI()
+	uri.SetScheme("https")
+	uri.SetHost(api)
+
+	return uri
 }

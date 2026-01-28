@@ -8,19 +8,6 @@ import (
 	"strings"
 )
 
-func toExt(audio string) string {
-	switch audio {
-	case cfg.AudioAAC:
-		return "m4a"
-	case cfg.AudioOpus:
-		return "ogg"
-	case cfg.AudioMP3:
-		return "mp3"
-	}
-
-	return ""
-}
-
 templ TrackButtons(current string, track sc.Track) {
 	<div class="btns">
 		for _, b := range [...]btn{{"related tracks", "/recommended", false, false},{"in albums", "/albums", false, false},{"in playlists", "/sets", false, false},{"track station", "/discover/sets/"+track.Station, true, false},{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true}} {
@@ -50,7 +37,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:title" content={ t.Title }/>
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
-	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
+	<link rel="icon" href={ t.Artwork }/>
 	if needPlayer && *prefs.Player == cfg.HLSPlayer {
 		<script src="/_/static/external/hls.light.min.js"></script>
 	}
@@ -106,6 +93,24 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 			if *prefs.KeepPlayerFocus {
 				<script async src="/_/static/keepfocus.js"></script>
 			}
+		} else if *prefs.Player == cfg.RestreamPlayer || *prefs.Player == cfg.ProgressivePlayer { 
+			{{ audioPref = &cfg.MP3 }}
+			<audio 
+				id="track" 
+				src={ stream } 
+				controls 
+				autoplay?={ autoplay }
+			if nextTrack != nil {
+				data-next={ next(&track, nextTrack, playlist, mode, "") } 
+				volume={ volume }	
+			}
+			></audio>
+			if nextTrack != nil {
+				<script async src="/_/static/restream.js"></script>
+			}
+			if *prefs.KeepPlayerFocus {
+				<script async src="/_/static/keepfocus.js"></script>
+			}
 		} else if stream != "" {
 			{{ audioPref = prefs.HLSAudio }}
 			<audio 
@@ -132,10 +137,14 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 			<noscript>
 				<br/>
 				JavaScript is disabled! Audio playback may not work without it enabled. 
-				if cfg.Restream {
-					<br/>
-					<a class="link" href="/_/preferences">You can enable Restream player in the preferences. It works without JavaScript.</a>
+				<br/>
+				<a class="link" href="/_/preferences">You can enable 
+				if cfg.Restream { 
+					Restream 
+				} else {
+					Progressive
 				}
+				player in the preferences. It works without JavaScript.</a>
 			</noscript>
 		}
 		if track.Policy == sc.PolicySnip {
@@ -194,7 +203,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
 	if displayErr == "" && cfg.Restream {
 		<div style="display: flex; margin-bottom: 1rem;">
-			<a class="btn" href={ templ.SafeURL("/_/restream" + t.Href() + "?metadata=true") } download={ t.Permalink + "." + toExt(*downloadAudio) }>download</a>
+			<a class="btn" href={ templ.SafeURL("/_/download" + t.Href()) }>download</a>
 		</div>
 	}
 	if t.Genre != "" {
@@ -252,8 +261,8 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 				@Comments(comments)
 			</div>
 			<script async src="/_/static/comments.js"></script>
-			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
+			if comments.NextHref != "" {
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
 			}
 		} else {
 			<div id="comments"></div>
@@ -265,8 +274,8 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 			<div>
 				@Comments(comments)
 			</div>
-			if comments.Next != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments"):])) } rel="noreferrer">more comments</a>
+			if comments.NextHref != "" {
+				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer">more comments</a>
 			}
 		} else {
 			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
@@ -315,7 +324,9 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 	</html>
 }
 
-templ SearchTracks(p *sc.Paginated[*sc.Track]) {
+templ SearchTracks(p *sc.Paginated[*sc.Track], prefs cfg.Preferences, content string) {
+	@searchbar(prefs, content, "tracks")
+	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } tracks</span>
 	<br/>
 	<br/>
@@ -325,8 +336,8 @@ templ SearchTracks(p *sc.Paginated[*sc.Track]) {
 		for _, track := range p.Collection {
 			@TrackItem(track, true, "")
 		}
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?type=tracks&pagination=" + url.QueryEscape(p.Next[sc.H+len("/search/tracks"):])) } rel="noreferrer">more tracks</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?type=tracks&pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/search/tracks?"):])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -344,8 +355,8 @@ templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
 		for _, track := range p.Collection {
 			@TrackItem(track, true, "")
 		}
-		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/related"):])) } rel="noreferrer">more tracks</a>
+		if p.NextHref != "" {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/related?"):])) } rel="noreferrer">more tracks</a>
 		}
 	}
 }
@@ -363,8 +374,8 @@ templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 		for _, playlist := range p.Collection {
 			@PlaylistItem(playlist, true)
 		}
-		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/albums"):])) } rel="noreferrer">more albums</a>
+		if p.NextHref != "" {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/albums?"):])) } rel="noreferrer">more albums</a>
 		}
 	}
 }
@@ -382,8 +393,8 @@ templ TrackInPlaylists(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 		for _, playlist := range p.Collection {
 			@PlaylistItem(playlist, true)
 		}
-		if p.Next != "" {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/tracks/")+len(string(t.ID))+len("/playlists_without_albums"):])) } rel="noreferrer">more playlists</a>
+		if p.NextHref != "" {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/playlists_without_albums?"):])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

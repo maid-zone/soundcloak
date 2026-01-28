@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/fs"
@@ -319,7 +320,7 @@ func main() {
 				return err
 			}
 
-			return r(c, "", templates.MainPage(prefs), templates.MainPageHead())
+			return r(c, "", templates.MainPage(prefs), templates.MainPageHead(prefs))
 		}
 
 		app.Get("/", mainPageHandler)
@@ -345,6 +346,10 @@ func main() {
 		return c.Redirect().Status(fiber.StatusPermanentRedirect).To("/_/static/favicon.ico")
 	})
 
+	app.Get("apple-touch-icon.png", func(c fiber.Ctx) error {
+		return c.Redirect().Status(fiber.StatusPermanentRedirect).To("/_/static/favicon.ico")
+	})
+
 	app.Get("robots.txt", func(c fiber.Ctx) error {
 		return c.SendString(`User-agent: *
 Disallow: /`)
@@ -356,40 +361,84 @@ Disallow: /`)
 			return err
 		}
 
-		q := cfg.B2s(c.RequestCtx().QueryArgs().Peek("q"))
+		q := c.RequestCtx().QueryArgs().Peek("q")
 		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
-		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
-		if args == "" {
-			args = "?q=" + url.QueryEscape(q)
+		args := c.RequestCtx().QueryArgs().Peek("pagination")
+		if len(args) == 0 {
+			args = fasthttp.AppendQuotedArg([]byte("q="), q)
 		}
 
 		switch t {
+		case "any":
+			q := cfg.B2s(q)
+			p, err := sc.Search("", prefs, args)
+			if err != nil {
+				log.Printf("error getting any for %s: %s\n", q, err)
+				return err
+			}
+
+			if q == "" {
+				q = p.NextHref[sc.H+len("/search?"):]
+				i := strings.LastIndexByte(q, '&')
+				if i != -1 {
+					q, _ = url.QueryUnescape(q[i+len("&q="):])
+				}
+			}
+
+			return r(c, q, templates.Search(p, prefs, q), templates.MainPageHead(prefs))
 		case "tracks":
+			q := cfg.B2s(q)
 			p, err := sc.SearchTracks("", prefs, args)
 			if err != nil {
 				log.Printf("error getting tracks for %s: %s\n", q, err)
 				return err
 			}
 
-			return r(c, "tracks: "+q, templates.SearchTracks(p), nil)
+			if q == "" {
+				q = p.NextHref[sc.H+len("/search/tracks?"):]
+				i := strings.LastIndexByte(q, '&')
+				if i != -1 {
+					q, _ = url.QueryUnescape(q[i+len("&q="):])
+				}
+			}
+
+			return r(c, "tracks: "+q, templates.SearchTracks(p, prefs, q), templates.MainPageHead(prefs))
 
 		case "users":
+			q := cfg.B2s(q)
 			p, err := sc.SearchUsers("", prefs, args)
 			if err != nil {
 				log.Printf("error getting users for %s: %s\n", q, err)
 				return err
 			}
 
-			return r(c, "users: "+q, templates.SearchUsers(p), nil)
+			if q == "" {
+				q = p.NextHref[sc.H+len("/search/users?"):]
+				i := strings.LastIndexByte(q, '&')
+				if i != -1 {
+					q, _ = url.QueryUnescape(q[i+len("&q="):])
+				}
+			}
+
+			return r(c, "users: "+q, templates.SearchUsers(p, prefs, q), templates.MainPageHead(prefs))
 
 		case "playlists":
+			q := cfg.B2s(q)
 			p, err := sc.SearchPlaylists("", prefs, args)
 			if err != nil {
 				log.Printf("error getting playlists for %s: %s\n", q, err)
 				return err
 			}
 
-			return r(c, "playlists: "+q, templates.SearchPlaylists(p), nil)
+			if q == "" {
+				q = p.NextHref[sc.H+len("/search/playlists?"):]
+				i := strings.LastIndexByte(q, '&')
+				if i != -1 {
+					q, _ = url.QueryUnescape(q[i+len("&q="):])
+				}
+			}
+
+			return r(c, "playlists: "+q, templates.SearchPlaylists(p, prefs, q), templates.MainPageHead(prefs))
 		}
 
 		return c.SendStatus(404)
@@ -465,19 +514,33 @@ Disallow: /`)
 		displayErr := ""
 		stream := ""
 
-		if *prefs.Player != cfg.NonePlayer {
-			tr, _ := track.Media.SelectCompatible(*prefs.HLSAudio, false)
+		if *prefs.Player == cfg.HLSPlayer {
+			var tr *sc.Transcoding
+			tr, _ = track.Media.SelectCompatible(*prefs.HLSAudio, false, false)
 			if tr == nil {
 				err = sc.ErrIncompatibleStream
-			} else if *prefs.Player == cfg.HLSPlayer {
+			} else {
 				stream, err = tr.GetStream(cid, prefs, track.Authorization)
 			}
+		} else if *prefs.Player == cfg.RestreamPlayer {
+			_, audio := track.Media.SelectCompatible(*prefs.RestreamAudio, true, true)
+			if audio == "" {
+				err = sc.ErrIncompatibleStream
+			}
+		} else {
+			var tr *sc.Transcoding
+			tr = track.Media.SelectCompatibleProgressive()
+			if tr == nil {
+				err = sc.ErrIncompatibleStream
+			} else {
+				stream, err = tr.GetStream(cid, prefs, track.Authorization)
+			}
+		}
 
-			if err != nil {
-				displayErr = "Failed to get track stream: " + err.Error()
-				if track.Policy == sc.PolicyBlock {
-					displayErr += "\nThis track may be blocked in the country where this instance is hosted."
-				}
+		if err != nil {
+			displayErr = "Failed to get track stream: " + err.Error()
+			if track.Policy == sc.PolicyBlock {
+				displayErr += "\nThis track may be blocked in the country where this instance is hosted."
 			}
 		}
 
@@ -491,7 +554,7 @@ Disallow: /`)
 		}
 
 		tag := c.Params("tag")
-		p, err := sc.RecentTracks("", prefs, c.Query("pagination", tag+"?limit=20"))
+		p, err := sc.RecentTracks("", prefs, tag, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tagged recent-tracks: %s\n", tag, err)
 			return err
@@ -507,7 +570,12 @@ Disallow: /`)
 		}
 
 		tag := c.Params("tag")
-		p, err := sc.SearchTracks("", prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag+"&sort=popular"))
+		args := c.RequestCtx().QueryArgs().Peek("pagination")
+		if len(args) == 0 {
+			args = []byte("q=*&filter.genre_or_tag=" + tag + "&sort=popular")
+		}
+
+		p, err := sc.SearchTracks("", prefs, args)
 		if err != nil {
 			log.Printf("error getting %s tagged popular-tracks: %s\n", tag, err)
 			return err
@@ -524,7 +592,12 @@ Disallow: /`)
 
 		tag := c.Params("tag")
 		// Using a different method, since /playlists/discovery endpoint seems to be broken :P
-		p, err := sc.SearchPlaylists("", prefs, c.Query("pagination", "?q=*&filter.genre_or_tag="+tag))
+		args := c.RequestCtx().QueryArgs().Peek("pagination")
+		if len(args) == 0 {
+			args = []byte("q=*&filter.genre_or_tag=" + tag)
+		}
+
+		p, err := sc.SearchPlaylists("", prefs, args)
 		if err != nil {
 			log.Printf("error getting %s tagged playlists: %s\n", tag, err)
 			return err
@@ -594,6 +667,64 @@ Disallow: /`)
 
 	if cfg.Restream {
 		restream.Load(app)
+
+		app.Get("/_/download/:author/:track", func(c fiber.Ctx) error {
+			p, err := preferences.Get(c)
+			if err != nil {
+				return err
+			}
+			p.ProxyImages = &cfg.False
+			p.ProxyStreams = &cfg.False
+
+			cid, err := sc.GetClientID()
+			if err != nil {
+				return err
+			}
+
+			t, err := sc.GetTrack(cid, c.Params("author")+"/"+c.Params("track"))
+			if err != nil {
+				return err
+			}
+
+			disabled_formats := map[string]bool{
+				cfg.AudioBest: false,
+				cfg.AudioAAC:  true,
+				cfg.AudioOpus: true,
+				cfg.AudioMP3:  true,
+			}
+			fmt.Println(t.Media.Transcodings)
+			for _, tr := range t.Media.Transcodings {
+				switch tr.Format.Protocol {
+				case sc.ProtocolHLS:
+					if tr.Preset == "aac_160k" {
+						disabled_formats[cfg.AudioAAC] = false
+					} else if tr.Format.MimeType == "audio/mpeg" {
+						disabled_formats[cfg.AudioMP3] = false
+					} else if strings.HasPrefix(tr.Preset, "opus_") {
+						disabled_formats[cfg.AudioOpus] = false
+					}
+				case sc.ProtocolProgressive:
+					if tr.Format.MimeType == "audio/mpeg" {
+						disabled_formats[cfg.AudioMP3] = false
+					}
+				}
+			}
+
+			if disabled_formats[cfg.AudioAAC] && disabled_formats[cfg.AudioOpus] && disabled_formats[cfg.AudioMP3] {
+				disabled_formats[cfg.AudioBest] = true
+			}
+
+			if disabled_formats[*p.DownloadAudio] {
+				pr := cfg.AudioMP3
+				p.DownloadAudio = &pr
+			}
+
+			return r(c, "Download "+t.Title+" by "+t.Author.Username, templates.DownloadTrack(p, t, disabled_formats), nil)
+		})
+
+		app.Post("/_/download/:author/:track", func(c fiber.Ctx) error {
+			return c.Redirect().To("/_/restream/" + c.Params("author") + "/" + c.Params("track") + "?metadata=true&" + strings.ReplaceAll(cfg.B2s(c.Body()), "+", "%20"))
+		})
 	}
 
 	preferences.Load(app)
@@ -609,8 +740,63 @@ Disallow: /`)
 			return err
 		}
 
+		if string(c.RequestCtx().QueryArgs().Peek("format")) == "opensearch" {
+			return c.JSON([]any{q, s})
+		}
+
 		return c.JSON(s)
 	})
+
+	{
+		type URL struct {
+			XMLName  xml.Name `xml:"Url"`
+			Method   string   `xml:"method,attr"`
+			Template string   `xml:"template,attr"`
+			Type     string   `xml:"type,attr"`
+			Rel      string   `xml:"rel,attr,omitempty"`
+		}
+
+		type Description struct {
+			XMLName     xml.Name `xml:"http://a9.com/-/spec/opensearch/1.1/ OpenSearchDescription"`
+			Description string
+			LongName    string
+			ShortName   string
+			Image       string
+			URLs        []URL
+		}
+
+		app.Get("/_/opensearch.xml", func(c fiber.Ctx) error {
+			base := c.BaseURL()
+
+			d := Description{
+				ShortName:   "soundcloak",
+				LongName:    "soundcloak",
+				Description: "Frontend for SoundCloud",
+				Image:       base + "/_/static/favicon.ico",
+				URLs: []URL{
+					{
+						Method:   "get",
+						Template: base + "/search?q={searchTerms}&type=any",
+						Type:     "text/html",
+						Rel:      "results",
+					},
+					{
+						Method:   "get",
+						Template: base + "/_/searchSuggestions?q={searchTerms}&format=opensearch",
+						Type:     "application/x-suggestions+json",
+					},
+					{
+						Method:   "get",
+						Template: base + "/_/opensearch.xml",
+						Type:     "application/opensearchdescription+xml",
+						Rel:      "self",
+					},
+				},
+			}
+
+			return c.XML(d)
+		})
+	}
 
 	// Currently, /:user is the tracks page
 	app.Get("/:user/tracks", func(c fiber.Ctx) error {
@@ -635,7 +821,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		pl, err := user.GetPlaylists(cid, prefs, c.Query("pagination", "?limit=20"))
+		pl, err := user.GetPlaylists(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s playlists: %s\n", c.Params("user"), err)
 			return err
@@ -662,7 +848,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		pl, err := user.GetAlbums(cid, prefs, c.Query("pagination", "?limit=20"))
+		pl, err := user.GetAlbums(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s albums: %s\n", c.Params("user"), err)
 			return err
@@ -689,7 +875,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetReposts(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetReposts(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s reposts: %s\n", c.Params("user"), err)
 			return err
@@ -716,7 +902,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetLikes(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetLikes(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s likes: %s\n", c.Params("user"), err)
 			return err
@@ -770,7 +956,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetFollowers(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetFollowers(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s followers: %s\n", c.Params("user"), err)
 			return err
@@ -797,7 +983,7 @@ Disallow: /`)
 		}
 		user.Postfix(prefs)
 
-		p, err := user.GetFollowing(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := user.GetFollowing(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s following: %s\n", c.Params("user"), err)
 			return err
@@ -831,16 +1017,25 @@ Disallow: /`)
 		if *prefs.Player != cfg.NonePlayer {
 			if *prefs.Player == cfg.HLSPlayer {
 				var tr *sc.Transcoding
-				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false)
+				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false, false)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
 					stream, err = tr.GetStream(cid, prefs, track.Authorization)
 				}
-			} else {
-				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true)
+			} else if *prefs.Player == cfg.RestreamPlayer {
+				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true, true)
 				if audio == "" {
 					err = sc.ErrIncompatibleStream
+				}
+			} else {
+				audio = cfg.AudioMP3
+				var tr *sc.Transcoding
+				tr = track.Media.SelectCompatibleProgressive()
+				if tr == nil {
+					err = sc.ErrIncompatibleStream
+				} else {
+					stream, err = tr.GetStream(cid, prefs, track.Authorization)
 				}
 			}
 
@@ -918,7 +1113,7 @@ Disallow: /`)
 
 		var downloadAudio *string
 		if cfg.Restream {
-			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true)
+			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true, true)
 			downloadAudio = &audio
 		}
 
@@ -947,8 +1142,9 @@ Disallow: /`)
 			return err
 		}
 
-		if comm.Next != "" {
-			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.Next, "/comments")[1]))
+		if comm.NextHref != "" {
+			misc.Log(comm.NextHref)
+			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.NextHref, "/comments?")[1]))
 		} else {
 			c.Set("next", "done")
 		}
@@ -1008,7 +1204,7 @@ Disallow: /`)
 		}
 		usr.Postfix(prefs)
 
-		p, err := usr.GetTracks(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := usr.GetTracks(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s tracks: %s\n", c.Params("user"), err)
 			return err
@@ -1102,7 +1298,7 @@ Disallow: /`)
 		}
 		track.Postfix(prefs, true)
 
-		rel, err := track.GetRelated(cid, prefs, c.Query("pagination", "?limit=20"))
+		rel, err := track.GetRelated(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s from %s related tracks: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
@@ -1129,7 +1325,7 @@ Disallow: /`)
 		}
 		track.Postfix(prefs, true)
 
-		p, err := track.GetPlaylists(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := track.GetPlaylists(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s from %s sets: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
@@ -1156,7 +1352,7 @@ Disallow: /`)
 		}
 		track.Postfix(prefs, true)
 
-		p, err := track.GetAlbums(cid, prefs, c.Query("pagination", "?limit=20"))
+		p, err := track.GetAlbums(cid, prefs, c.Query("pagination", "limit=20"))
 		if err != nil {
 			log.Printf("error getting %s from %s albums: %s\n", c.Params("track"), c.Params("user"), err)
 			return err
@@ -1190,6 +1386,7 @@ Disallow: /`)
 	if cfg.Addr[0] == ':' {
 		table["Listening on"] = "127.0.0.1" + cfg.Addr
 	}
+	table["Listening on"] = "http://" + table["Listening on"]
 	longest := ""
 	for key := range table {
 		if len(key) > len(longest) {

@@ -14,7 +14,6 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 	"github.com/goccy/go-json"
-	"github.com/gorilla/feeds"
 	"github.com/valyala/fasthttp"
 )
 
@@ -137,8 +136,11 @@ func GetUser(cid string, permalink string) (User, error) {
 	return u, err
 }
 
-func SearchUsers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
-	p := Paginated[*User]{Next: "https://" + api + "/search/users" + args}
+func SearchUsers(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*User], error) {
+	uri := baseUri()
+	uri.SetPath("/search/users")
+	uri.SetQueryStringBytes(args)
+	p := Paginated[*User]{Next: uri}
 	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
@@ -152,10 +154,15 @@ func SearchUsers(cid string, prefs cfg.Preferences, args string) (*Paginated[*Us
 	return &p, nil
 }
 
+func (u User) baseUri(subpath, args string) *fasthttp.URI {
+	uri := baseUri()
+	uri.SetPath("/users/" + string(u.ID) + "/" + subpath)
+	uri.SetQueryString(args)
+	return uri
+}
+
 func (u User) GetTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/tracks" + args,
-	}
+	p := Paginated[*Track]{Next: u.baseUri("tracks", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -232,9 +239,7 @@ func (u *User) Postfix(prefs cfg.Preferences) {
 }
 
 func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
-	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/playlists_without_albums" + args,
-	}
+	p := Paginated[*Playlist]{Next: u.baseUri("playlists_without_albums", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -250,9 +255,7 @@ func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Pag
 }
 
 func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
-	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/albums" + args,
-	}
+	p := Paginated[*Playlist]{Next: u.baseUri("albums", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -268,9 +271,10 @@ func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Pagina
 }
 
 func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
-	p := Paginated[*Repost]{
-		Next: "https://" + api + "/stream/users/" + string(u.ID) + "/reposts" + args,
-	}
+	uri := baseUri()
+	uri.SetPath("/stream/users/" + string(u.ID) + "/reposts")
+	uri.SetQueryString(args)
+	p := Paginated[*Repost]{Next: uri}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -285,9 +289,7 @@ func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Pagin
 }
 
 func (u User) GetLikes(cid string, prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
-	p := Paginated[*Like]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/likes" + args,
-	}
+	p := Paginated[*Like]{Next: u.baseUri("likes", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -338,8 +340,11 @@ func (u *User) GetWebProfiles(cid string) error {
 }
 
 func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
+	uri := baseUri()
+	uri.SetPath("/users/" + string(u.ID) + "/relatedartists")
+	uri.QueryArgs().Set("page_size", "20")
 	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/relatedartists?page_size=20",
+		Next: uri,
 	}
 
 	err := p.Proceed(cid, true)
@@ -356,9 +361,10 @@ func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 }
 
 func (u User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
-	p := Paginated[*Track]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/toptracks?limit=10",
-	}
+	uri := baseUri()
+	uri.SetPath("/users/" + string(u.ID) + "/toptracks")
+	uri.QueryArgs().Set("limit", "10")
+	p := Paginated[*Track]{Next: uri}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -374,9 +380,7 @@ func (u User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) 
 }
 
 func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
-	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/followers" + args,
-	}
+	p := Paginated[*User]{Next: u.baseUri("followers", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -392,9 +396,7 @@ func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Pag
 }
 
 func (u User) GetFollowing(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
-	p := Paginated[*User]{
-		Next: "https://" + api + "/users/" + string(u.ID) + "/followings" + args,
-	}
+	p := Paginated[*User]{Next: u.baseUri("followings", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -420,12 +422,12 @@ func t(s string) string {
 
 // TODO: maybe add option for caching generated feeds? could benefit when many people follow same artists
 func (u *User) GenerateFeed(ctx context.Context, cid string, prefs cfg.Preferences, base string) ([]byte, error) {
-	tracks, err := u.GetTracks(cid, prefs, "?limit=20")
+	tracks, err := u.GetTracks(cid, prefs, "limit=20")
 	if err != nil {
 		return nil, err
 	}
 
-	f := feeds.RssFeed{
+	f := RssFeed{
 		Title:          "Tracks from " + u.Username,
 		Link:           base + "/" + u.Permalink,
 		ManagingEditor: u.Username + " (@" + u.Permalink + ")",
@@ -439,12 +441,12 @@ func (u *User) GenerateFeed(ctx context.Context, cid string, prefs cfg.Preferenc
 	if len(tracks.Collection) != 0 {
 		f.LastBuildDate = t(tracks.Collection[0].LastModified)
 		for _, track := range tracks.Collection {
-			item := feeds.RssItem{
+			item := RssItem{
 				Title: track.Title,
 				Link:  base + "/" + u.Permalink + "/" + track.Permalink,
 
 				Category: track.Genre,
-				Guid:     &feeds.RssGuid{Id: string(track.ID), IsPermaLink: "false"},
+				Guid:     &RssGuid{Id: string(track.ID), IsPermaLink: "false"},
 				PubDate:  t(track.LastModified),
 			}
 
@@ -469,7 +471,7 @@ func (u *User) GenerateFeed(ctx context.Context, cid string, prefs cfg.Preferenc
 	}
 	f.PubDate = f.LastBuildDate
 
-	return xml.Marshal(feeds.RssFeedXml{
+	return xml.Marshal(RssFeedXml{
 		Version:          "2.0",
 		Channel:          &f,
 		ContentNamespace: "http://purl.org/rss/1.0/modules/content/",

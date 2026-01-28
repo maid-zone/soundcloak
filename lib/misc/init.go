@@ -45,27 +45,16 @@ func Log(what ...any) {
 	}
 }
 
-var ImageClient *fasthttp.HostClient
 var HlsClient *fasthttp.HostClient
+var HlsStreamingOnlyClient *fasthttp.HostClient
 var HlsAacClient *fasthttp.HostClient
 
 func init() {
-	if cfg.Restream || cfg.ProxyImages {
-		ImageClient = &fasthttp.HostClient{
-			Addr:                cfg.ImageCDN + ":443",
-			IsTLS:               true,
-			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
-			StreamResponseBody:  true,
-			DialDualStack:       cfg.DialDualStack,
-		}
-	}
-
 	if cfg.Restream || cfg.ProxyStreams {
 		HlsClient = &fasthttp.HostClient{
 			Addr:                cfg.HLSCDN + ":443",
 			IsTLS:               true,
 			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
-			StreamResponseBody:  true,
 			DialDualStack:       cfg.DialDualStack,
 		}
 
@@ -73,7 +62,15 @@ func init() {
 			Addr:                cfg.HLSAACCDN + ":443",
 			IsTLS:               true,
 			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
+			DialDualStack:       cfg.DialDualStack,
+		}
+
+		HlsStreamingOnlyClient = &fasthttp.HostClient{
+			Addr:                cfg.HLSCDN + ":443",
+			IsTLS:               true,
+			MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 			StreamResponseBody:  true,
+			MaxResponseBodySize: 1,
 			DialDualStack:       cfg.DialDualStack,
 		}
 	}

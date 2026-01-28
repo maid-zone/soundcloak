@@ -88,13 +88,15 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 	}
 	// clone needed to mitigate memory skill issues smh
 	if aac {
-		for _, s := range bytes.Split(r.resp.Body(), newline) {
+		for s := range bytes.SplitSeq(r.resp.Body(), newline) {
 			if len(s) == 0 {
 				continue
 			}
 			if s[0] == '#' {
-				if bytes.HasPrefix(s, []byte(`#EXT-X-MAP:URI="`)) {
-					r.parts = append(r.parts, clone(s[16:len(s)-1]))
+				// #EXT-X-MAP:URI="..."
+				const x = `#EXT-X-MAP:URI="`
+				if len(s) > len(x) && string(s[:len(x)]) == x {
+					r.parts = append(r.parts, clone(s[len(x):len(s)-1]))
 				}
 
 				continue
@@ -103,7 +105,7 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 			r.parts = append(r.parts, clone(s))
 		}
 	} else {
-		for _, s := range bytes.Split(r.resp.Body(), newline) {
+		for s := range bytes.SplitSeq(r.resp.Body(), newline) {
 			if len(s) == 0 || s[0] == '#' {
 				continue
 			}
@@ -120,7 +122,7 @@ func (r *reader) Close() error {
 	r.req.Reset()
 	r.resp.Reset()
 
-	r.leftover = nil
+	r.leftover = r.leftover[:0]
 	r.index = 0
 	r.parts = r.parts[:0]
 
@@ -132,10 +134,7 @@ func (r *reader) Close() error {
 func (r *reader) Read(buf []byte) (n int, err error) {
 	misc.Log("we read")
 	if len(r.leftover) != 0 {
-		h := len(buf)
-		if h > len(r.leftover) {
-			h = len(r.leftover)
-		}
+		h := min(len(buf), len(r.leftover))
 
 		n = copy(buf, r.leftover[:h])
 
@@ -183,4 +182,9 @@ func (r *reader) Read(buf []byte) (n int, err error) {
 	}
 
 	return
+}
+
+func (c *reader) Write(data []byte) (n int, err error) {
+	c.leftover = append(c.leftover, data...)
+	return len(data), nil
 }

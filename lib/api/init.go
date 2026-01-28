@@ -2,12 +2,12 @@ package api
 
 import (
 	"log"
-	"net/url"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
+	"github.com/valyala/fasthttp"
 )
 
 func Load(a *fiber.App) {
@@ -15,18 +15,18 @@ func Load(a *fiber.App) {
 
 	prefs := cfg.Preferences{ProxyImages: &cfg.False}
 	r.Get("/search", func(c fiber.Ctx) error {
-		q := cfg.B2s(c.RequestCtx().QueryArgs().Peek("q"))
+		q := c.RequestCtx().QueryArgs().Peek("q")
 		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
-		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
-		if args == "" {
-			args = "?q=" + url.QueryEscape(q)
+		args := c.RequestCtx().QueryArgs().Peek("pagination")
+		if len(args) == 0 {
+			args = fasthttp.AppendQuotedArg([]byte("q="), q)
 		}
 
 		switch t {
 		case "tracks":
 			p, err := sc.SearchTracks("", prefs, args)
 			if err != nil {
-				log.Printf("[API] error getting tracks for %s: %s\n", q, err)
+				log.Printf("[API] error getting tracks for %s: %s\n", cfg.B2s(q), err)
 				return err
 			}
 
@@ -35,7 +35,7 @@ func Load(a *fiber.App) {
 		case "users":
 			p, err := sc.SearchUsers("", prefs, args)
 			if err != nil {
-				log.Printf("[API] error getting users for %s: %s\n", q, err)
+				log.Printf("[API] error getting users for %s: %s\n", cfg.B2s(q), err)
 				return err
 			}
 
@@ -44,7 +44,7 @@ func Load(a *fiber.App) {
 		case "playlists":
 			p, err := sc.SearchPlaylists("", prefs, args)
 			if err != nil {
-				log.Printf("[API] error getting playlists for %s: %s\n", q, err)
+				log.Printf("[API] error getting playlists for %s: %s\n", cfg.B2s(q), err)
 				return err
 			}
 

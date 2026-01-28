@@ -64,7 +64,7 @@ var PlaylistTTL = 20 * time.Minute
 var PlaylistCacheCleanDelay = PlaylistTTL / 4
 
 // default fasthttp one was causing connections to be stuck? todo make it cycle browser useragents or just choose random at startup
-var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+var UserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0"
 
 // override the extractor
 var ClientID = ""
@@ -72,41 +72,7 @@ var ClientID = ""
 // enab;e api
 var EnableAPI = false
 
-// Dear soundcloud workers who are for sure reading this:
-// please keep this image in your mind
-// .       ,+@#@=--__,                          __+##@@@#==,
-// .     @*           @#m,                __==#@            #
-// .    @                 @#m_,      __+#@                   %
-// .    @                      #@*@#*                        %
-// .    @                   __--##@@@#---__                  @
-// .    #,             m#@@*               *%@,             ,#
-// .     @        ___,@                        *@+---___    @
-// .      %#__==#@ ,*                             %@,   *==%,
-// .    ,=@       @                                  @      *@=,
-// . ,#@        ,%                         ,_         @,       %,
-// ,@*         @*        ,m#@            ,@  @,        *#       @,
-// #     __---@        ,@    @         .@      @,       *@---__  #
-// @        .@       .@ --____@       .%_____--  @       @.       @
-// .@       #        @         @,     @           @.      @       #
-// . %     :@       @            @,  @             #      @:    ,@
-// .   @,   @      ,* @@@****----- *@-----****@@@  %      @:   ,%
-// .    *_, @      @   @  @     @     @  @     @   @      @  ,@
-// .      *+#      @   @**      @     @**      @   @      @+*^
-// .        @,     @    #      #       #      @    @     .#
-// .         #     #:    *@__@*         *@__#*    ,#     @
-// .         %*,    %.                            @    ,#@
-// .        @   @,   @_         m     m         _*    @  @
-// .       @   @  *-___#        ^+___+^        #___+#*   #
-// .      #__+* @    @ %,                      , @       %
-// .             @    #  @_,               ,_@*  #    #   @
-// .              *,   @    *@##--___--##@*     ,*   @ *-__#
-// .                ^--=*   @    @   @    @     @  ,#
-// .                       :@   ,+@@@+,   @:   #==-
-// .                         ==@  @ @  @==
-// .                        ,#   @   @   @,
-// .                       @    %     %    %
-// .                        *==*       @==#*
-// cirno day everyday
+// yeah i doubt they will be reading this lolol
 var SoundcloudApiProxy = ""
 
 var DialDualStack = false

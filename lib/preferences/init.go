@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	encodingjson "encoding/json"
+
 	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
 
@@ -175,7 +177,7 @@ func Load(r *fiber.App) {
 			old.ShowAudio = &cfg.False
 		}
 
-		if *old.Player == cfg.HLSPlayer {
+		if *old.Player == cfg.HLSPlayer || *old.Player == cfg.ProgressivePlayer {
 			if cfg.ProxyStreams {
 				switch p.ProxyStreams {
 				case on:
@@ -184,7 +186,9 @@ func Load(r *fiber.App) {
 					old.ProxyStreams = &cfg.False
 				}
 			}
+		}
 
+		if *old.Player == cfg.HLSPlayer {
 			switch p.FullyPreloadTrack {
 			case on:
 				old.FullyPreloadTrack = &cfg.True
@@ -265,7 +269,15 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		return c.JSON(Export{Preferences: &p})
+		data, err := encodingjson.Marshal(Export{Preferences: &p})
+		if err != nil {
+			return err
+		}
+
+		c.Response().Header.SetContentType("application/json")
+
+		return c.Send(data)
+		// go-json seems to crash for this one :p
 	})
 
 	r.Post("/_/preferences/import", func(c fiber.Ctx) error {

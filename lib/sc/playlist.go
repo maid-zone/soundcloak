@@ -71,8 +71,11 @@ func GetPlaylist(cid string, permalink string) (Playlist, error) {
 	return p, nil
 }
 
-func SearchPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
-	p := Paginated[*Playlist]{Next: "https://" + api + "/search/playlists" + args}
+func SearchPlaylists(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*Playlist], error) {
+	uri := baseUri()
+	uri.SetPath("/search/playlists")
+	uri.SetQueryStringBytes(args)
+	p := Paginated[*Playlist]{Next: uri}
 	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err

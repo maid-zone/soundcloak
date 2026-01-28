@@ -1,70 +1,24 @@
 package sc
 
 import (
-	"net/url"
-	"strings"
-
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 )
 
 // Functions/structures related to featured/suggested content
 
-type PlaylistOrUser struct {
-	Kind      string `json:"kind"` // "playlist" or "system-playlist" or "user"
-	Permalink string `json:"permalink"`
-
-	// User-specific
-	Avatar   string `json:"avatar_url"`
-	Username string `json:"username"`
-	FullName string `json:"full_name"`
-
-	// Playlist-specific
-	Title  string `json:"title"`
-	Author struct {
-		Permalink string `string:"permalink"`
-	} `json:"user"`
-	Artwork    string `json:"artwork_url"`
-	TrackCount int64  `json:"track_count"`
-}
-
-func (p PlaylistOrUser) Href() string {
-	switch p.Kind {
-	case "system-playlist":
-		return "/discover/sets/" + p.Permalink
-	case "playlist":
-		return "/" + p.Author.Permalink + "/sets/" + p.Permalink
-	default:
-		return "/" + p.Permalink
-	}
-}
-
-func (p *PlaylistOrUser) Fix(prefs cfg.Preferences) {
-	switch p.Kind {
-	case "user":
-		if p.Avatar == "https://a1.sndcdn.com/images/default_avatar_large.png" {
-			p.Avatar = ""
-		} else {
-			p.Avatar = strings.Replace(p.Avatar, "-large.", "-t200x200.", 1)
-		}
-	default:
-		if p.Artwork != "" {
-			p.Artwork = strings.Replace(p.Artwork, "-large.", "-t200x200.", 1)
-			if cfg.ProxyImages && *prefs.ProxyImages {
-				p.Artwork = "/_/proxy/images?url=" + url.QueryEscape(p.Artwork)
-			}
-		}
-	}
-}
-
 type Selection struct {
-	Title string                     `json:"title"`
-	Kind  string                     `json:"kind"`  // should always be "selection"!
-	Items Paginated[*PlaylistOrUser] `json:"items"` // ?? why
+	Title string                        `json:"title"`
+	Kind  string                        `json:"kind"`  // should always be "selection"!
+	Items Paginated[*UserPlaylistTrack] `json:"items"` // ?? why
 }
 
 func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], error) {
+	uri := baseUri()
+	uri.SetPath("/mixed-selections")
+	uri.QueryArgs().Set("limit", "20")
+
 	// There is no pagination
-	p := Paginated[*Selection]{Next: "https://" + api + "/mixed-selections?limit=20"}
+	p := Paginated[*Selection]{Next: uri}
 	err := p.Proceed(cid, false)
 	if err != nil {
 		return nil, err

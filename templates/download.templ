@@ -1,0 +1,51 @@
+package templates
+
+import "git.maid.zone/stuff/soundcloak/lib/sc"
+import "git.maid.zone/stuff/soundcloak/lib/cfg"
+
+templ sel_audio2(name string, selected string, f map[string]bool) {
+	@sel(name, []option{
+		{cfg.AudioBest, "Best", f[cfg.AudioBest]},
+		{cfg.AudioAAC, "M4A AAC 160kb/s", f[cfg.AudioAAC]},
+		{cfg.AudioOpus, "OGG Opus 72kb/s", f[cfg.AudioOpus]},
+		{cfg.AudioMP3, "MP3 128kb/s", f[cfg.AudioMP3]},
+	}, selected)
+}
+
+templ text(name string, value string) {
+	<input name={ name } type="text" autocomplete="off" value={value}/>
+}
+
+templ DownloadTrack(prefs cfg.Preferences, t sc.Track, disabled_formats map[string]bool) {
+    if t.Artwork != "" {
+		<img src={ t.Artwork } width="300px"/>
+	}
+	<h1><a href={templ.SafeURL(t.Href())} id="title">{ t.Title }</a></h1>
+	if t.Policy == sc.PolicySnip {
+		<h2>Full track not available, only a 30-second snippet.</h2>
+	}
+	// just nice script to redirect you back to track page :)
+	<form method="post" autocomplete="off" onsubmit="setTimeout(function(){location='/'+location.pathname.split('/').slice(3).join('/')},7500)">
+		@sel_audio2("audio", *prefs.RestreamAudio, disabled_formats)
+		<details style="margin-top: 1rem; margin-bottom: 1rem">
+			<summary>File metadata</summary>
+			
+			<label>
+				Title:
+				@text("title", t.Title)
+			</label>
+
+			<label>
+				Author:
+				@text("author", t.Author.Username)
+			</label>
+
+			<label>
+				Genre:
+				@text("genre", t.Genre)
+			</label>
+		</details>
+		<input type="submit" value="Download" class="btn" style="margin-top: 1rem;"/>
+	</form>
+	<style>label{display:flex;gap:.5rem;align-items:center;margin-bottom:.35rem}</style>
+}

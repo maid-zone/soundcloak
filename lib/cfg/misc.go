@@ -27,10 +27,14 @@ var Repo = "unknown"
 var CommitURL = "unknown"
 
 const (
-	// Downloads the HLS stream on the backend, and restreams it to frontend as a file. Requires no JS, but less stable client-side
+	// Downloads the HLS stream on the backend, and restreams it to frontend as a file.
+	// If requested MP3 preset, it uses Progressive protocol (so just proxying a file, maybe adding metadata if you need it)
+	// Requires no JS, but less stable client-side (browser likes to randomly unload the audio if you listen to shit on repeat xd)
 	RestreamPlayer string = "restream"
 	// Downloads the HLS stream on the frontend (proxying can be enabled). Requires JS, more stable client-side
 	HLSPlayer string = "hls"
+	// Just proxies the file given from Progressive stream, only available when restream is not, also just MP3 preset
+	ProgressivePlayer string = "progressive"
 	// Disables the song player
 	NonePlayer string = "none"
 )
@@ -55,6 +59,9 @@ const (
 	// 128kbps mp3 audio, always available, good for compatibility
 	AudioMP3 string = "mpeg"
 )
+
+// for taking ptrs :)
+var MP3 = AudioMP3
 
 type Preferences struct {
 	Player       *string

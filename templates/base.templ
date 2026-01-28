@@ -11,6 +11,7 @@ templ Base(title string, content templ.Component, head templ.Component) {
 			<link rel="stylesheet" href="/_/static/global.css"/>
 			<link rel="stylesheet" href="/_/static/instance.css"/>
 			<link rel="icon" href="/_/static/favicon.ico"/>
+			<link rel="search" type="application/opensearchdescription+xml" title="soundcloak" href="/_/opensearch.xml"/>
 			<title>
 				if title != "" {
 					{ title } ~
@@ -31,36 +32,22 @@ templ Base(title string, content templ.Component, head templ.Component) {
 	</html>
 }
 
-templ MainPageHead() {
-	<link rel="stylesheet" href="/_/static/index.css"/>
+templ MainPageHead(p cfg.Preferences) {
+	if *p.SearchSuggestions {
+		<link rel="stylesheet" href="/_/static/index.css"/>
+	}
 }
 
 templ MainPage(p cfg.Preferences) {
-	<form action="/search">
-		<div style="position: relative">
-			<div style="display: flex; gap: .5rem;">
-				<input id="q" name="q" type="text" autocomplete="off" autofill="off" style="padding: .5rem .6rem; flex-grow: 1;"/>
-				<select name="type">
-					<option value="tracks">Tracks</option>
-					<option value="users">Users</option>
-					<option value="playlists">Playlists</option>
-				</select>
-			</div>
-			if *p.SearchSuggestions {
-				<ul id="search-suggestions" style="display: none;"></ul>
-				<script async src="/_/static/index.js"></script>
-			}
-		</div>
-		<input type="submit" value="Search" class="btn" style="width: 100%; margin-top: .5rem;"/>
-	</form>
+	@searchbar(p, "", "")
 	<footer>
-		<div>
+		<div style="margin-top:5rem;gap:1rem;display:grid;grid-template:auto/auto auto auto;justify-content:center">
 			<a class="btn" href="/discover">Discover Playlists</a>
 			<a class="btn" href="/_/preferences">Preferences</a>
 			<a class="btn" href="https://git.maid.zone/stuff/soundcloak">Source code</a>
 			<a class="btn" href="/_/static/notice.txt">Legal notice</a>
 		</div>
 
-		<p style="text-align: center;">Build <a class="link" href={cfg.CommitURL}>{cfg.Commit}</a></p>
+		<p style="text-align:center">Build <a class="link" href={templ.SafeURL(cfg.CommitURL)}>{cfg.Commit}</a></p>
 	</footer>
 }

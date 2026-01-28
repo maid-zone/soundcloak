@@ -2,7 +2,6 @@ package proxystreams
 
 import (
 	"bytes"
-	"net/url"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
@@ -11,12 +10,23 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var sndcdn = []byte(".sndcdn.com")
-var soundcloudcloud = []byte(".soundcloud.cloud")
+const sndcdn = ".sndcdn.com"
+const soundcloudcloud = "soundcloud.cloud"
+
 var newline = []byte{'\n'}
-var extxmap = []byte(`#EXT-X-MAP:URI="`)
+
+var hls_aac_streaming_httpc *fasthttp.HostClient
 
 func Load(a *fiber.App) {
+	hls_aac_streaming_httpc = &fasthttp.HostClient{
+		Addr:                cfg.HLSAACCDN + ":443",
+		IsTLS:               true,
+		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
+		StreamResponseBody:  true,
+		MaxResponseBodySize: 1,
+		DialDualStack:       cfg.DialDualStack,
+	}
+
 	r := a.Group("/_/proxy/streams")
 
 	r.Get("/", func(c fiber.Ctx) error {
@@ -33,7 +43,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
+		if h := parsed.Host(); len(h) > len(sndcdn) && string(h[len(h)-len(sndcdn):]) != sndcdn {
 			return fiber.ErrBadRequest
 		}
 
@@ -46,7 +56,7 @@ func Load(a *fiber.App) {
 		resp := fasthttp.AcquireResponse()
 		//defer fasthttp.ReleaseResponse(resp)
 
-		err = sc.DoWithRetry(misc.HlsClient, req, resp)
+		err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 		if err != nil {
 			return err
 		}
@@ -71,7 +81,7 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), soundcloudcloud) {
+		if h := parsed.Host(); len(h) > len(soundcloudcloud) && string(h[len(h)-len(soundcloudcloud):]) != soundcloudcloud {
 			return fiber.ErrBadRequest
 		}
 
@@ -83,7 +93,7 @@ func Load(a *fiber.App) {
 
 		resp := fasthttp.AcquireResponse()
 
-		err = sc.DoWithRetry(misc.HlsAacClient, req, resp)
+		err = sc.DoWithRetry(hls_aac_streaming_httpc, req, resp)
 		if err != nil {
 			return err
 		}
@@ -108,7 +118,8 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
+		const x = ".sndcdn.com"
+		if h := parsed.Host(); len(h) > len(x) && string(h[len(h)-len(x):]) != x {
 			return fiber.ErrBadRequest
 		}
 
@@ -126,22 +137,19 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		data, err := resp.BodyUncompressed()
-		if err != nil {
-			data = resp.Body()
-		}
-
-		var sp = bytes.Split(data, newline)
-		for i, l := range sp {
+		for l := range bytes.SplitSeq(resp.Body(), newline) {
 			if len(l) == 0 || l[0] == '#' {
+				c.Response().AppendBody(l)
+				c.Response().AppendBody(newline)
 				continue
 			}
 
-			l = []byte("/_/proxy/streams?url=" + url.QueryEscape(cfg.B2s(l)))
-			sp[i] = l
+			c.Response().AppendBodyString("/_/proxy/streams?url=")
+			c.Response().AppendBody(fasthttp.AppendQuotedArg(nil, l))
+			c.Response().AppendBody(newline)
 		}
 
-		return c.Send(bytes.Join(sp, newline))
+		return nil
 	})
 
 	r.Get("/playlist/aac", func(c fiber.Ctx) error {
@@ -158,7 +166,8 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), soundcloudcloud) {
+		const x = ".soundcloud.cloud"
+		if h := parsed.Host(); len(h) > len(x) && string(h[len(h)-len(x):]) != x {
 			return fiber.ErrBadRequest
 		}
 
@@ -176,25 +185,32 @@ func Load(a *fiber.App) {
 			return err
 		}
 
-		var sp = bytes.Split(resp.Body(), newline)
-		for i, l := range sp {
+		for l := range bytes.SplitSeq(resp.Body(), newline) {
 			if len(l) == 0 {
+				c.Response().AppendBody(l)
+				c.Response().AppendBody(newline)
 				continue
 			}
 
 			if l[0] == '#' {
-				if bytes.HasPrefix(l, extxmap) {
-					l = []byte(`#EXT-X-MAP:URI="/_/proxy/streams/aac?url=` + url.QueryEscape(cfg.B2s(l[16:len(l)-1])) + `"`)
-					sp[i] = l
+				// #EXT-X-MAP:URI="..."
+				const x = `#EXT-X-MAP:URI="`
+				if len(l) > len(x) && string(l[:len(x)]) == x {
+					c.Response().AppendBodyString(`#EXT-X-MAP:URI="/_/proxy/streams/aac?url=`)
+					c.Response().AppendBody(fasthttp.AppendQuotedArg(nil, l[16:len(l)-1]))
+					c.Response().AppendBodyString(`"`)
+				} else {
+					c.Response().AppendBody(l)
 				}
-
+				c.Response().AppendBody(newline)
 				continue
 			}
 
-			l = []byte("/_/proxy/streams/aac?url=" + url.QueryEscape(cfg.B2s(l)))
-			sp[i] = l
+			c.Response().AppendBodyString("/_/proxy/streams/aac?url=")
+			c.Response().AppendBody(fasthttp.AppendQuotedArg(nil, l))
+			c.Response().AppendBody(newline)
 		}
 
-		return c.Send(bytes.Join(sp, newline))
+		return nil
 	})
 }

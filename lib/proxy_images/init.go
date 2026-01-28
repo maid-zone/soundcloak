@@ -1,8 +1,6 @@
 package proxyimages
 
 import (
-	"bytes"
-
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
@@ -11,7 +9,7 @@ import (
 )
 
 var al_httpc *fasthttp.HostClient
-var sndcdn = []byte(".sndcdn.com")
+var streaming_httpc *fasthttp.HostClient
 
 func Load(r *fiber.App) {
 
@@ -20,6 +18,15 @@ func Load(r *fiber.App) {
 		IsTLS:               true,
 		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 		StreamResponseBody:  true,
+		MaxResponseBodySize: 1,
+	}
+
+	streaming_httpc = &fasthttp.HostClient{
+		Addr:                cfg.ImageCDN + ":443",
+		IsTLS:               true,
+		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
+		StreamResponseBody:  true,
+		MaxResponseBodySize: 1,
 		DialDualStack:       cfg.DialDualStack,
 	}
 
@@ -37,14 +44,15 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		if !bytes.HasSuffix(parsed.Host(), sndcdn) {
+		const x = ".sndcdn.com"
+		if h := parsed.Host(); len(h) > len(x) && string(h[len(h)-len(x):]) != x {
 			return fiber.ErrBadRequest
 		}
 
 		var cl *fasthttp.HostClient
 		if parsed.Host()[0] == 'i' {
 			parsed.SetHost(cfg.ImageCDN)
-			cl = misc.ImageClient
+			cl = streaming_httpc
 		} else if string(parsed.Host()[:2]) == "al" {
 			cl = al_httpc
 		}

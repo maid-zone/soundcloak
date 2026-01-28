@@ -93,7 +93,7 @@ type Comment struct {
 	Timestamp int    `json:"timestamp"`
 }
 
-func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {
+func (m Media) SelectCompatible(mode string, opus bool, restream bool) (*Transcoding, string) {
 	switch mode {
 	case cfg.AudioBest:
 		for _, t := range m.Transcodings {
@@ -123,12 +123,28 @@ func (m Media) SelectCompatible(mode string, opus bool) (*Transcoding, string) {
 		}
 	}
 
+	if restream {
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolProgressive && t.Format.MimeType == "audio/mpeg" {
+				return &t, cfg.AudioMP3
+			}
+		}
+	}
 	for _, t := range m.Transcodings {
 		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
 			return &t, cfg.AudioMP3
 		}
 	}
 	return nil, ""
+}
+
+func (m Media) SelectCompatibleProgressive() *Transcoding {
+	for _, t := range m.Transcodings {
+		if t.Format.Protocol == ProtocolProgressive && t.Format.MimeType == "audio/mpeg" {
+			return &t
+		}
+	}
+	return nil
 }
 
 func GetTrack(cid string, permalink string) (Track, error) {
@@ -245,8 +261,11 @@ func GetArbitraryTrack(cid string, data string) (Track, error) {
 	return Track{}, ErrKindNotCorrect
 }
 
-func SearchTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{Next: "https://" + api + "/search/tracks" + args}
+func SearchTracks(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*Track], error) {
+	uri := baseUri()
+	uri.SetPath("/search/tracks")
+	uri.SetQueryStringBytes(args)
+	p := Paginated[*Track]{Next: uri}
 	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
@@ -343,12 +362,17 @@ func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization
 		return "", ErrNoURL
 	}
 
-	if cfg.ProxyStreams && *prefs.ProxyStreams && *prefs.Player == cfg.HLSPlayer {
-		if tr.Preset == "aac_160k" {
-			return "/_/proxy/streams/playlist/aac?url=" + url.QueryEscape(s.URL), nil
-		}
+	if cfg.ProxyStreams && *prefs.ProxyStreams {
+		switch *prefs.Player {
+		case cfg.HLSPlayer:
+			if tr.Preset == "aac_160k" {
+				return "/_/proxy/streams/playlist/aac?url=" + url.QueryEscape(s.URL), nil
+			}
 
-		return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
+			return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
+		case cfg.ProgressivePlayer:
+			return "/_/proxy/streams?url=" + url.QueryEscape(s.URL), nil
+		}
 	}
 
 	return s.URL, nil
@@ -456,8 +480,11 @@ func (t Track) Href() string {
 	return "/" + t.Author.Permalink + "/" + t.Permalink
 }
 
-func RecentTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{Next: "https://" + api + "/recent-tracks/" + args}
+func RecentTracks(cid string, prefs cfg.Preferences, tag, args string) (*Paginated[*Track], error) {
+	uri := baseUri()
+	uri.SetPath("/recent-tracks/" + tag)
+	uri.SetQueryString(args)
+	p := Paginated[*Track]{Next: uri}
 	err := p.Proceed(cid, true)
 	if err != nil {
 		return nil, err
@@ -471,10 +498,15 @@ func RecentTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*T
 	return &p, nil
 }
 
+func (t Track) baseUri(subpath, args string) *fasthttp.URI {
+	uri := baseUri()
+	uri.SetPath("/tracks/" + string(t.ID) + "/" + subpath)
+	uri.SetQueryString(args)
+	return uri
+}
+
 func (t Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
-	p := Paginated[*Track]{
-		Next: "https://" + api + "/tracks/" + string(t.ID) + "/related" + args,
-	}
+	p := Paginated[*Track]{Next: t.baseUri("related", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -490,9 +522,7 @@ func (t Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Pagi
 }
 
 func (t Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
-	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/tracks/" + string(t.ID) + "/playlists_without_albums" + args,
-	}
+	p := Paginated[*Playlist]{Next: t.baseUri("playlists_without_albums", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -508,9 +538,7 @@ func (t Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Pa
 }
 
 func (t Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
-	p := Paginated[*Playlist]{
-		Next: "https://" + api + "/tracks/" + string(t.ID) + "/albums" + args,
-	}
+	p := Paginated[*Playlist]{Next: t.baseUri("albums", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -526,9 +554,7 @@ func (t Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Pagin
 }
 
 func (t Track) GetComments(cid string, prefs cfg.Preferences, args string) (*Paginated[*Comment], error) {
-	p := Paginated[*Comment]{
-		Next: "https://" + api + "/tracks/" + string(t.ID) + "/comments" + args,
-	}
+	p := Paginated[*Comment]{Next: t.baseUri("comments", args)}
 
 	err := p.Proceed(cid, true)
 	if err != nil {
@@ -541,4 +567,17 @@ func (t Track) GetComments(cid string, prefs cfg.Preferences, args string) (*Pag
 	}
 
 	return &p, nil
+}
+
+func ToExt(audio string) string {
+	switch audio {
+	case cfg.AudioAAC:
+		return "m4a"
+	case cfg.AudioOpus:
+		return "ogg"
+	case cfg.AudioMP3:
+		return "mp3"
+	}
+
+	return ""
 }

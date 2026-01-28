@@ -17,7 +17,7 @@ type option struct {
 templ sel(name string, options []option, selected string) {
 	<select name={ name } autocomplete="off">
 		for _, opt := range options {
-			<option 
+			<option
 				value={ opt.value }
 				selected?={ opt.value==selected }
 				disabled?={ opt.disabled }
@@ -35,6 +35,10 @@ templ sel_audio(name string, selected string, noOpus bool) {
 	}, selected)
 }
 
+templ js() {
+	<span class="js">(requires JS)</span>
+}
+
 templ Preferences(prefs cfg.Preferences) {
 	<h1>Preferences</h1>
 	<form method="post" autocomplete="off">
@@ -49,11 +53,54 @@ templ Preferences(prefs cfg.Preferences) {
 			Player:
 			@sel("Player", []option{
 				{cfg.RestreamPlayer, "Restream Player", !cfg.Restream},
-				{cfg.HLSPlayer, "HLS Player (requires JS)", false},
+				{cfg.HLSPlayer, "HLS Player", false},
+				{cfg.ProgressivePlayer, "Progressive Player", cfg.Restream},
 				{cfg.NonePlayer, "None", false},
 			}, *prefs.Player)
 		</label>
+		<details style="margin-bottom:1rem">
+			<summary>Explanation of each player</summary>
+			Each player option uses a different way to deliver/playback the music for you.
+			<ul>
+				<li>
+					Restream Player
+					<p>
+						It's most suitable for listening to music, because audio must be loaded from start to finish.
+						Streaming protocols are handled on server-side, so works without JavaScript enabled. 
+						You can stream all the available audio presets with it.
+					</p>
+				</li>
+				<li>
+					HLS Player
+					<p>
+						It's recommended if you listen to long audios. Since streaming protocol (HLS) is handled on your browser, 
+						you can skip parts of an audio without needing to load them.
+						<span class="js">It also requires enabled JavaScript to function.</span>
+						ogg/opus audio preset cannot be streamed with it.
+					</p>
+				</li>
+				<li>
+					Progressive Player
+					<p>
+						Similar to Restream Player, but available in case restream is disabled. You can only stream MP3 at 128kb/s using it.
+					</p>
+				</li>
+				<li>
+					None
+					<p>
+						Don't stream audio at all :)
+					</p>
+				</li>
+			</ul>
+		</details>
 		switch *prefs.Player {
+			case cfg.ProgressivePlayer:
+				if cfg.ProxyStreams {
+					<label>
+						Proxy song streams:
+						@checkbox("ProxyStreams", *prefs.ProxyStreams)
+					</label>
+				}
 			case cfg.HLSPlayer:
 				if cfg.ProxyStreams {
 					<label>
@@ -93,20 +140,20 @@ templ Preferences(prefs cfg.Preferences) {
 		<label>
 			Fetch search suggestions:
 			@checkbox("SearchSuggestions", *prefs.SearchSuggestions)
-			(requires JS)
+			@js()
 		</label>
 		<label>
 			Dynamically load comments:
 			@checkbox("DynamicLoadComments", *prefs.DynamicLoadComments)
-			(requires JS)
+			@js()
 		</label>
 		<label>
 			Keep player focus:
 			@checkbox("KeepPlayerFocus", *prefs.KeepPlayerFocus)
-			(requires JS)
+			@js()
 		</label>
 		<h2 style="margin-bottom: .35rem">Autoplay</h2>
-		<i>Requires JS. You also need to allow autoplay from this domain</i>
+		<i><span class="js">Requires JS. </span>You also need to allow autoplay from this domain</i>
 		<label style="margin-top: 1rem">
 			Autoplay next track in playlists:
 			@checkbox("AutoplayNextTrack", *prefs.AutoplayNextTrack)
@@ -138,5 +185,7 @@ templ Preferences(prefs cfg.Preferences) {
 		<input class="btn" type="file" autocomplete="off" name="prefs"/>
 		<input type="submit" value="Import" class="btn"/>
 	</form>
-	<style>label{display:flex;gap:.5rem;align-items:center;margin-bottom:.35rem}</style>
+	// oh mah gah
+	<style>label{display:flex;gap:.5rem;align-items:center;margin-bottom:.35rem}li>p{margin-top:0}</style>
+	<script>var y=document.getElementsByClassName('js');for(x=0;x<y.length;x++)y[x].style='display:none'</script>
 }

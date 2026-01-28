@@ -78,7 +78,9 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	</div>
 }
 
-templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
+templ SearchPlaylists(p *sc.Paginated[*sc.Playlist], prefs cfg.Preferences, content string) {
+	@searchbar(prefs, content, "playlist")
+	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } playlists</span>
 	<br/>
 	<br/>
@@ -90,8 +92,8 @@ templ SearchPlaylists(p *sc.Paginated[*sc.Playlist]) {
 		for _, playlist := range p.Collection {
 			@PlaylistItem(playlist, true)
 		}
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?type=playlists&pagination=" + url.QueryEscape(p.Next[sc.H+len("/search/playlists"):])) } rel="noreferrer">more playlists</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?type=playlists&pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/search/playlists?"):])) } rel="noreferrer">more playlists</a>
 		}
 	}
 }

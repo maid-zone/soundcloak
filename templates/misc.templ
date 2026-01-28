@@ -2,7 +2,13 @@ package templates
 
 import (
     "git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
     "git.maid.zone/stuff/soundcloak/lib/textparsing"
+	"github.com/valyala/fasthttp"
+	"context"
+	"io"
+	"strconv"
+	"net/url"
 )
 
 templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
@@ -23,4 +29,81 @@ templ Description(prefs cfg.Preferences, text string, injected templ.Component) 
 			</p>
 		</details>
 	}
+}
+
+func Bytes(b []byte) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		_, err := w.Write(fasthttp.AppendHTMLEscapeBytes(nil, b))
+		return err
+	})
+}
+
+
+templ UserPlaylistTrackItem(pl *sc.UserPlaylistTrack) {
+	<a class="listing" href={ templ.SafeURL(pl.Href()) }>
+		{{
+			img := pl.Artwork
+			if pl.Kind == "user" {
+				img = pl.Avatar
+			}
+			if img == "" {
+				img = "/_/static/placeholder.jpg"
+			}
+		}}
+		<img loading="lazy" fetchpriority="low" src={ img }/>
+		<div class="meta">
+			if pl.Kind == "user" {
+				<h3>{ pl.Username }</h3>
+				if pl.FullName != "" {
+					<p>{ pl.FullName }</p>
+				}
+			} else {
+				<h3>{ pl.Title }</h3>
+				if pl.Kind == "track" {
+					<span>{ pl.Author.Username }</span>
+				} else {
+					<p>{ strconv.FormatInt(pl.TracksCount(), 10) } tracks</p>
+				}
+			}
+		</div>
+	</a>
+}
+
+templ Search(p *sc.Paginated[*sc.UserPlaylistTrack], prefs cfg.Preferences, content string) {
+	@searchbar(prefs, content, "any")
+	<br>
+	<span>Found { strconv.FormatInt(p.Total, 10) } results</span>
+	<br/>
+	<br/>
+	if len(p.Collection) == 0 && p.Total != 0 {
+		<p>no more results</p>
+	} else {
+		for _, u := range p.Collection {
+			@UserPlaylistTrackItem(u)
+		}
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?type=any&pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/search?"):])) } rel="noreferrer">more results</a>
+		}
+	}
+}
+
+templ searchbar(p cfg.Preferences, content string, typ string) {
+	<form action="/search">
+		<div style="position:relative">
+			<div style="display:flex;gap:.5rem">
+				<input id="q" name="q" type="text" autocomplete="off" autofill="off" value={content} style="padding:.5rem.6rem;flex-grow:1"/>
+				@sel("type", []option{
+					{"any", "Anything", false},
+					{"tracks", "Tracks", false},
+					{"users", "Users", false},
+					{"playlists", "Playlists", false},
+				}, typ)
+			</div>
+			if *p.SearchSuggestions {
+				<ul id="search-suggestions" style="display:none"></ul>
+				<script async src="/_/static/index.js"></script>
+			}
+		</div>
+		<input type="submit" value="Search" class="btn" style="width:100%;margin-top:.5rem"/>
+	</form>
 }

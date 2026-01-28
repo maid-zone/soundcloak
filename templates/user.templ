@@ -12,7 +12,7 @@ templ UserHeader(u sc.User) {
 	<meta name="og:title" content={ u.FormatUsername() }/>
 	<meta name="og:description" content={ u.FormatDescription() }/>
 	<meta name="og:image" content={ u.Avatar }/>
-	<link rel="icon" type="image/x-icon" href={ u.Avatar }/>
+	<link rel="icon" href={ u.Avatar }/>
 }
 
 templ UserItem(user *sc.User) {
@@ -127,8 +127,8 @@ templ User(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Track]) {
 				@TrackItem(track, false, "")
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(u.Tracks) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/tracks"):])) } rel="noreferrer">more tracks</a>
+		if p.NextHref != "" && len(p.Collection) != int(u.Tracks) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/tracks?"):])) } rel="noreferrer">more tracks</a>
 		}
 	} else {
 		<span>no more tracks</span>
@@ -145,8 +145,8 @@ templ UserPlaylists(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playli
 				@PlaylistItem(playlist, false)
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/playlists_without_albums"):])) } rel="noreferrer">more playlists</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/playlists_without_albums?"):])) } rel="noreferrer">more playlists</a>
 		}
 	} else {
 		<span>no more playlists</span>
@@ -163,8 +163,8 @@ templ UserAlbums(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Playlist]
 				@PlaylistItem(playlist, false)
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/albums"):])) } rel="noreferrer">more albums</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/albums?"):])) } rel="noreferrer">more albums</a>
 		}
 	} else {
 		<span>no more albums</span>
@@ -185,8 +185,8 @@ templ UserReposts(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Repost])
 				}
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/stream/users/")+len(u.ID)+len("/reposts"):])) } rel="noreferrer">more reposts</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/stream/users/")+len(u.ID)+len("/reposts?"):])) } rel="noreferrer">more reposts</a>
 		}
 	} else {
 		<span>no more reposts</span>
@@ -207,8 +207,8 @@ templ UserLikes(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.Like]) {
 				}
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/likes"):])) } rel="noreferrer">more likes</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/likes?"):])) } rel="noreferrer">more likes</a>
 		}
 	} else {
 		<span>no more likes</span>
@@ -255,8 +255,8 @@ templ UserFollowers(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User])
 				@UserItem(user)
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/followers"):])) } rel="noreferrer">more users</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/followers?"):])) } rel="noreferrer">more users</a>
 		}
 	} else {
 		<span>no more users</span>
@@ -273,15 +273,17 @@ templ UserFollowing(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User])
 				@UserItem(user)
 			}
 		</div>
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.Next[sc.H+len("/users/")+len(u.ID)+len("/followings"):])) } rel="noreferrer">more users</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/users/")+len(u.ID)+len("/followings?"):])) } rel="noreferrer">more users</a>
 		}
 	} else {
 		<span>no more users</span>
 	}
 }
 
-templ SearchUsers(p *sc.Paginated[*sc.User]) {
+templ SearchUsers(p *sc.Paginated[*sc.User], prefs cfg.Preferences, content string) {
+	@searchbar(prefs,content, "users")
+	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } users</span>
 	<br/>
 	<br/>
@@ -293,8 +295,8 @@ templ SearchUsers(p *sc.Paginated[*sc.User]) {
 		for _, user := range p.Collection {
 			@UserItem(user)
 		}
-		if p.Next != "" && len(p.Collection) != int(p.Total) {
-			<a class="btn" href={ templ.SafeURL("?type=users&pagination=" + url.QueryEscape(p.Next[sc.H+len("/search/users"):])) } rel="noreferrer">more users</a>
+		if p.NextHref != "" && len(p.Collection) != int(p.Total) {
+			<a class="btn" href={ templ.SafeURL("?type=users&pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/search/users?"):])) } rel="noreferrer">more users</a>
 		}
 	}
 }
