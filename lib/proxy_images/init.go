@@ -9,7 +9,6 @@ import (
 )
 
 var al_httpc *fasthttp.HostClient
-var streaming_httpc *fasthttp.HostClient
 
 func Load(r *fiber.App) {
 
@@ -19,15 +18,6 @@ func Load(r *fiber.App) {
 		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 		StreamResponseBody:  true,
 		MaxResponseBodySize: 1,
-	}
-
-	streaming_httpc = &fasthttp.HostClient{
-		Addr:                cfg.ImageCDN + ":443",
-		IsTLS:               true,
-		MaxIdleConnDuration: cfg.MaxIdleConnDuration,
-		StreamResponseBody:  true,
-		MaxResponseBodySize: 1,
-		DialDualStack:       cfg.DialDualStack,
 	}
 
 	r.Get("/_/proxy/images", func(c fiber.Ctx) error {
@@ -52,7 +42,7 @@ func Load(r *fiber.App) {
 		var cl *fasthttp.HostClient
 		if parsed.Host()[0] == 'i' {
 			parsed.SetHost(cfg.ImageCDN)
-			cl = streaming_httpc
+			cl = misc.ImageStreamingOnlyClient
 		} else if string(parsed.Host()[:2]) == "al" {
 			cl = al_httpc
 		}

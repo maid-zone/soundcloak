@@ -692,7 +692,6 @@ Disallow: /`)
 				cfg.AudioOpus: true,
 				cfg.AudioMP3:  true,
 			}
-			fmt.Println(t.Media.Transcodings)
 			for _, tr := range t.Media.Transcodings {
 				switch tr.Format.Protocol {
 				case sc.ProtocolHLS:

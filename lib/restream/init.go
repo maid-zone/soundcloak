@@ -399,7 +399,7 @@ func Load(r *fiber.App) {
 				if t.Artwork != "" {
 					r.req.SetRequestURI(t.Artwork)
 
-					err := sc.DoWithRetry(image_httpc, r.req, r.resp)
+					err := sc.DoWithRetry(misc.ImageStreamingOnlyClient, r.req, r.resp)
 					if err == nil && r.resp.StatusCode() == 200 {
 						parsed, _, err := image.Decode(r.resp.BodyStream())
 						r.resp.CloseBodyStream()
