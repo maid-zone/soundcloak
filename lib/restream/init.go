@@ -165,49 +165,64 @@ func Load(r *fiber.App) {
 					return err
 				}
 
-				r.req.SetRequestURIBytes(r.parts[0])
-				err = sc.DoWithRetry(r.client, r.req, r.resp)
-				if err != nil {
-					return err
-				}
-
-				r.index++
-				res := r.resp.Body()
-				// purpose is to inject OpusTags metadata into ogg files
-				const until_hdr = len("OggS") + 1 /* ver */ + 0
-				const until_seq = until_hdr + 1 /* hdr */ + 8 /* granule */ + 4 /* bitstream */ + 0
-				const until_checksum = until_seq + 4 /* seq */ + 0
-				const until_segments = until_checksum + 4 /* checksum */ + 1 /* segments num */ + 0
-
-				// this expects first page to only have 1 segment
-				second_page := until_segments + 1 + int(res[until_segments])
-
-				r.leftover = append(r.leftover, res[:second_page]...)
-
+				// insane tech im crine brah
 				const opustags_prelude = "OpusTags\x04\x00\x00\x00maid" // "OpusTags", uint32 for length, then <length> bytes for vendor string
 				const artist = "ARTIST="
 				const title = "TITLE="
 				const genre = "GENRE="
+				// METADATA_BLOCK_PICTURE comes from the FLAC format (https://www.rfc-editor.org/rfc/rfc9639.html#section-8.8), but base64 encoded
+				const picture = "METADATA_BLOCK_PICTURE="
 				// we need to put actual content somewhere else to segment it properly
-				var leftover []byte
-				{
-					ln := len(opustags_prelude) + // opustags hdr
-						4 + // number of fields
-						4 + len(artist) + len(t.Author.Username) + // ARTIST=...
-						4 + len(title) + len(t.Title) // TITLE=...
 
-					if t.Genre != "" {
-						ln += 4 + len(genre) + len(t.Genre)
-					}
-					leftover = make([]byte, 0, ln)
+				var num byte = 2
+				ln := len(opustags_prelude) + // opustags hdr
+					4 + // number of fields
+					4 + len(artist) + len(t.Author.Username) + // ARTIST=...
+					4 + len(title) + len(t.Title) // TITLE=...
+
+				if t.Genre != "" {
+					ln += 4 + len(genre) + len(t.Genre) // GENRE=...
+					num++
 				}
+
+				var pic []byte
+				var newLen int
+				if t.Artwork != "" {
+					r.req.SetRequestURI(t.Artwork)
+
+					err := sc.DoWithRetry(image_httpc, r.req, r.resp)
+					if err == nil && r.resp.StatusCode() == 200 {
+						const emptyshits2 = "\x00\x00\x00\x00" + // desc length
+							"\x00\x00\x00\x00" + // width
+							"\x00\x00\x00\x00" + // height
+							"\x00\x00\x00\x00" + // color depth
+							"\x00\x00\x00\x00" // indexed color count
+						pic = make([]byte, 0, 4+ // picture type
+							4+ // mime len
+							len(r.resp.Header.ContentType())+ // mime
+							len(emptyshits2)+ // blah blah look above
+							4+ // body len
+							len(r.resp.Body()))
+						pic = append(pic, 0, 0, 0, 3) // picture type (3, Front cover)
+						pic = binary.BigEndian.AppendUint32(pic, uint32(len(r.resp.Header.ContentType())))
+						pic = append(pic, r.resp.Header.ContentType()...)
+						pic = pic[:len(pic)+len(emptyshits2)]
+						pic = binary.BigEndian.AppendUint32(pic, uint32(len(r.resp.Body())))
+						pic = append(pic, r.resp.Body()...)
+
+						newLen = base64.StdEncoding.EncodedLen(len(pic))
+						ln += 4 + len(picture) + newLen // METADATA_BLOCK_PICTURE=...
+						num++
+					}
+				}
+
+				leftover := make([]byte, 0, ln)
+				misc.Log("alloc leftover", ln)
 
 				// here come the metadata
 				leftover = append(leftover, opustags_prelude...)
 				// number of fields
-				const default_num = 2
-				num := uint32(default_num)
-				leftover = append(leftover, default_num, 0, 0, 0)
+				leftover = append(leftover, num, 0, 0, 0)
 				// each field in the format of SOME_KEY=SOME_VALUE
 				// same approach here, first the field length, then the field itself
 				leftover = binary.LittleEndian.AppendUint32(leftover, uint32(len(artist)+len(t.Author.Username)))
@@ -221,71 +236,52 @@ func Load(r *fiber.App) {
 					leftover = binary.LittleEndian.AppendUint32(leftover, uint32(len(genre)+len(t.Genre)))
 					leftover = append(leftover, genre...)
 					leftover = append(leftover, t.Genre...)
-					num++
 				}
 
-				if t.Artwork != "" {
-					r.req.SetRequestURI(t.Artwork)
+				if pic != nil {
+					leftover = binary.LittleEndian.AppendUint32(leftover, uint32(len(picture)+newLen))
+					leftover = append(leftover, picture...)
+					base64.StdEncoding.Encode(leftover[len(leftover):len(leftover)+newLen], pic)
+					leftover = leftover[:len(leftover)+newLen]
+				}
+				misc.Log("ended leftover", cap(leftover))
 
-					err := sc.DoWithRetry(image_httpc, r.req, r.resp)
-					if err == nil && r.resp.StatusCode() == 200 {
-						// METADATA_BLOCK_PICTURE comes from the FLAC format (https://www.rfc-editor.org/rfc/rfc9639.html#section-8.8), but base64 encoded
-						const picture = "METADATA_BLOCK_PICTURE="
-
-						const emptyshits2 = "\x00\x00\x00\x00" + // desc length
-							"\x00\x00\x00\x00" + // width
-							"\x00\x00\x00\x00" + // height
-							"\x00\x00\x00\x00" + // color depth
-							"\x00\x00\x00\x00" // indexed color count
-						pic := make([]byte, 0, 4+ // picture type
-							4+ // mime len
-							len(r.resp.Header.ContentType())+ // mime
-							len(emptyshits2)+ // blah blah look above
-							4+ // body len
-							len(r.resp.Body()))
-						pic = append(pic, 0, 0, 0, 3) // picture type (3, Front cover)
-						pic = binary.BigEndian.AppendUint32(pic, uint32(len(r.resp.Header.ContentType())))
-						pic = append(pic, r.resp.Header.ContentType()...)
-						pic = pic[:len(pic)+len(emptyshits2)]
-						pic = binary.BigEndian.AppendUint32(pic, uint32(len(r.resp.Body())))
-						pic = append(pic, r.resp.Body()...)
-
-						newLen := base64.StdEncoding.EncodedLen(len(pic))
-						// alloc for the picture
-						if n := 4 + len(picture) + newLen - (cap(leftover) - len(leftover)); n > 0 {
-							leftover = append(leftover[:cap(leftover)], make([]byte, n)...)[:len(leftover)]
-						}
-						leftover = binary.LittleEndian.AppendUint32(leftover, uint32(len(picture)+newLen))
-						leftover = append(leftover, picture...)
-						base64.StdEncoding.Encode(leftover[len(leftover):len(leftover)+newLen], pic)
-						leftover = leftover[:len(leftover)+newLen]
-						num++
-					}
+				// now its safe to fuck shit up
+				r.req.SetRequestURIBytes(r.parts[0])
+				err = sc.DoWithRetry(r.client, r.req, r.resp)
+				if err != nil {
+					return err
 				}
 
-				if num != default_num {
-					binary.LittleEndian.PutUint32(leftover[len(opustags_prelude):], num)
-				}
+				r.index++
+				res := r.resp.Body()
+				const until_hdr = len("OggS") + 1 /* ver */ + 0
+				const until_seq = until_hdr + 1 /* hdr */ + 8 /* granule */ + 4 /* bitstream */ + 0
+				const until_checksum = until_seq + 4 /* seq */ + 0
+				const until_segments = until_checksum + 4 /* checksum */ + 1 /* segments num */ + 0
 
+				// this expects first page to only have 1 segment
+				second_page := until_segments + 1 + int(res[until_segments])
+
+				const (
+					Continuation byte = 0x01
+					BOS          byte = 0x02
+					EOS          byte = 0x04
+				)
 				const max_possible_page = 255 * 255     // 255 segments, each can have 255 bytes
 				if len(leftover) <= max_possible_page { // happy path :) it all fits in one page
-					// allocate hdr
-					if n := until_segments - (cap(r.leftover) - len(r.leftover)); n > 0 {
-						r.leftover = append(r.leftover[:cap(r.leftover)], make([]byte, n)...)[:len(r.leftover)]
-					}
-
-					ptr := len(r.leftover)
+					// lets segment it using ceil division
+					segments_num := (len(leftover) + 254) / 255
+					// allocate
+					r.leftover = make([]byte, second_page, second_page+until_segments+segments_num+len(leftover)+len(res)-(second_page+until_segments+int(res[second_page+until_segments])))
+					misc.Log("alloc r.leftover", cap(r.leftover))
+					copy(r.leftover, res[:second_page])
 					r.leftover = append(r.leftover, res[second_page:second_page+until_checksum]...)
 					r.leftover = append(r.leftover, 0, 0, 0, 0) // checksum, to be filled in
 
-					// lets segment it using ceil division
-					segments_num := (len(leftover) + 254) / 255
 					r.leftover = append(r.leftover, byte(segments_num))
-					// grow the slice before we add allat
-					if n := segments_num - (cap(r.leftover) - len(r.leftover)); n > 0 {
-						r.leftover = append(r.leftover[:cap(r.leftover)], make([]byte, n)...)[:len(r.leftover)+segments_num]
-					}
 
+					r.leftover = r.leftover[:len(r.leftover)+segments_num]
 					for i := range segments_num - 1 {
 						r.leftover[len(r.leftover)-i-2] = 255
 					}
@@ -300,34 +296,28 @@ func Load(r *fiber.App) {
 
 					// checksum is calculated for entire page including header
 					var crc uint32
-					for _, b := range r.leftover[ptr:] {
+					for _, b := range r.leftover[second_page:] {
 						crc = (crc << 8) ^ crcTable[(crc>>24)^uint32(b)]
 					}
 
-					binary.LittleEndian.PutUint32(r.leftover[ptr+until_checksum:], crc)
+					binary.LittleEndian.PutUint32(r.leftover[second_page+until_checksum:], crc)
 				} else { // sad path :(
 					pages_num := (len(leftover) + max_possible_page - 1) / max_possible_page
 
 					// allocate exactly as much as we need
-					if n :=
-						pages_num*until_segments + // headers
-							((len(leftover) + 254) / 255) + // needed segments
-							len(leftover) - // data itself
-
-							(cap(r.leftover) - len(r.leftover)); n > 0 {
-						r.leftover = append(r.leftover[:cap(r.leftover)], make([]byte, n)...)[:len(r.leftover)]
-					}
+					r.leftover = make([]byte, second_page,
+						second_page+pages_num*until_segments+ // headers
+							((len(leftover)+254)/255)+ // needed segments
+							len(leftover)+ // contents
+							len(res)-(second_page+until_segments+int(res[second_page+until_segments])), // the rest
+					)
+					copy(r.leftover, res[:second_page])
 					for i := range pages_num {
 						ptr := len(r.leftover)
 						r.leftover = append(r.leftover, res[second_page:second_page+until_checksum]...)
 						binary.LittleEndian.PutUint32(r.leftover[ptr+until_seq:], uint32(i))
 						r.leftover = append(r.leftover, 0, 0, 0, 0) // checksum, to be filled in
 
-						const (
-							Continuation byte = 0x01
-							BOS          byte = 0x02
-							EOS          byte = 0x04
-						)
 						var segments_num int
 						var sl []byte
 						if i+1 == pages_num {
@@ -368,7 +358,8 @@ func Load(r *fiber.App) {
 					}
 				}
 				// dump the rest after original 2nd page
-				r.leftover = append(r.leftover, res[second_page+until_segments+int(res[second_page+until_segments])])
+				r.leftover = append(r.leftover, res[second_page+until_segments+int(res[second_page+until_segments]):]...)
+				misc.Log("ended r.leftover", cap(r.leftover))
 				return c.SendStream(r)
 			case cfg.AudioAAC:
 				r := acquireReader()
