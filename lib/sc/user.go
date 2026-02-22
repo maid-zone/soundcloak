@@ -71,7 +71,7 @@ func (r Repost) Fix(prefs cfg.Preferences) {
 		return
 	case PlaylistRepost:
 		if r.Playlist != nil {
-			r.Playlist.Fix("", false, false) // err always nil if cached == false
+			r.Playlist.Fix(false, false) // err always nil if cached == false
 			r.Playlist.Postfix(prefs, false, false)
 		}
 		return
@@ -89,11 +89,11 @@ func (l Like) Fix(prefs cfg.Preferences) {
 		l.Track.Fix(false, false)
 		l.Track.Postfix(prefs, false)
 	} else if l.Playlist != nil {
-		l.Playlist.Fix("", false, false)
+		l.Playlist.Fix(false, false)
 		l.Playlist.Postfix(prefs, false, false)
 	}
 }
-func GetUser(cid string, permalink string) (User, error) {
+func GetUser(permalink string) (User, error) {
 	usersCacheLock.RLock()
 	if cell, ok := UsersCache[permalink]; ok {
 		usersCacheLock.RUnlock()
@@ -103,15 +103,7 @@ func GetUser(cid string, permalink string) (User, error) {
 	usersCacheLock.RUnlock()
 
 	var u User
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return u, err
-		}
-	}
-
-	err = Resolve(cid, permalink, &u)
+	err := Resolve(permalink, &u)
 	if err != nil {
 		return u, err
 	}
@@ -122,7 +114,7 @@ func GetUser(cid string, permalink string) (User, error) {
 	}
 
 	if cfg.GetWebProfiles {
-		err = u.GetWebProfiles(cid)
+		err = u.GetWebProfiles()
 		if err != nil {
 			return u, err
 		}
@@ -136,12 +128,12 @@ func GetUser(cid string, permalink string) (User, error) {
 	return u, err
 }
 
-func SearchUsers(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*User], error) {
+func SearchUsers(prefs cfg.Preferences, args []byte) (*Paginated[*User], error) {
 	uri := baseUri()
 	uri.SetPath("/search/users")
 	uri.SetQueryStringBytes(args)
 	p := Paginated[*User]{Next: uri}
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -161,10 +153,10 @@ func (u User) baseUri(subpath, args string) *fasthttp.URI {
 	return uri
 }
 
-func (u User) GetTracks(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{Next: u.baseUri("tracks", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -238,45 +230,45 @@ func (u *User) Postfix(prefs cfg.Preferences) {
 	}
 }
 
-func (u User) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{Next: u.baseUri("playlists_without_albums", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix("", false, false)
+		pl.Fix(false, false)
 		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u User) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (u User) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{Next: u.baseUri("albums", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pl := range p.Collection {
-		pl.Fix("", false, false)
+		pl.Fix(false, false)
 		pl.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
+func (u User) GetReposts(prefs cfg.Preferences, args string) (*Paginated[*Repost], error) {
 	uri := baseUri()
 	uri.SetPath("/stream/users/" + string(u.ID) + "/reposts")
 	uri.SetQueryString(args)
 	p := Paginated[*Repost]{Next: uri}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -288,10 +280,10 @@ func (u User) GetReposts(cid string, prefs cfg.Preferences, args string) (*Pagin
 	return &p, nil
 }
 
-func (u User) GetLikes(cid string, prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
+func (u User) GetLikes(prefs cfg.Preferences, args string) (*Paginated[*Like], error) {
 	p := Paginated[*Like]{Next: u.baseUri("likes", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -303,26 +295,20 @@ func (u User) GetLikes(cid string, prefs cfg.Preferences, args string) (*Paginat
 	return &p, nil
 }
 
-func (u *User) GetWebProfiles(cid string) error {
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return err
-		}
-	}
-
+func (u *User) GetWebProfiles() error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://" + api + "/users/soundcloud:users:" + string(u.ID) + "/web-profiles?client_id=" + cid)
+	baseUriReq(req)
+	req.URI().SetPath("/users/soundcloud:users:" + string(u.ID) + "/web-profiles")
+	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return err
 	}
@@ -339,7 +325,7 @@ func (u *User) GetWebProfiles(cid string) error {
 	return json.Unmarshal(data, &u.WebProfiles)
 }
 
-func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
+func (u User) GetRelated(prefs cfg.Preferences) ([]*User, error) {
 	uri := baseUri()
 	uri.SetPath("/users/" + string(u.ID) + "/relatedartists")
 	uri.QueryArgs().Set("page_size", "20")
@@ -347,7 +333,7 @@ func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 		Next: uri,
 	}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -360,13 +346,13 @@ func (u User) GetRelated(cid string, prefs cfg.Preferences) ([]*User, error) {
 	return p.Collection, nil
 }
 
-func (u User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) {
+func (u User) GetTopTracks(prefs cfg.Preferences) ([]*Track, error) {
 	uri := baseUri()
 	uri.SetPath("/users/" + string(u.ID) + "/toptracks")
 	uri.QueryArgs().Set("limit", "10")
 	p := Paginated[*Track]{Next: uri}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -379,10 +365,10 @@ func (u User) GetTopTracks(cid string, prefs cfg.Preferences) ([]*Track, error) 
 	return p.Collection, nil
 }
 
-func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+func (u User) GetFollowers(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{Next: u.baseUri("followers", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -395,10 +381,10 @@ func (u User) GetFollowers(cid string, prefs cfg.Preferences, args string) (*Pag
 	return &p, nil
 }
 
-func (u User) GetFollowing(cid string, prefs cfg.Preferences, args string) (*Paginated[*User], error) {
+func (u User) GetFollowing(prefs cfg.Preferences, args string) (*Paginated[*User], error) {
 	p := Paginated[*User]{Next: u.baseUri("followings", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -421,8 +407,8 @@ func t(s string) string {
 }
 
 // TODO: maybe add option for caching generated feeds? could benefit when many people follow same artists
-func (u *User) GenerateFeed(ctx context.Context, cid string, prefs cfg.Preferences, base string) ([]byte, error) {
-	tracks, err := u.GetTracks(cid, prefs, "limit=20")
+func (u *User) GenerateFeed(ctx context.Context, prefs cfg.Preferences, base string) ([]byte, error) {
+	tracks, err := u.GetTracks(prefs, "limit=20")
 	if err != nil {
 		return nil, err
 	}

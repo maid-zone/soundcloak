@@ -33,7 +33,7 @@ type Playlist struct {
 	Album         bool    `json:"is_album"`
 }
 
-func GetPlaylist(cid string, permalink string) (Playlist, error) {
+func GetPlaylist(permalink string) (Playlist, error) {
 	playlistsCacheLock.RLock()
 	if cell, ok := PlaylistsCache[permalink]; ok {
 		playlistsCacheLock.RUnlock()
@@ -43,14 +43,8 @@ func GetPlaylist(cid string, permalink string) (Playlist, error) {
 
 	var p Playlist
 	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return p, err
-		}
-	}
 
-	err = Resolve(cid, permalink, &p)
+	err = Resolve(permalink, &p)
 	if err != nil {
 		return p, err
 	}
@@ -59,7 +53,7 @@ func GetPlaylist(cid string, permalink string) (Playlist, error) {
 		return p, ErrKindNotCorrect
 	}
 
-	err = p.Fix(cid, true, true)
+	err = p.Fix(true, true)
 	if err != nil {
 		return p, err
 	}
@@ -71,27 +65,27 @@ func GetPlaylist(cid string, permalink string) (Playlist, error) {
 	return p, nil
 }
 
-func SearchPlaylists(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*Playlist], error) {
+func SearchPlaylists(prefs cfg.Preferences, args []byte) (*Paginated[*Playlist], error) {
 	uri := baseUri()
 	uri.SetPath("/search/playlists")
 	uri.SetQueryStringBytes(args)
 	p := Paginated[*Playlist]{Next: uri}
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, p := range p.Collection {
-		p.Fix("", false, false)
+		p.Fix(false, false)
 		p.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (p *Playlist) Fix(cid string, cached bool, fixAuthor bool) error {
+func (p *Playlist) Fix(cached bool, fixAuthor bool) error {
 	if cached {
-		err := p.GetMissingTracks(cid)
+		err := p.GetMissingTracks()
 		if err != nil {
 			return err
 		}
@@ -166,28 +160,28 @@ func JoinMissingTracks(missing []MissingTrack) (st string) {
 	return
 }
 
-func GetMissingTracks(cid string, missing []MissingTrack) (res []Track, next []MissingTrack, err error) {
+func GetMissingTracks(missing []MissingTrack) (res []Track, next []MissingTrack, err error) {
 	if len(missing) > 50 {
 		next = missing[50:]
 		missing = missing[:50]
 	}
 
-	res, err = GetTracks(cid, JoinMissingTracks(missing))
+	res, err = GetTracks(JoinMissingTracks(missing))
 	return
 }
 
-func GetNextMissingTracks(cid string, raw string) (res []Track, next []string, err error) {
+func GetNextMissingTracks(raw string) (res []Track, next []string, err error) {
 	missing := strings.Split(raw, ",")
 	if len(missing) > 50 {
 		next = missing[50:]
 		missing = missing[:50]
 	}
 
-	res, err = GetTracks(cid, strings.Join(missing, ","))
+	res, err = GetTracks(strings.Join(missing, ","))
 	return
 }
 
-func (p *Playlist) GetMissingTracks(cid string) error {
+func (p *Playlist) GetMissingTracks() error {
 	missing := []MissingTrack{}
 	for i, track := range p.Tracks {
 		if track.Title == "" {
@@ -199,7 +193,7 @@ func (p *Playlist) GetMissingTracks(cid string) error {
 		return nil
 	}
 
-	res, next, err := GetMissingTracks(cid, missing)
+	res, next, err := GetMissingTracks(missing)
 	if err != nil {
 		return err
 	}

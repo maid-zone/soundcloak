@@ -51,12 +51,7 @@ func Load(r *fiber.App) {
 		p.ProxyImages = &cfg.False
 		p.ProxyStreams = &cfg.False
 
-		cid, err := sc.GetClientID()
-		if err != nil {
-			return err
-		}
-
-		t, err := sc.GetTrack(cid, c.Params("author")+"/"+c.Params("track"))
+		t, err := sc.GetTrack(c.Params("author") + "/" + c.Params("track"))
 		if err != nil {
 			return err
 		}
@@ -92,7 +87,7 @@ func Load(r *fiber.App) {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(cid, p, t.Authorization)
+		u, err := tr.GetStream(p, t.Authorization)
 		if err != nil {
 			return err
 		}

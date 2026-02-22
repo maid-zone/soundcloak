@@ -12,14 +12,14 @@ type Selection struct {
 	Items Paginated[*UserPlaylistTrack] `json:"items"` // ?? why
 }
 
-func GetSelections(cid string, prefs cfg.Preferences) (*Paginated[*Selection], error) {
+func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
 	uri := baseUri()
 	uri.SetPath("/mixed-selections")
 	uri.QueryArgs().Set("limit", "20")
 
 	// There is no pagination
 	p := Paginated[*Selection]{Next: uri}
-	err := p.Proceed(cid, false)
+	err := p.Proceed(false)
 	if err != nil {
 		return nil, err
 	}

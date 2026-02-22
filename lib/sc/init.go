@@ -45,13 +45,8 @@ func scrub(err error) error {
 	return err
 }
 
-type clientIdCache struct {
-	NextCheck time.Time
-	ClientID  string
-	Version   string
-}
-
-var ClientIDCache clientIdCache
+var ClientID string
+var Version string
 
 const api = "api-v2.soundcloud.com"
 
@@ -175,17 +170,8 @@ func processFile(wg *sync.WaitGroup, ch chan string, uri []byte, isDone *bool) {
 	misc.Log("not found in", string(uri))
 }
 
-// now faster and more error-prone (?)
-func GetClientID() (string, error) {
-	if cfg.ClientID != "" {
-		return cfg.ClientID, nil
-	}
-
-	if ClientIDCache.NextCheck.After(time.Now()) {
-		misc.Log("clientidcache hit @ 1")
-		return ClientIDCache.ClientID, nil
-	}
-
+// dont use
+func GetClientID() error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
@@ -199,7 +185,7 @@ func GetClientID() (string, error) {
 
 	err := DoWithRetryAll(genericClient, req, resp)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	data, err := resp.BodyUncompressed()
@@ -213,10 +199,9 @@ func GetClientID() (string, error) {
 		if ver == "" && len(l) > len(sc_version)+len(`"</script>`) && string(l[:len(sc_version)]) == sc_version {
 			ver = cfg.B2s(l[len(sc_version) : len(l)-len(`"</script>`)])
 			misc.Log("found ver:", ver)
-			if ClientIDCache.Version != "" && ver == ClientIDCache.Version {
+			if Version != "" && ver == Version {
 				misc.Log("clientidcache hit @ ver")
-				ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-				return ClientIDCache.ClientID, nil
+				return nil
 			}
 		} else if len(l) > len(sc_hydration)+len(`;</script>`) && string(l[:len(sc_hydration)]) == sc_hydration {
 			hydration = l[len(sc_hydration) : len(l)-len(`;</script>`)]
@@ -226,7 +211,7 @@ func GetClientID() (string, error) {
 	}
 
 	if ver == "" {
-		return "", ErrVersionNotFound
+		return ErrVersionNotFound
 	}
 
 	// inspired a bit by 4get
@@ -236,11 +221,10 @@ func GetClientID() (string, error) {
 			g := m.GroupByNumber(1)
 			if g != nil {
 				misc.Log("found using sc_hydration")
-				ClientIDCache.ClientID = g.String()
-				ClientIDCache.Version = ver
-				ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-				misc.Log(ClientIDCache)
-				return ClientIDCache.ClientID, nil
+				ClientID = g.String()
+				Version = ver
+				misc.Log(ClientID, Version)
+				return nil
 			}
 		}
 	}
@@ -258,11 +242,11 @@ func GetClientID() (string, error) {
 	}
 
 	if ver == "" {
-		return "", ErrVersionNotFound
+		return ErrVersionNotFound
 	}
 
 	if len(scriptUrls) == 0 {
-		return "", ErrScriptNotFound
+		return ErrScriptNotFound
 	}
 
 	for _, s := range scriptUrls {
@@ -290,13 +274,12 @@ func GetClientID() (string, error) {
 	if res == "" {
 		err = ErrIDNotFound
 	} else {
-		ClientIDCache.ClientID = res
-		ClientIDCache.Version = ver
-		ClientIDCache.NextCheck = time.Now().Add(cfg.ClientIDTTL)
-		misc.Log(ClientIDCache)
+		ClientID = res
+		Version = ver
+		misc.Log(ClientID, Version)
 	}
 
-	return res, err
+	return err
 }
 
 // Just retry any kind of errors, why not
@@ -340,15 +323,7 @@ func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fastht
 	return
 }
 
-func Resolve(cid string, path string, out any) error {
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return err
-		}
-	}
-
+func Resolve(path string, out any) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
@@ -356,14 +331,14 @@ func Resolve(cid string, path string, out any) error {
 	req.URI().SetHost(api)
 	req.URI().SetPath("/resolve")
 	req.URI().QueryArgs().Set("url", "https://soundcloud.com/"+path)
-	req.URI().QueryArgs().Set("client_id", cid)
+	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return err
 	}
@@ -387,15 +362,7 @@ type Paginated[T any] struct {
 	Total      int64         `json:"total_results"`
 }
 
-func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return err
-		}
-	}
-
+func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
@@ -406,14 +373,14 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 	} else {
 		req.SetRequestURI(p.NextHref)
 	}
-	req.URI().QueryArgs().Set("client_id", cid)
+	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5") // you get captcha without it :)
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return err
 	}
@@ -443,7 +410,7 @@ func (p *Paginated[T]) Proceed(cid string, shouldUnfold bool) error {
 	// another note: in featured tracks it seems to just be forever stuck after 2-3~ pages so i added a way to disable this behaviour
 	if shouldUnfold && len(p.Collection) == 0 && p.NextHref != "" {
 		// this will make sure that we actually proceed to something useful and not emptiness
-		return p.Proceed(cid, true)
+		return p.Proceed(true)
 	}
 
 	return nil
@@ -483,14 +450,14 @@ type SearchSuggestion struct {
 	Query string `json:"query"`
 }
 
-func GetSearchSuggestions(cid string, query string) ([]string, error) {
+func GetSearchSuggestions(query string) ([]string, error) {
 	uri := baseUri()
 	uri.SetPath("/search/queries")
 	uri.QueryArgs().Set("limit", "10")
 	uri.QueryArgs().Set("q", query)
 
 	p := Paginated[SearchSuggestion]{Next: uri}
-	err := p.Proceed(cid, false)
+	err := p.Proceed(false)
 	if err != nil {
 		return nil, err
 	}
@@ -569,12 +536,12 @@ func (p UserPlaylistTrack) TracksCount() int64 {
 	return int64(len(p.Tracks))
 }
 
-func Search(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*UserPlaylistTrack], error) {
+func Search(prefs cfg.Preferences, args []byte) (*Paginated[*UserPlaylistTrack], error) {
 	uri := baseUri()
 	uri.SetPath("/search")
 	uri.SetQueryStringBytes(args)
 	p := Paginated[*UserPlaylistTrack]{Next: uri}
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +553,6 @@ func Search(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*UserPla
 	return &p, nil
 }
 
-// could probably make a generic function, whatever
 func init() {
 	if cfg.SoundcloudApiProxy != "" {
 		d := fasthttpproxy.Dialer{Config: httpproxy.Config{HTTPProxy: cfg.SoundcloudApiProxy, HTTPSProxy: cfg.SoundcloudApiProxy}, DialDualStack: cfg.DialDualStack}
@@ -598,6 +564,31 @@ func init() {
 		genericClient.Dial = dialer
 		httpc.Dial = dialer
 	}
+
+	if cfg.ClientID != "" {
+		ClientID = cfg.ClientID
+	} else {
+		err := GetClientID()
+		if err != nil {
+			log.Println("Failed to get ClientID:", err)
+			log.Println("please report this as  issue")
+			log.Println("For temporary workaround, you can manually extract this token and set in your config: https://git.maid.zone/stuff/soundcloak/src/branch/main/docs/INSTANCE_GUIDE.md#script-version-clientid-not-found")
+			os.Exit(1)
+			return
+		}
+
+		go func() {
+			ticker := time.NewTicker(cfg.ClientIDTTL)
+			for range ticker.C {
+				err := GetClientID()
+				if err != nil {
+					fmt.Println("Got error extracting ClientID, using previously extracted, please report as issue:", err)
+				}
+			}
+		}()
+	}
+
+	// could probably make a generic function, whatever
 	go func() {
 		ticker := time.NewTicker(cfg.UserCacheCleanDelay)
 		for range ticker.C {
@@ -653,4 +644,9 @@ func baseUri() *fasthttp.URI {
 	uri.SetHost(api)
 
 	return uri
+}
+
+func baseUriReq(req *fasthttp.Request) {
+	req.URI().SetScheme("https")
+	req.URI().SetHost(api)
 }

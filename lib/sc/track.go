@@ -147,7 +147,7 @@ func (m Media) SelectCompatibleProgressive() *Transcoding {
 	return nil
 }
 
-func GetTrack(cid string, permalink string) (Track, error) {
+func GetTrack(permalink string) (Track, error) {
 	tracksCacheLock.RLock()
 	if cell, ok := TracksCache[permalink]; ok {
 		tracksCacheLock.RUnlock()
@@ -156,7 +156,7 @@ func GetTrack(cid string, permalink string) (Track, error) {
 	tracksCacheLock.RUnlock()
 
 	var t Track
-	err := Resolve(cid, permalink, &t)
+	err := Resolve(permalink, &t)
 	if err != nil {
 		return t, err
 	}
@@ -182,12 +182,12 @@ func GetTrack(cid string, permalink string) (Track, error) {
 // plain permalink/id:
 // - <user>/<track>
 // - <id>
-func GetArbitraryTrack(cid string, data string) (Track, error) {
+func GetArbitraryTrack(data string) (Track, error) {
 	if len(data) > 8 && (data[:8] == "https://" || data[:7] == "http://") {
 		u, err := url.Parse(data)
 		if err == nil {
 			if (u.Host == "api.soundcloud.com" || u.Host == "api-v2.soundcloud.com") && len(u.Path) > 8 && u.Path[:8] == "/tracks/" {
-				return GetTrackByID(cid, u.Path[8:])
+				return GetTrackByID(u.Path[8:])
 			}
 
 			if u.Host == "soundcloud.com" {
@@ -215,7 +215,7 @@ func GetArbitraryTrack(cid string, data string) (Track, error) {
 					return Track{}, ErrKindNotCorrect
 				}
 
-				return GetTrack(cid, u.Path)
+				return GetTrack(u.Path)
 			}
 		} else {
 			return Track{}, err
@@ -231,7 +231,7 @@ func GetArbitraryTrack(cid string, data string) (Track, error) {
 	}
 
 	if valid {
-		return GetTrackByID(cid, data)
+		return GetTrackByID(data)
 	}
 
 	// this part should be at the end since it manipulates data
@@ -254,19 +254,19 @@ func GetArbitraryTrack(cid string, data string) (Track, error) {
 	}
 
 	if n == 1 {
-		return GetTrack(cid, data)
+		return GetTrack(data)
 	}
 
 	// failed to find a data point
 	return Track{}, ErrKindNotCorrect
 }
 
-func SearchTracks(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*Track], error) {
+func SearchTracks(prefs cfg.Preferences, args []byte) (*Paginated[*Track], error) {
 	uri := baseUri()
 	uri.SetPath("/search/tracks")
 	uri.SetQueryStringBytes(args)
 	p := Paginated[*Track]{Next: uri}
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -279,26 +279,22 @@ func SearchTracks(cid string, prefs cfg.Preferences, args []byte) (*Paginated[*T
 	return &p, nil
 }
 
-func GetTracks(cid string, ids string) ([]Track, error) {
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func GetTracks(ids string) ([]Track, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://" + api + "/tracks?ids=" + ids + "&client_id=" + cid)
+	uri := baseUri()
+	uri.SetPath("/tracks")
+	uri.QueryArgs().Set("ids", ids)
+	uri.QueryArgs().Set("client_id", ClientID)
+	req.SetURI(uri)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return nil, err
 	}
@@ -317,26 +313,20 @@ func GetTracks(cid string, ids string) ([]Track, error) {
 	return res, err
 }
 
-func (tr Transcoding) GetStream(cid string, prefs cfg.Preferences, authorization string) (string, error) {
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return "", err
-		}
-	}
-
+func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (string, error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI(tr.URL + "?client_id=" + cid + "&track_authorization=" + authorization)
+	req.SetRequestURI(tr.URL)
+	req.URI().QueryArgs().Set("client_id", ClientID)
+	req.URI().QueryArgs().Set("track_authorization", authorization)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return "", err
 	}
@@ -419,7 +409,7 @@ func (t Track) FormatDescription() string {
 	return desc
 }
 
-func GetTrackByID(cid string, id string) (Track, error) {
+func GetTrackByID(id string) (Track, error) {
 	tracksCacheLock.RLock()
 	for _, cell := range TracksCache {
 		if string(cell.Value.ID) == string(id) {
@@ -429,26 +419,20 @@ func GetTrackByID(cid string, id string) (Track, error) {
 	}
 	tracksCacheLock.RUnlock()
 
-	var t Track
-	var err error
-	if cid == "" {
-		cid, err = GetClientID()
-		if err != nil {
-			return t, err
-		}
-	}
-
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
-	req.SetRequestURI("https://" + api + "/tracks/" + id + "?client_id=" + cid)
+	baseUriReq(req)
+	req.URI().SetPath("/tracks/" + id)
+	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err = DoWithRetry(httpc, req, resp)
+	var t Track
+	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
 		return t, err
 	}
@@ -480,12 +464,12 @@ func (t Track) Href() string {
 	return "/" + t.Author.Permalink + "/" + t.Permalink
 }
 
-func RecentTracks(cid string, prefs cfg.Preferences, tag, args string) (*Paginated[*Track], error) {
+func RecentTracks(prefs cfg.Preferences, tag, args string) (*Paginated[*Track], error) {
 	uri := baseUri()
 	uri.SetPath("/recent-tracks/" + tag)
 	uri.SetQueryString(args)
 	p := Paginated[*Track]{Next: uri}
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -505,10 +489,10 @@ func (t Track) baseUri(subpath, args string) *fasthttp.URI {
 	return uri
 }
 
-func (t Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
+func (t Track) GetRelated(prefs cfg.Preferences, args string) (*Paginated[*Track], error) {
 	p := Paginated[*Track]{Next: t.baseUri("related", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
@@ -521,42 +505,42 @@ func (t Track) GetRelated(cid string, prefs cfg.Preferences, args string) (*Pagi
 	return &p, nil
 }
 
-func (t Track) GetPlaylists(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (t Track) GetPlaylists(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{Next: t.baseUri("playlists_without_albums", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, p := range p.Collection {
-		p.Fix("", false, false)
+		p.Fix(false, false)
 		p.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (t Track) GetAlbums(cid string, prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
+func (t Track) GetAlbums(prefs cfg.Preferences, args string) (*Paginated[*Playlist], error) {
 	p := Paginated[*Playlist]{Next: t.baseUri("albums", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, p := range p.Collection {
-		p.Fix("", false, false)
+		p.Fix(false, false)
 		p.Postfix(prefs, false, false)
 	}
 
 	return &p, nil
 }
 
-func (t Track) GetComments(cid string, prefs cfg.Preferences, args string) (*Paginated[*Comment], error) {
+func (t Track) GetComments(prefs cfg.Preferences, args string) (*Paginated[*Comment], error) {
 	p := Paginated[*Comment]{Next: t.baseUri("comments", args)}
 
-	err := p.Proceed(cid, true)
+	err := p.Proceed(true)
 	if err != nil {
 		return nil, err
 	}

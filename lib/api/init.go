@@ -24,7 +24,7 @@ func Load(a *fiber.App) {
 
 		switch t {
 		case "tracks":
-			p, err := sc.SearchTracks("", prefs, args)
+			p, err := sc.SearchTracks(prefs, args)
 			if err != nil {
 				log.Printf("[API] error getting tracks for %s: %s\n", cfg.B2s(q), err)
 				return err
@@ -33,7 +33,7 @@ func Load(a *fiber.App) {
 			return c.JSON(p)
 
 		case "users":
-			p, err := sc.SearchUsers("", prefs, args)
+			p, err := sc.SearchUsers(prefs, args)
 			if err != nil {
 				log.Printf("[API] error getting users for %s: %s\n", cfg.B2s(q), err)
 				return err
@@ -42,7 +42,7 @@ func Load(a *fiber.App) {
 			return c.JSON(p)
 
 		case "playlists":
-			p, err := sc.SearchPlaylists("", prefs, args)
+			p, err := sc.SearchPlaylists(prefs, args)
 			if err != nil {
 				log.Printf("[API] error getting playlists for %s: %s\n", cfg.B2s(q), err)
 				return err
@@ -60,7 +60,7 @@ func Load(a *fiber.App) {
 			args = "?limit=20"
 		}
 
-		p, err := (sc.Track{ID: json.Number(c.Params("id"))}).GetRelated("", prefs, args)
+		p, err := (sc.Track{ID: json.Number(c.Params("id"))}).GetRelated(prefs, args)
 		if err != nil {
 			log.Printf("[API] error getting related tracks for %s: %s\n", c.Params("id"), err)
 			return err
@@ -70,7 +70,7 @@ func Load(a *fiber.App) {
 	})
 
 	r.Get("/playlistByPermalink/:author/sets/:playlist", func(c fiber.Ctx) error {
-		p, err := sc.GetPlaylist("", c.Params("author")+"/sets/"+c.Params("playlist"))
+		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
 		if err != nil {
 			log.Printf("[API] error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
 			return err
@@ -80,7 +80,7 @@ func Load(a *fiber.App) {
 	})
 
 	r.Get("/playlistByPermalink/:author/sets/:playlist/tracks", func(c fiber.Ctx) error {
-		p, err := sc.GetPlaylist("", c.Params("author")+"/sets/"+c.Params("playlist"))
+		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
 		if err != nil {
 			log.Printf("[API] error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
 			return err
@@ -95,7 +95,7 @@ func Load(a *fiber.App) {
 	})
 
 	r.Get("/track/:id", func(c fiber.Ctx) error {
-		t, err := sc.GetTrackByID("", c.Params("id"))
+		t, err := sc.GetTrackByID(c.Params("id"))
 		if err != nil {
 			log.Printf("[API] error getting track %s: %s\n", c.Params("id"), err)
 			return err
@@ -106,7 +106,7 @@ func Load(a *fiber.App) {
 
 	r.Get("/tracks", func(c fiber.Ctx) error {
 		ids := cfg.B2s(c.RequestCtx().QueryArgs().Peek("ids"))
-		t, err := sc.GetTracks("", ids)
+		t, err := sc.GetTracks(ids)
 		if err != nil {
 			log.Printf("[API] error getting %s tracks: %s\n", ids, err)
 			return err
@@ -116,7 +116,7 @@ func Load(a *fiber.App) {
 	})
 
 	r.Get("/trackByPermalink/:user/:track", func(c fiber.Ctx) error {
-		t, err := sc.GetTrack("", c.Params("user")+"/"+c.Params("track"))
+		t, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
 			log.Printf("[API] error getting track %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
 			return err

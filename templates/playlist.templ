@@ -79,7 +79,7 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 }
 
 templ SearchPlaylists(p *sc.Paginated[*sc.Playlist], prefs cfg.Preferences, content string) {
-	@searchbar(prefs, content, "playlist")
+	@searchbar(prefs, content, "playlists")
 	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } playlists</span>
 	<br/>
