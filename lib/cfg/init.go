@@ -77,6 +77,9 @@ var SoundcloudApiProxy = ""
 
 var DialDualStack = false
 
+// Spoof TLS fingerprint
+var SpoofTLS = false
+
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
 
@@ -405,6 +408,11 @@ func fromEnv() error {
 		DialDualStack = boolean(env)
 	}
 
+	env = os.Getenv("SPOOF_TLS")
+	if env != "" {
+		SpoofTLS = boolean(env)
+	}
+
 	env = os.Getenv("NETWORK")
 	if env != "" {
 		Network = env
@@ -502,6 +510,7 @@ func init() {
 		EnableAPI               *bool
 		SoundcloudApiProxy      *string
 		DialDualStack           *bool
+		SpoofTLS                *bool
 		Network                 *string
 		Addr                    *string
 		UnixSocketPerms         *string
@@ -577,6 +586,9 @@ func init() {
 	}
 	if config.DialDualStack != nil {
 		DialDualStack = *config.DialDualStack
+	}
+	if config.SpoofTLS != nil {
+		SpoofTLS = *config.SpoofTLS
 	}
 	if config.Network != nil {
 		Network = *config.Network

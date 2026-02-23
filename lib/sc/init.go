@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/url"
 	"os"
 	"strings"
@@ -59,39 +60,17 @@ const sc_hydration = `<script>window.__sc_hydration = `
 const script0 = `<script crossorigin src="https://a-v2.sndcdn.com/assets/0-`
 const script = `<script crossorigin src="https://a-v2.sndcdn.com/assets/`
 
-var tlsConfig = &tls.Config{
-	CipherSuites: []uint16{
-		tls.TLS_AES_128_GCM_SHA256,
-		tls.TLS_CHACHA20_POLY1305_SHA256,
-		tls.TLS_AES_256_GCM_SHA384,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-		tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-		tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-		tls.TLS_RSA_WITH_AES_128_CBC_SHA,
-		tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-	},
-}
-
 var httpc = &fasthttp.HostClient{
 	Addr:                api + ":443",
 	IsTLS:               true,
 	MaxIdleConnDuration: cfg.MaxIdleConnDuration,
 	DialDualStack:       cfg.DialDualStack,
-	TLSConfig:           tlsConfig,
+	//TLSConfig:           tlsConfig,
 }
 
 var genericClient = &fasthttp.Client{
 	DialDualStack: cfg.DialDualStack,
-	TLSConfig:     tlsConfig,
+	//TLSConfig:     tlsConfig,
 }
 
 // var verRegex = regexp2.MustCompile(`^<script>window\.__sc_version="([0-9]{10})"</script>$`, 2)
@@ -563,6 +542,32 @@ func init() {
 
 		genericClient.Dial = dialer
 		httpc.Dial = dialer
+	}
+
+	if cfg.SpoofTLS {
+		var tlsConfig = &tls.Config{
+			CipherSuites: []uint16{
+				tls.TLS_CHACHA20_POLY1305_SHA256,
+				tls.TLS_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+
+				0x0A0A, 0x1A1A, 0x2A2A, 0x3A3A, 0x4A4A, 0x5A5A, 0x6A6A, 0x7A7A, 0x8A8A, 0x9A9A, 0xAAAA, 0xBABA, 0xCACA, 0xDADA, 0xEAEA, 0xFAFA,
+			},
+		}
+
+		rand.Shuffle(len(tlsConfig.CipherSuites), func(i, j int) {
+			tlsConfig.CipherSuites[i], tlsConfig.CipherSuites[j] = tlsConfig.CipherSuites[j], tlsConfig.CipherSuites[i]
+		})
+
+		httpc.TLSConfig = tlsConfig
+		genericClient.TLSConfig = tlsConfig
 	}
 
 	if cfg.ClientID != "" {
