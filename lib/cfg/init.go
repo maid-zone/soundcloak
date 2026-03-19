@@ -78,7 +78,7 @@ var SoundcloudApiProxy = ""
 var DialDualStack = false
 
 // Spoof TLS fingerprint
-var SpoofTLS = false
+var SpoofTLS = true
 
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
