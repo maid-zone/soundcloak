@@ -124,4 +124,14 @@ func Load(a *fiber.App) {
 
 		return c.JSON(t)
 	})
+
+	r.Get("/user/:id/tracks", func(c fiber.Ctx) error {
+		t, err := (sc.User{ID: json.Number(c.Params("id"))}).GetTracks(prefs, c.Query("pagination"))
+		if err != nil {
+			log.Printf("[API] error getting user %s tracks: %s\n", c.Params("id"), err)
+			return err
+		}
+
+		return c.JSON(t)
+	})
 }
