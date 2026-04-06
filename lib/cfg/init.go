@@ -63,8 +63,8 @@ var PlaylistTTL = 20 * time.Minute
 // delay between cleanup of playlist cache
 var PlaylistCacheCleanDelay = PlaylistTTL / 4
 
-// default fasthttp one was causing connections to be stuck? todo make it cycle browser useragents or just choose random at startup
-var UserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0"
+// recommended to keep it Firefox 148 to align with TLS fingerprint i guess
+var UserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
 
 // override the extractor
 var ClientID = ""
