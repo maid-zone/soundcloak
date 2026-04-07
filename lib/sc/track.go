@@ -403,7 +403,7 @@ func (t Track) FormatDescription() string {
 	desc += "\nCreated: " + t.CreatedAt
 	desc += "\nLast modified: " + t.LastModified
 	if len(t.TagList) != 0 {
-		desc += "\nTags: " + strings.Join(TagListParser(t.TagList), ", ")
+		desc += "\nTags: " + TagListParser(t.TagList)
 	}
 
 	return desc

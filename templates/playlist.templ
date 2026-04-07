@@ -5,7 +5,6 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 templ PlaylistHeader(p sc.Playlist) {
@@ -69,11 +68,13 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	}
 	<div>
 		if p.TagList != "" {
-			<p>Tags: { strings.Join(sc.TagListParser(p.TagList), ", ") }</p>
+			<p>Tags: { sc.TagListParser(p.TagList) }</p>
 		}
 		<p>{ strconv.FormatInt(p.Likes, 10) } likes</p>
 		<br/>
-		<p>Created: { p.CreatedAt }</p>
+		if p.CreatedAt != "" {
+			<p>Created: { p.CreatedAt }</p>
+		}
 		<p>Last modified: { p.LastModified }</p>
 	</div>
 }

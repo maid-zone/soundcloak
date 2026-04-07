@@ -139,7 +139,7 @@ func (p Playlist) FormatDescription() string {
 	desc += "\nCreated: " + p.CreatedAt
 	desc += "\nLast modified: " + p.LastModified
 	if len(p.TagList) != 0 {
-		desc += "\nTags: " + strings.Join(TagListParser(p.TagList), ", ")
+		desc += "\nTags: " + TagListParser(p.TagList)
 	}
 
 	return desc

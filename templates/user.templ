@@ -80,7 +80,9 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 		<p>{ strconv.FormatInt(u.Tracks, 10) } tracks</p>
 		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists & albums</p>
 		<br/>
-		<p>Created: { u.CreatedAt }</p>
+		if u.CreatedAt != "" {
+			<p>Created: { u.CreatedAt }</p>
+		}
 		<p>Last modified: { u.LastModified }</p>
 	</div>
 }

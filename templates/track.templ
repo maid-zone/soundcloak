@@ -5,7 +5,6 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 templ TrackButtons(current string, track sc.Track) {
@@ -245,14 +244,16 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
 	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
 	<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
-	<p>Created: { t.CreatedAt }</p>
+	if t.CreatedAt != "" {
+		<p>Created: { t.CreatedAt }</p>
+	}
 	<p>Last modified: { t.LastModified }</p>
 	if t.License != "" {
 		<p>License: { t.License }</p>
 	}
 	<p>Policy: { t.Policy }</p>
 	if t.TagList != "" {
-		<p>Tags: { strings.Join(sc.TagListParser(t.TagList), ", ") }</p>
+		<p>Tags: { sc.TagListParser(t.TagList) }</p>
 	}
 	<h1>Comments</h1>
 	if *prefs.DynamicLoadComments {
