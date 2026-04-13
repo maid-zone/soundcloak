@@ -1,6 +1,6 @@
 # Setup
 ## Prerequisites
-1. [golang](https://go.dev) (I recommend version 1.25.1)
+1. [golang](https://go.dev) (Soundcloak tries to always target the latest, so choose it)
 2. [git](https://git-scm.com)
 
 ## The setup

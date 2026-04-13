@@ -5,9 +5,7 @@ import "git.maid.zone/stuff/soundcloak/lib/cfg"
 
 templ sel_audio2(name string, selected string, f map[string]bool) {
 	@sel(name, []option{
-		{cfg.AudioBest, "Best", f[cfg.AudioBest]},
 		{cfg.AudioAAC, "M4A AAC 160kb/s", f[cfg.AudioAAC]},
-		{cfg.AudioOpus, "OGG Opus 72kb/s", f[cfg.AudioOpus]},
 		{cfg.AudioMP3, "MP3 128kb/s", f[cfg.AudioMP3]},
 	}, selected)
 }

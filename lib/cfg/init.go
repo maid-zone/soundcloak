@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -217,23 +218,46 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.DefaultAutoplayMode = &p
 	}
 
-	p := AudioMP3
 	if loaded.HLSAudio != nil {
-		DefaultPreferences.HLSAudio = loaded.HLSAudio
+		switch *loaded.HLSAudio {
+		case AudioBest:
+			fmt.Println(`"best" audio preset has been deprecated, please change it in your config. Interpreting it as "aac"`)
+			DefaultPreferences.HLSAudio = &AAC
+		default:
+			DefaultPreferences.HLSAudio = loaded.HLSAudio
+		}
 	} else {
-		DefaultPreferences.HLSAudio = &p
+		DefaultPreferences.HLSAudio = &MP3
 	}
 
 	if loaded.RestreamAudio != nil {
-		DefaultPreferences.RestreamAudio = loaded.RestreamAudio
+		switch *loaded.RestreamAudio {
+		case AudioBest:
+			fmt.Println(`"best" audio preset has been deprecated, please change it in your config. Interpreting it as "aac"`)
+			DefaultPreferences.RestreamAudio = &AAC
+		case AudioOpus:
+			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "mpeg"`)
+			DefaultPreferences.RestreamAudio = &MP3
+		default:
+			DefaultPreferences.RestreamAudio = loaded.RestreamAudio
+		}
 	} else {
-		DefaultPreferences.RestreamAudio = &p
+		DefaultPreferences.RestreamAudio = &MP3
 	}
 
 	if loaded.DownloadAudio != nil {
-		DefaultPreferences.DownloadAudio = loaded.DownloadAudio
+		switch *loaded.DownloadAudio {
+		case AudioBest:
+			fmt.Println(`"best" audio preset has been deprecated, please change it in your config. Interpreting it as "aac"`)
+			DefaultPreferences.DownloadAudio = &AAC
+		case AudioOpus:
+			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "mpeg"`)
+			DefaultPreferences.DownloadAudio = &MP3
+		default:
+			DefaultPreferences.DownloadAudio = loaded.RestreamAudio
+		}
 	} else {
-		DefaultPreferences.DownloadAudio = &p
+		DefaultPreferences.DownloadAudio = &MP3
 	}
 
 	if loaded.ShowAudio != nil {

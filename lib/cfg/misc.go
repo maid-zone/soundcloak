@@ -47,13 +47,13 @@ const (
 )
 
 const (
-	// choose best for quality/size (AudioAAC over AudioOpus over AudioMP3)
+	// DEPRECATED choose best for quality/size (AudioAAC over AudioOpus over AudioMP3)
 	AudioBest string = "best"
 
-	// 160kbps m4a AAC audio, rarely available (fallback to AudioMP3 if unavailable)
+	// 160kbps m4a AAC audio, often available (fallback to AudioMP3 if unavailable)
 	AudioAAC string = "aac"
 
-	// 72kbps ogg opus audio, usually available 99% of the time (fallback to AudioMP3 if unavailable)
+	// DEPRECATED THEY REMOVED ALL OPUS ENCODING 72kbps ogg opus audio, usually available 0% of the time (fallback to AudioMP3 if unavailable)
 	AudioOpus string = "opus"
 
 	// 128kbps mp3 audio, always available, good for compatibility
@@ -62,6 +62,7 @@ const (
 
 // for taking ptrs :)
 var MP3 = AudioMP3
+var AAC = AudioAAC
 
 type Preferences struct {
 	Player       *string
@@ -87,11 +88,11 @@ type Preferences struct {
 
 	// Check above for more info
 	// Probably best to keep all at "mpeg" by default for compatibility
-	HLSAudio      *string // Please don't use "opus" or "best". hls.js doesn't work with ogg/opus
-	RestreamAudio *string // You can actually use anything here
-	DownloadAudio *string // "aac" may not play well with some players
+	HLSAudio      *string //
+	RestreamAudio *string // You can actually use anything here and above
+	DownloadAudio *string // "aac" may not play well with some players due to it being in segmented format (maybe i will write something to remux it in the future)
 
-	ShowAudio *bool // display audio (aac, opus, mpeg etc) under track player
+	ShowAudio *bool // display audio (aac/mpeg) under track player
 
 	SearchSuggestions *bool // load search suggestions on main page
 

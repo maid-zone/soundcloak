@@ -98,32 +98,13 @@ type Comment struct {
 	Timestamp int    `json:"timestamp"`
 }
 
-func (m Media) SelectCompatible(mode string, opus bool, restream bool) (*Transcoding, string) {
+func (m Media) SelectCompatible(mode string, restream bool) (*Transcoding, string) {
 	switch mode {
 	case cfg.AudioBest:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
-				return &t, cfg.AudioAAC
-			}
-		}
-
-		if opus {
-			for _, t := range m.Transcodings {
-				if t.Format.Protocol == ProtocolHLS && strings.HasPrefix(t.Preset, "opus_") {
-					return &t, cfg.AudioOpus
-				}
-			}
-		}
 	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
 			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
 				return &t, cfg.AudioAAC
-			}
-		}
-	case cfg.AudioOpus:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS && strings.HasPrefix(t.Preset, "opus_") {
-				return &t, cfg.AudioOpus
 			}
 		}
 	}
@@ -562,8 +543,6 @@ func ToExt(audio string) string {
 	switch audio {
 	case cfg.AudioAAC:
 		return "m4a"
-	case cfg.AudioOpus:
-		return "ogg"
 	case cfg.AudioMP3:
 		return "mp3"
 	}

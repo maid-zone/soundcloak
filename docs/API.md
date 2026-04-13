@@ -64,11 +64,11 @@ Doesn't require API to be enabled
 
 Restream must be enabled in the instance. This endpoint can be used to download or stream tracks. Query parameters are:
 - `metadata`: `true` or `false`. If `true`, soundcloak will inject metadata (author, track cover, track title, etc) into the audio file, but this may take a little bit more time
-- `audio`: `best`, `aac`, `opus`, or `mpeg`. [Read more here](AUDIO_PRESETS.md)
+- `audio`: `aac`, or `mpeg`. [Read more here](AUDIO_PRESETS.md)
 
-Restream converts the HLS playlist to an audio file on the fly serverside, optionally adding metadata. Please note that when `audio` is `opus` and `metadata` is `true`, it's not done on the fly, as metadata injection is a bit tricky there.
+Restream converts the HLS playlist to an audio file on the fly serverside, optionally adding metadata.
 
-For example: `/_/restream/lucybedroque/speakers?metadata=true&audio=opus` to get the `opus` audio with `metadata` for song `speakers` by author `lucybedroque`
+For example: `/_/restream/lucybedroque/speakers?metadata=true&audio=aac` to get the `aac` audio with `metadata` for song `speakers` by author `lucybedroque`
 
 ## GET `/_/searchSuggestions`
 

@@ -2,7 +2,7 @@
 
 | Name                             | Key                 | Default                                                                | Possible values               | Description                                                                                                                                                                                                              |
 | :--------------------------------- | --------------------- | ------------------------------------------------------------------------ | ------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Download audio                       | DownloadAudio              | "mpeg"                                                                 | "mpeg", "opus", "aac", "best" | What [audio preset](AUDIO_PRESETS.md) should be loaded when downloading audio with metadata. Restream must be enabled on the backend                                                                                      |
+| Download audio                       | DownloadAudio              | "mpeg"                                                                 | "mpeg", "aac" | What [audio preset](AUDIO_PRESETS.md) should be loaded when downloading audio with metadata. Restream must be enabled on the backend                                                                                      |
 
 # Player preferences
 
@@ -23,7 +23,7 @@
 
 | Name            | Key           | Default | Possible values               | Description                                                                |
 | :---------------- | --------------- | --------- | ------------------------------- | :--------------------------------------------------------------------------- |
-| Streaming audio | RestreamAudio | "mpeg"  | "mpeg", "opus", "aac", "best" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
+| Streaming audio | RestreamAudio | "mpeg"  | "mpeg", "aac" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
 
 
 # Frontend enhancements

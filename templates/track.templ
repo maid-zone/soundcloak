@@ -73,9 +73,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		{{ return }}
 	}
 	if displayErr == "" {
-		{{ var audioPref *string }}
 		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
-			{{ audioPref = prefs.RestreamAudio }}
 			<audio 
 				id="track" 
 				src={ "/_/restream" + track.Href() } 
@@ -93,7 +91,6 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				<script async src="/_/static/keepfocus.js"></script>
 			}
 		} else if *prefs.Player == cfg.RestreamPlayer || *prefs.Player == cfg.ProgressivePlayer { 
-			{{ audioPref = &cfg.MP3 }}
 			<audio 
 				id="track" 
 				src={ stream } 
@@ -111,7 +108,6 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				<script async src="/_/static/keepfocus.js"></script>
 			}
 		} else if stream != "" {
-			{{ audioPref = prefs.HLSAudio }}
 			<audio 
 				id="track" 
 				src={ stream } 
@@ -156,11 +152,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		}
 		if *prefs.ShowAudio {
 			<div>
-				if *audioPref == cfg.AudioBest {
-					<p>Audio: best ({ audio })</p>
-				} else {
-					<p>Audio: { audio }</p>
-				}
+				<p>Audio: { audio }</p>
 			</div>
 		}
 	} else {

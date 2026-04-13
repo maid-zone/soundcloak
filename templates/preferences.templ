@@ -26,11 +26,9 @@ templ sel(name string, options []option, selected string) {
 	</select>
 }
 
-templ sel_audio(name string, selected string, noOpus bool) {
+templ sel_audio(name string, selected string) {
 	@sel(name, []option{
-		{cfg.AudioBest, "Best", noOpus},
 		{cfg.AudioAAC, "M4A AAC 160kb/s", false},
-		{cfg.AudioOpus, "OGG Opus 72kb/s", noOpus},
 		{cfg.AudioMP3, "MP3 128kb/s", false},
 	}, selected)
 }
@@ -45,7 +43,7 @@ templ Preferences(prefs cfg.Preferences) {
 		if cfg.Restream {
 			<label>
 				Download audio:
-				@sel_audio("DownloadAudio", *prefs.DownloadAudio, false)
+				@sel_audio("DownloadAudio", *prefs.DownloadAudio)
 			</label>
 		}
 		<h1>Player preferences</h1>
@@ -76,7 +74,6 @@ templ Preferences(prefs cfg.Preferences) {
 						It's recommended if you listen to long audios. Since streaming protocol (HLS) is handled on your browser, 
 						you can skip parts of an audio without needing to load them.
 						<span class="js">It also requires enabled JavaScript to function.</span>
-						ogg/opus audio preset cannot be streamed with it.
 					</p>
 				</li>
 				<li>
@@ -114,12 +111,12 @@ templ Preferences(prefs cfg.Preferences) {
 				</label>
 				<label>
 					Streaming audio:
-					@sel_audio("HLSAudio", *prefs.HLSAudio, true)
+					@sel_audio("HLSAudio", *prefs.HLSAudio)
 				</label>
 			case cfg.RestreamPlayer:
 				<label>
 					Streaming audio:
-					@sel_audio("RestreamAudio", *prefs.RestreamAudio, false)
+					@sel_audio("RestreamAudio", *prefs.RestreamAudio)
 				</label>
 		}
 		<h1>Frontend enhancements</h1>

@@ -491,14 +491,14 @@ Disallow: /`)
 
 		if *prefs.Player == cfg.HLSPlayer {
 			var tr *sc.Transcoding
-			tr, _ = track.Media.SelectCompatible(*prefs.HLSAudio, false, false)
+			tr, _ = track.Media.SelectCompatible(*prefs.HLSAudio, false)
 			if tr == nil {
 				err = sc.ErrIncompatibleStream
 			} else {
 				stream, err = tr.GetStream(prefs, track.Authorization)
 			}
 		} else if *prefs.Player == cfg.RestreamPlayer {
-			_, audio := track.Media.SelectCompatible(*prefs.RestreamAudio, true, true)
+			_, audio := track.Media.SelectCompatible(*prefs.RestreamAudio, true)
 			if audio == "" {
 				err = sc.ErrIncompatibleStream
 			}
@@ -657,10 +657,8 @@ Disallow: /`)
 			}
 
 			disabled_formats := map[string]bool{
-				cfg.AudioBest: false,
-				cfg.AudioAAC:  true,
-				cfg.AudioOpus: true,
-				cfg.AudioMP3:  true,
+				cfg.AudioAAC: true,
+				cfg.AudioMP3: true,
 			}
 			for _, tr := range t.Media.Transcodings {
 				switch tr.Format.Protocol {
@@ -669,8 +667,6 @@ Disallow: /`)
 						disabled_formats[cfg.AudioAAC] = false
 					} else if tr.Format.MimeType == "audio/mpeg" {
 						disabled_formats[cfg.AudioMP3] = false
-					} else if strings.HasPrefix(tr.Preset, "opus_") {
-						disabled_formats[cfg.AudioOpus] = false
 					}
 				case sc.ProtocolProgressive:
 					if tr.Format.MimeType == "audio/mpeg" {
@@ -679,13 +675,8 @@ Disallow: /`)
 				}
 			}
 
-			if disabled_formats[cfg.AudioAAC] && disabled_formats[cfg.AudioOpus] && disabled_formats[cfg.AudioMP3] {
-				disabled_formats[cfg.AudioBest] = true
-			}
-
 			if disabled_formats[*p.DownloadAudio] {
-				pr := cfg.AudioMP3
-				p.DownloadAudio = &pr
+				p.DownloadAudio = &cfg.MP3
 			}
 
 			return r(c, "Download "+t.Title+" by "+t.Author.Username, templates.DownloadTrack(p, t, disabled_formats), nil)
@@ -946,14 +937,14 @@ Disallow: /`)
 		if *prefs.Player != cfg.NonePlayer {
 			if *prefs.Player == cfg.HLSPlayer {
 				var tr *sc.Transcoding
-				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false, false)
+				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
 					stream, err = tr.GetStream(prefs, track.Authorization)
 				}
 			} else if *prefs.Player == cfg.RestreamPlayer {
-				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true, true)
+				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true)
 				if audio == "" {
 					err = sc.ErrIncompatibleStream
 				}
@@ -1042,7 +1033,7 @@ Disallow: /`)
 
 		var downloadAudio *string
 		if cfg.Restream {
-			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true, true)
+			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true)
 			downloadAudio = &audio
 		}
 

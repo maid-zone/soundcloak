@@ -16,6 +16,7 @@ import (
 
 const on = "on"
 
+// apply defaults + migration code
 func Defaults(dst *cfg.Preferences) {
 	if dst.Player == nil {
 		dst.Player = cfg.DefaultPreferences.Player
@@ -49,16 +50,40 @@ func Defaults(dst *cfg.Preferences) {
 		dst.DefaultAutoplayMode = cfg.DefaultPreferences.DefaultAutoplayMode
 	}
 
+	// THE GREAT OPUS MIGRATION
 	if dst.HLSAudio == nil {
 		dst.HLSAudio = cfg.DefaultPreferences.HLSAudio
+	} else {
+		switch *dst.HLSAudio {
+		case cfg.AudioOpus:
+			dst.HLSAudio = &cfg.MP3
+		case cfg.AudioBest:
+			dst.HLSAudio = &cfg.AAC
+		}
 	}
 
+	// they removed ogg/opus encodings from every single track, there is nothing anywhere
 	if dst.RestreamAudio == nil {
 		dst.RestreamAudio = cfg.DefaultPreferences.RestreamAudio
+	} else {
+		switch *dst.RestreamAudio {
+		case cfg.AudioOpus:
+			dst.RestreamAudio = &cfg.MP3
+		case cfg.AudioBest:
+			dst.RestreamAudio = &cfg.AAC
+		}
 	}
 
+	// only remains mp3 and aac
 	if dst.DownloadAudio == nil {
 		dst.DownloadAudio = cfg.DefaultPreferences.DownloadAudio
+	} else {
+		switch *dst.DownloadAudio {
+		case cfg.AudioOpus:
+			dst.DownloadAudio = &cfg.MP3
+		case cfg.AudioBest:
+			dst.DownloadAudio = &cfg.AAC
+		}
 	}
 
 	if dst.ShowAudio == nil {
