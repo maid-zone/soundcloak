@@ -152,6 +152,13 @@ templ Preferences(prefs cfg.Preferences) {
 			@checkbox("KeepPlayerFocus", *prefs.KeepPlayerFocus)
 			@js()
 		</label>
+		<label>
+			Show audio waveform:
+			@checkbox("Waveform", *prefs.Waveform)
+			if *prefs.Player == cfg.RestreamPlayer {
+				<i>(works best with HLS player)</i>
+			}
+		</label>
 		<h2 style="margin-bottom: .35rem">Autoplay</h2>
 		<i><span class="js">Requires JS. </span>You also need to allow autoplay from this domain</i>
 		<label style="margin-top: 1rem">

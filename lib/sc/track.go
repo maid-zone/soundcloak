@@ -1,8 +1,10 @@
 package sc
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,6 +13,8 @@ import (
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
 )
@@ -45,6 +49,7 @@ type Track struct {
 	Played        int64       `json:"playback_count"`
 	Reposted      int64       `json:"reposts_count"`
 	Duration      uint32      `json:"full_duration"`
+	Waveform      string      `json:"waveform_url"`
 }
 
 type TrackPolicy string
@@ -564,4 +569,87 @@ func ToExt(audio string) string {
 	}
 
 	return ""
+}
+
+type Waveform struct {
+	//Width   int   `json:"width"`
+	Height  uint64   `json:"height"`
+	Samples []uint64 `json:"samples"`
+}
+
+func (t *Track) RenderWaveform() templ.Component {
+	if t.Waveform == "" {
+		return templ.NopComponent
+	}
+
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	req.SetRequestURI(t.Waveform)
+	req.Header.SetUserAgent(cfg.UserAgent)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	err := DoWithRetry(httpc, req, resp)
+	if err != nil {
+		return templ.NopComponent
+	}
+
+	data, err := resp.BodyUncompressed()
+	if err != nil {
+		data = resp.Body()
+	}
+
+	var wf Waveform
+	err = json.Unmarshal(data, &wf)
+	if err != nil || len(wf.Samples) == 0 || wf.Height == 0 {
+		return templ.NopComponent
+	}
+
+	return templ.ComponentFunc(func(_ context.Context, w io.Writer) error {
+		ww := w.(*templruntime.Buffer)
+		_, err := ww.WriteString(`<svg class="waveform" viewBox="0 0 200 100" preserveAspectRatio="none"><defs><clipPath id="wf-p"><rect x="0" y="0" width="0" height="100"/></clipPath></defs><path d="`)
+		if err != nil {
+			return err
+		}
+		const (
+			targetBars = 200
+			svgHeight  = 100
+			center     = svgHeight / 2
+		)
+
+		step := len(wf.Samples) / targetBars
+		if step < 1 {
+			step = 1
+		}
+
+		var count uint64
+		b := make([]byte, 1, 10)
+		b[0] = 'M'
+		for i := 0; i < len(wf.Samples) && count < targetBars; i += step {
+			h := wf.Samples[i] * center / wf.Height
+			if h < 1 {
+				h = 1
+			}
+
+			b = b[:1]
+			b = strconv.AppendUint(b, count, 10)
+			b = append(b, ',')
+			b = strconv.AppendUint(b, center-h, 10)
+			b = append(b, 'V')
+			b = strconv.AppendUint(b, center+h, 10)
+			count++
+			_, err = ww.Write(b)
+			if err != nil {
+				return err
+			}
+		}
+		_, err = ww.WriteString(`" stroke="var(--0)" fill="none" stroke-width="0.6"/></svg><script async src="/_/static/waveform.js"></script>`)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

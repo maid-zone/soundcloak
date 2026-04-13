@@ -76,6 +76,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.KeepPlayerFocus == nil {
 		dst.KeepPlayerFocus = cfg.DefaultPreferences.KeepPlayerFocus
 	}
+
+	if dst.Waveform == nil {
+		dst.Waveform = cfg.DefaultPreferences.Waveform
+	}
 }
 
 func Get(c fiber.Ctx) (cfg.Preferences, error) {
@@ -107,6 +111,7 @@ type PrefsForm struct {
 	SearchSuggestions        string
 	DynamicLoadComments      string
 	KeepPlayerFocus          string
+	Waveform                 string
 }
 
 type Export struct {
@@ -240,6 +245,12 @@ func Load(r *fiber.App) {
 			old.KeepPlayerFocus = &cfg.False
 		}
 
+		if p.Waveform == on {
+			old.Waveform = &cfg.True
+		} else {
+			old.Waveform = &cfg.False
+		}
+
 		old.Player = &p.Player
 
 		setPrefs(c, &old)
@@ -255,7 +266,7 @@ func Load(r *fiber.App) {
 		cookie.SetValue("{}")
 		cookie.SetExpire(time.Now().Add(400 * 24 * time.Hour))
 		cookie.SetHTTPOnly(true)
-		cookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+		cookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
 		cookie.SetPath("/")
 		c.Response().Header.SetCookie(cookie)
 		fasthttp.ReleaseCookie(cookie)

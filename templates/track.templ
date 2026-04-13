@@ -146,6 +146,9 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				player in the preferences. It works without JavaScript.</a>
 			</noscript>
 		}
+		if *prefs.Waveform {
+			@track.RenderWaveform()
+		}
 		if track.Policy == sc.PolicySnip {
 			<div>
 				<p>Only a 30-second snippet is available.</p>

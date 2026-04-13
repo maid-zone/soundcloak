@@ -158,6 +158,7 @@ func defaultPreferences() {
 	DefaultPreferences.SearchSuggestions = &False
 	DefaultPreferences.DynamicLoadComments = &False
 	DefaultPreferences.KeepPlayerFocus = &False
+	DefaultPreferences.Waveform = &False
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -257,6 +258,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.KeepPlayerFocus = loaded.KeepPlayerFocus
 	} else {
 		DefaultPreferences.KeepPlayerFocus = &False
+	}
+
+	if loaded.Waveform != nil {
+		DefaultPreferences.Waveform = loaded.Waveform
+	} else {
+		DefaultPreferences.Waveform = &False
 	}
 }
 

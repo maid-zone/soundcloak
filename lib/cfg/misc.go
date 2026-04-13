@@ -98,6 +98,8 @@ type Preferences struct {
 	DynamicLoadComments *bool // dynamic comments loader without leaving track page
 
 	KeepPlayerFocus *bool // keep player element in focus
+
+	Waveform *bool // show waveform
 }
 
 func B2s(b []byte) string {
