@@ -15,7 +15,7 @@ import (
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
-	"github.com/dlclark/regexp2"
+	"github.com/dlclark/regexp2/v2"
 	"github.com/goccy/go-json"
 	utls "github.com/refraction-networking/utls"
 	"github.com/refraction-networking/utls/dicttls"
@@ -68,6 +68,8 @@ var httpc = &fasthttp.HostClient{
 	DialDualStack:       cfg.DialDualStack,
 }
 
+var Httpc = httpc // :P
+
 var genericClient = &fasthttp.Client{
 	DialDualStack: cfg.DialDualStack,
 }
@@ -77,8 +79,8 @@ var genericClient = &fasthttp.Client{
 // var scriptRegex = regexp2.MustCompile(`^<script crossorigin src="(https://a-v2\.sndcdn\.com/assets/0-.+\.js)"></script>$`, 2)
 
 //go:generate go tool regexp2cg -package sc -o regexp2_codegen.go
-var clientIdRegex = regexp2.MustCompile(`client_id:"([A-Za-z0-9]{32})"`, 0) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
-var hydrationClientIdRegex = regexp2.MustCompile(`{"hydratable":"apiClient","data":{"id":"([A-Za-z0-9]{32})"`, 0)
+var clientIdRegex = regexp2.MustCompile(`client_id:"([A-Za-z0-9]{32})"`, regexp2.None) //regexp2.MustCompile(`\("client_id=([A-Za-z0-9]{32})"\)`, 0)
+var hydrationClientIdRegex = regexp2.MustCompile(`{"hydratable":"apiClient","data":{"id":"([A-Za-z0-9]{32})"`, regexp2.None)
 var ErrVersionNotFound = errors.New("version not found")
 var ErrScriptNotFound = errors.New("script not found")
 var ErrIDNotFound = errors.New("clientid not found")

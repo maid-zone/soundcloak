@@ -6,12 +6,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dlclark/regexp2"
+	"github.com/dlclark/regexp2/v2"
 )
 
 //go:generate go tool regexp2cg -package textparsing -o regexp2_codegen.go
-var emailre = regexp2.MustCompile(`^[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}$`, 0)
-var theregex = regexp2.MustCompile(`@[a-zA-Z0-9\-_]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`, 0)
+var emailre = regexp2.MustCompile(`^[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6}$`, regexp2.None)
+var theregex = regexp2.MustCompile(`@[a-zA-Z0-9\-_]+|(?:https?:\/\/[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{1,6}[-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)|(?:[-a-zA-Z0-9%._\+~#=]+@[-a-zA-Z0-9%._\+~=&]{2,256}\.[a-z]{1,6})`, regexp2.None)
 
 func IsEmail(s string) bool {
 	t, _ := emailre.MatchString(s)

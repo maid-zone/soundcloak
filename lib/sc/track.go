@@ -83,6 +83,14 @@ type Transcoding struct {
 	Quality string `json:"quality"`
 }
 
+func (t Transcoding) Slug(tr Track) string {
+	return tr.Author.Permalink + "/" +
+		tr.Permalink + "/" +
+		t.Quality + "/" +
+		t.Preset + "/" +
+		string(t.Format.Protocol)
+}
+
 type Media struct {
 	Transcodings []Transcoding `json:"transcodings"`
 }
@@ -98,24 +106,96 @@ type Comment struct {
 	Timestamp int    `json:"timestamp"`
 }
 
-func (m Media) SelectCompatible(mode string, restream bool) (*Transcoding, string) {
-	switch mode {
-	case cfg.AudioBest:
-	case cfg.AudioAAC:
+// func (m Media) SelectCompatible(mode string, restream bool) (*Transcoding, string) {
+// 	switch mode {
+// 	case cfg.AudioBest:
+// 	case cfg.AudioAAC:
+// 		for _, t := range m.Transcodings {
+// 			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
+// 				return &t, cfg.AudioAAC
+// 			}
+// 		}
+// 	}
+
+// 	if restream {
+// 		for _, t := range m.Transcodings {
+// 			if t.Format.Protocol == ProtocolProgressive && t.Format.MimeType == "audio/mpeg" {
+// 				return &t, cfg.AudioMP3
+// 			}
+// 		}
+// 	}
+// 	for _, t := range m.Transcodings {
+// 		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
+// 			return &t, cfg.AudioMP3
+// 		}
+// 	}
+// 	return nil, ""
+// }
+
+func (m Media) SelectCompatibleRestream(mode string) (*Transcoding, string) {
+	var b1 *Transcoding
+	// note that best is deprecated, left for compatibility
+	if mode == cfg.AudioAAC || mode == cfg.AudioBest {
+		// reduce iterations count :)
+		var b2 *Transcoding
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
-				return &t, cfg.AudioAAC
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				if t.Preset == "aac_160k" {
+					return &t, cfg.AudioAAC
+				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
+					b1 = &t
+				}
+			case ProtocolProgressive:
+				if b2 == nil && t.Format.MimeType == "audio/mpeg" {
+					b2 = &t
+				}
 			}
 		}
+		// progressive prefered instead of hls because less processing
+		if b2 != nil {
+			return b2, cfg.AudioMP3
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		return nil, ""
 	}
 
-	if restream {
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolProgressive && t.Format.MimeType == "audio/mpeg" {
+	for _, t := range m.Transcodings {
+		if t.Format.MimeType == "audio/mpeg" {
+			switch t.Format.Protocol {
+			case ProtocolProgressive:
 				return &t, cfg.AudioMP3
+			case ProtocolHLS:
+				b1 = &t
 			}
 		}
 	}
+	if b1 != nil {
+		return b1, cfg.AudioMP3
+	}
+	return nil, ""
+}
+
+func (m Media) SelectCompatibleHLS(mode string) (*Transcoding, string) {
+	if mode == cfg.AudioAAC || mode == cfg.AudioBest {
+		var b1 *Transcoding
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS {
+				if t.Preset == "aac_160k" {
+					return &t, cfg.AudioAAC
+				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
+					b1 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		return nil, ""
+	}
+
 	for _, t := range m.Transcodings {
 		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
 			return &t, cfg.AudioMP3
@@ -299,13 +379,33 @@ func GetTracks(ids string) ([]Track, error) {
 	return res, err
 }
 
-func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (string, error) {
+type CachedStream struct {
+	Playlist *fasthttp.URI
+	Base     *fasthttp.URI
+}
+
+var StreamCache = map[string]cached[CachedStream]{}
+var StreamCacheMut = sync.RWMutex{}
+
+func (tr Transcoding) GetStream(slug string, t Track) (cached[CachedStream], error) {
+	if slug == "" {
+		slug = tr.Slug(t)
+	}
+
+	StreamCacheMut.RLock()
+	s, ok := StreamCache[slug]
+	StreamCacheMut.RUnlock()
+	if ok && s.Expires.After(time.Now()) {
+		misc.Log("cache hit", s)
+		return s, nil
+	}
+
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
 	req.SetRequestURI(tr.URL)
 	req.URI().QueryArgs().Set("client_id", ClientID)
-	req.URI().QueryArgs().Set("track_authorization", authorization)
+	req.URI().QueryArgs().Set("track_authorization", t.Authorization)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
@@ -314,11 +414,11 @@ func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (st
 
 	err := DoWithRetry(httpc, req, resp)
 	if err != nil {
-		return "", err
+		return s, err
 	}
 
 	if resp.StatusCode() != 200 {
-		return "", fmt.Errorf("getstream: got status code %d", resp.StatusCode())
+		return s, fmt.Errorf("getstream: got status code %d", resp.StatusCode())
 	}
 
 	data, err := resp.BodyUncompressed()
@@ -326,32 +426,29 @@ func (tr Transcoding) GetStream(prefs cfg.Preferences, authorization string) (st
 		data = resp.Body()
 	}
 
-	var s Stream
-	err = json.Unmarshal(data, &s)
+	var st Stream
+	err = json.Unmarshal(data, &st)
 	if err != nil {
-		return "", err
+		return s, err
 	}
 
-	misc.Log(s)
+	misc.Log(st)
 
-	if s.URL == "" {
-		return "", ErrNoURL
+	if st.URL == "" {
+		return s, ErrNoURL
 	}
 
-	if cfg.ProxyStreams && *prefs.ProxyStreams {
-		switch *prefs.Player {
-		case cfg.HLSPlayer:
-			if tr.Preset == "aac_160k" {
-				return "/_/proxy/streams/playlist/aac?url=" + url.QueryEscape(s.URL), nil
-			}
-
-			return "/_/proxy/streams/playlist?url=" + url.QueryEscape(s.URL), nil
-		case cfg.ProgressivePlayer:
-			return "/_/proxy/streams?url=" + url.QueryEscape(s.URL), nil
-		}
+	if s.Value.Playlist == nil {
+		s.Value.Playlist = fasthttp.AcquireURI()
 	}
-
-	return s.URL, nil
+	err = s.Value.Playlist.Parse(nil, cfg.S2b(st.URL))
+	if err == nil {
+		s.Expires = time.Now().Add(time.Duration(t.Duration)*time.Millisecond + 105*time.Second)
+		StreamCacheMut.Lock()
+		StreamCache[slug] = s
+		StreamCacheMut.Unlock()
+	}
+	return s, err
 }
 
 func (t *Track) Fix(large bool, fixAuthor bool) {

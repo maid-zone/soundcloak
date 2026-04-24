@@ -56,7 +56,7 @@ func fixDuration(data []byte, duration *uint32) {
 	}
 }
 
-func (r *reader) Setup(url string, aac bool, duration *uint32) error {
+func (r *reader) Setup(url *fasthttp.URI, aac bool, duration *uint32) error {
 	if r.req == nil {
 		r.req = fasthttp.AcquireRequest()
 	}
@@ -65,7 +65,7 @@ func (r *reader) Setup(url string, aac bool, duration *uint32) error {
 		r.resp = fasthttp.AcquireResponse()
 	}
 
-	r.req.SetRequestURI(url)
+	r.req.SetURI(url)
 	r.req.Header.SetUserAgent(cfg.UserAgent)
 
 	if aac {

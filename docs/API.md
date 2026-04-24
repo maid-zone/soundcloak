@@ -1,82 +1,154 @@
-# Check enabled features
+# API endpoints
 
-Just go to `/_/info` endpoint
+<details>
+    <summary><h2><code>/_/info</code></h2></summary>
 
-# API
+Get details about instance's configuration. Some instances may hide this information, but it's enabled by default. Example response:
+```json
+{
+  "DefaultPreferences": {
+    "Player": "restream",
+    "ProxyStreams": true,
+    "FullyPreloadTrack": false,
+    "ProxyImages": true,
+    "ParseDescriptions": true,
+    "AutoplayNextTrack": false,
+    "AutoplayNextRelatedTrack": false,
+    "DefaultAutoplayMode": "normal",
+    "HLSAudio": "aac",
+    "RestreamAudio": "mpeg",
+    "DownloadAudio": "mpeg",
+    "ShowAudio": false,
+    "SearchSuggestions": false,
+    "DynamicLoadComments": false,
+    "KeepPlayerFocus": false,
+    "Waveform": false
+  },
+  "Commit": "910261d",
+  "Repo": "https://git.maid.zone/stuff/soundcloak",
+  "ProxyImages": true,
+  "ProxyStreams": true,
+  "Restream": true,
+  "GetWebProfiles": true,
+  "EnableAPI": true
+}
+```
 
-To make use of it, instance must have API enabled of course. All responses are in JSON format if the request is successful. Errors are just returned as plaintext. Currently, there is few functionality present. If you are working on some cool project and wanna have more functionality here, let me know
+</details>
 
-## Paginated endpoints
+<details>
+    <summary><h2><code>/_/searchSuggestions</code></h2></summary>
 
-Those endpoints return an object with properties:
-- `collection`: List of the results on this page
-- `total_results`: total results duh, maybe 0 on some endpoints
-- `next_href`: Link to next page
+Get search suggestions. Query parameters:
 
-To go to next page, take the `next_href`, strip away everything until `?`, and pass that as `pagination` query parameter. Note that not all endpoints may support going to next page.
+* `q`: query to look up
+* `format`: set to opensearch if you want it in opensearch JSON format
 
-You can also use `pagination` parameter to pass raw arguments into soundcloud api (for example, more advanced search filters, different initial result limit, etc)
+Example response for `/_/searchSuggestions?q=music`:
+```json
+[
+  "music sounds better with you",
+  "music is the answer",
+  "musica para dormir",
+  "music for soul 6",
+  "musica cristiana",
+  "musica de amor nunca mais",
+  "music for soul 4 -pn ft tdat",
+  "musica",
+  "music on"
+]
+```
 
-## GET `/_/api/search`
+</details>
 
-Search for users, tracks or playlists. Query parameters are:
-- `q`: the query
-- `type`: `users`, `tracks`, or `playlists`. Required
-- `pagination`: [Read above](#paginated-endpoints)
+<details>
+    <summary><h2><code>/_/rss/:user</code></h2></summary>
 
-For example: `/_/api/search?q=test&type=tracks` to search for `tracks` named `test`
+Generates an [RSS](https://en.wikipedia.org/wiki/RSS) feed for user tracks. Put a username instead of `:user`. Query parameters:
 
-## GET `/_/api/track/:id`
+* `proxy_images`: if images should be proxied through instance. Instance must have `ProxyImages` enabled. By default, uses value from preferences
 
-Get track by ID.
+</details>
 
-For example: `/_/api/track/2014143543` to get track with ID `2014143543`
+<details>
+    <summary><h2><code>/_/proxy/images</code></h2></summary>
 
-## GET `/_/api/track/:id/related`
+Proxy an image through this instance. Instance must have `ProxyImages` enabled. Query parameters:
 
-Get related tracks by ID. Pagination is supported here. Initial request returns upto 20 tracks
+* `url`: image URL. Only accepting images from `*.sndcdn.com`
 
-For example: `/_/api/track/2014143543/related` to get tracks related to track with ID `2014143543`
+</details>
 
-## GET `/_/api/tracks`
+<details>
+    <summary><h2><code>/_/api/hls/:author/:track</code></h2></summary>
 
-Get tracks by ID in bulk. Pass the IDs comma-separated as `ids` query parameter. You can't request more than 50 tracks at once. The result is a list, which only contains the tracks which were successfully resolved
+Get an [HLS](https://en.wikipedia.org/wiki/HTTP_Live_Streaming) playlist for streaming the track. Query parameters:
 
-For example: `/_/api/tracks?ids=2014143543,476907846`. This will only return one track, since 2nd ID is not a track ID
+* `audio`: force the audio. Can be `aac` or `mpeg`. By default, uses value from preferences
+* `redirect`: if should redirect to playlist on soundcloud's CDN. By default `false`
+* `redirect_parts`: if should redirect to the track parts on soundcloud's CDN. If `ProxyStreams` is disabled on server, will be `true` by default, otherwise `false`
 
-## GET `/_/api/playlistByPermalink/:author/sets/:playlist`
+</details>
 
-Get playlist by permalinks. 
+<details>
+    <summary><h2><code>/_/api/progressive/:author/:track</code></h2></summary>
 
-For example: `/_/api/playlistByPermalink/lucybedroque/sets/unmusique` to get `unmusique` playlist from `lucybedroque`
+Get an MP3 file of the track. Query parameters:
 
-## GET `/_/api/playlistByPermalink/:author/sets/:playlist/tracks`
+* `redirect`: if should redirect to the MP3 on soundcloud's CDN. If `ProxyStreams` is disabled on server, will be `true` by default, otherwise `false`
 
-Get list of track IDs in playlist.
+</details>
 
-For example: `/_/api/playlistByPermalink/lucybedroque/sets/unmusique/tracks` to get all IDs of the tracks in playlist `unmusique` from `lucybedroque`
+<details>
+    <summary><h2><code>/_/api/restream/:author/:track</code></h2></summary>
 
-# Other automation
+Get an MP3 or Fragmented M4A file of the track, with metadata injected if needed. Instance must have `Restream` enabled for this to work. Query parameters:
 
-Doesn't require API to be enabled
+* `audio`: force the audio. Can be `aac` or `mpeg`. By default, uses value from preferences
+* `metadata`: if should inject metadata. By default `false`. Metadata values are taken from track on soundcloud
+* `title`: override title in metadata
+* `genre`: override genre in metadata
+* `author`: override author in metadata
 
-## GET `/_/restream/:author/:track`
+</details>
 
-Restream must be enabled in the instance. This endpoint can be used to download or stream tracks. Query parameters are:
-- `metadata`: `true` or `false`. If `true`, soundcloak will inject metadata (author, track cover, track title, etc) into the audio file, but this may take a little bit more time
-- `audio`: `aac`, or `mpeg`. [Read more here](AUDIO_PRESETS.md)
+<details>
+    <summary><h2><code>/_/api/v2/...</code></h2></summary>
 
-Restream converts the HLS playlist to an audio file on the fly serverside, optionally adding metadata.
+Proxy for soundcloud's `api-v2.soundcloud.com`. Instance must have `EnableAPI` enabled. Automatically adds latest `client_id` value to your requests, so you don't need to. Only GET requests are allowed, your supplied headers and body get ignored. List of allowed endpoints:
 
-For example: `/_/restream/lucybedroque/speakers?metadata=true&audio=aac` to get the `aac` audio with `metadata` for song `speakers` by author `lucybedroque`
+* `/resolve?url=...` (for getting info from url like `https://soundcloud.com/:user/:track`)
+* `/charts/selections`
+* `/users/...`
+* `/tracks/...`
+* `/playlists/...`
+* `/featured_tracks/...`
 
-## GET `/_/searchSuggestions`
 
-Pass your query as `q` query parameter
+So, for example, request like `https://api-v2.soundcloud.com/users/420953284?client_id=tkIWLs4MIowq7bCXP80TOwx6DnDa7UPc` will be turned into `<instance>/_/api/v2/users/420953284`. For more information about what endpoints there are, you can look at soundcloud's official frontend using devtools or read soundcloak/other tools source code. [Here is a big list of endpoints, extracted from the official frontend code](https://fs.maid.zone/sc_endpoints.json). Also keep in mind that there is no caching on this proxy, please cache things on your own
 
-For example: `/_/searchSuggestions?q=hi` to get search suggestions for `hi`
+</details>
 
-## GET `/_/proxy/images`
+# Notes about API
 
-ProxyImages must be enabled in the instance. Put image url into `url` query parameter. Of course, this only proxies images from soundcloud cdn
+Keep in mind that this is unofficial, using reversed not-public API, probably not compliant with any terms of service that soundcloud have. Soundcloud likes to break things like this once in a while, but I try to keep it working. If you wanna use this for your application, it would be great to host your own soundcloak server, or to spread traffic across the [public](https://maid.zone/soundcloak/instances.html) ones *(maybe you could also support the people running them)*
 
+## Audio streaming
+
+Soundcloud offers [two audio presets](docs/AUDIO_PRESETS.md). There is multiple methods available for streaming audio, each with it's own behavior:
+
+* HLS (`/_/api/hls/:author/:track`)
+
+[HLS](https://en.wikipedia.org/wiki/HTTP_Live_Streaming) breaks down an audio into multiple smaller files. This let's you load audio parts on demand, instead of start to finish. You can stream both MP3 and AAC audio with this, but you usually need some program/library to handle the streaming. For web, there is [hls.js](https://github.com/video-dev/hls.js). If you use `?redirect=true` option, keep in mind that this playlist link and parts inside it will automatically expire after track duration + 105s. Otherwise, soundcloak automatically handles renewing the audio playlist.
+
+* Progressive (`/_/api/progressive/:author/:track`)
+
+This only lets you stream tracks as mp3 128kb/s file. If you use `?redirect=true` option, keep in mind that this file link will automatically expire after track duration + 105s. Otherwise, soundcloak automatically handles renewing the audio file
+
+* Restream (`/_/api/restream/:author/:track`)
+
+This combines both HLS (automatically converting to regular audio file) and Progressive methods, and also adds metadata injection on the fly.
+
+## Old API
+
+Currently, it's still all working, but I plan to remove it sometime later, so please migrate everything to the new methods. Also `/_/restream/...` has been redirected to `/_/api/restream/...`

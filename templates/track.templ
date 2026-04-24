@@ -73,24 +73,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 		{{ return }}
 	}
 	if displayErr == "" {
-		if cfg.Restream && *prefs.Player == cfg.RestreamPlayer {
-			<audio 
-				id="track" 
-				src={ "/_/restream" + track.Href() } 
-				controls 
-				autoplay?={ autoplay }
-			if nextTrack != nil {
-				data-next={ next(&track, nextTrack, playlist, mode, "") } 
-				volume={ volume }	
-			}
-			></audio>
-			if nextTrack != nil {
-				<script async src="/_/static/restream.js"></script>
-			}
-			if *prefs.KeepPlayerFocus {
-				<script async src="/_/static/keepfocus.js"></script>
-			}
-		} else if *prefs.Player == cfg.RestreamPlayer || *prefs.Player == cfg.ProgressivePlayer { 
+		if stream != "" {
 			<audio 
 				id="track" 
 				src={ stream } 
@@ -101,23 +84,8 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				volume={ volume }	
 			}
 			></audio>
-			if nextTrack != nil {
-				<script async src="/_/static/restream.js"></script>
-			}
-			if *prefs.KeepPlayerFocus {
-				<script async src="/_/static/keepfocus.js"></script>
-			}
-		} else if stream != "" {
-			<audio 
-				id="track" 
-				src={ stream } 
-				controls 
-				autoplay?={ autoplay }
-			if nextTrack != nil {
-				data-next={ next(&track, nextTrack, playlist, mode, "") } 
-				volume={ volume }	
-			}
-			></audio>
+		}
+		if *prefs.Player == cfg.HLSPlayer {
 			<script
 				async
 			if *prefs.FullyPreloadTrack {
@@ -126,22 +94,25 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				src="/_/static/player.js"
 			}
 			></script>
-			if *prefs.KeepPlayerFocus {
-				<script async src="/_/static/keepfocus.js"></script>
-			}
-			<noscript>
-				<br/>
-				JavaScript is disabled! Audio playback may not work without it enabled. 
-				<br/>
-				<a class="link" href="/_/preferences">You can enable 
-				if cfg.Restream { 
-					Restream 
-				} else {
-					Progressive
-				}
-				player in the preferences. It works without JavaScript.</a>
-			</noscript>
+		} else if nextTrack != nil {
+			<script async src="/_/static/restream.js"></script>
 		}
+		if *prefs.KeepPlayerFocus {
+			<script async src="/_/static/keepfocus.js"></script>
+		}
+		<noscript>
+			<br/>
+			JavaScript is disabled! Audio playback may not work without it enabled. 
+			<br/>
+			<a class="link" href="/_/preferences">You can enable 
+			if cfg.Restream { 
+				Restream or Progressive
+			} else {
+				Progressive
+			}
+			player in the preferences. It works without JavaScript.</a>
+		</noscript>
+		
 		if *prefs.Waveform {
 			@track.RenderWaveform()
 		}
@@ -189,7 +160,7 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, downloadAudio *string, comments *sc.Paginated[*sc.Comment]) {
+templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, comments *sc.Paginated[*sc.Comment]) {
 	if t.Artwork != "" {
 		<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
 	}
@@ -305,9 +276,6 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/_/static/global.css"/>
 			<title>soundcloak</title>
-			if *prefs.Player == cfg.HLSPlayer && stream != "" {
-				<script src="/_/static/external/hls.light.min.js"></script>
-			}
 		</head>
 		<body>
 			if t.Artwork != "" {

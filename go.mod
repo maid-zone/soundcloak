@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	github.com/a-h/templ v0.3.1001
 	github.com/bogem/id3v2/v2 v2.1.4
-	github.com/dlclark/regexp2 v1.11.5-0.20240806004527-5bbbed8ea10b
+	github.com/dlclark/regexp2/v2 v2.0.0-beta.2
 	github.com/gcottom/mp4meta v0.0.5
 	github.com/goccy/go-json v0.10.6
 	github.com/gofiber/fiber/v3 v3.1.0
@@ -22,11 +22,11 @@ require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
-	github.com/dlclark/regexp2cg v0.2.0 // indirect
+	github.com/dlclark/regexp2cg v0.4.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gofiber/schema v1.7.0 // indirect
-	github.com/gofiber/utils/v2 v2.0.2 // indirect
+	github.com/gofiber/schema v1.7.1 // indirect
+	github.com/gofiber/utils/v2 v2.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sunfish-shogi/bufseekio v0.1.0 // indirect
-	github.com/tinylib/msgp v1.6.3 // indirect
+	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/mod v0.34.0 // indirect

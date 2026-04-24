@@ -1,137 +1,60 @@
 package api
 
 import (
-	"log"
-
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
-	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
-	"github.com/valyala/fasthttp"
 )
 
 func Load(a *fiber.App) {
 	r := a.Group("/_/api")
-
-	prefs := cfg.Preferences{ProxyImages: &cfg.False}
-	r.Get("/search", func(c fiber.Ctx) error {
-		q := c.RequestCtx().QueryArgs().Peek("q")
-		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
-		args := c.RequestCtx().QueryArgs().Peek("pagination")
-		if len(args) == 0 {
-			args = fasthttp.AppendQuotedArg([]byte("q="), q)
+	r.Use("/v2", func(c fiber.Ctx) error {
+		req := c.Request()
+		p := req.URI().Path()[len("/_/api/v2"):]
+		if string(p) == "/resolve" ||
+			string(p) == "/charts/selections" ||
+			(len(p) > len("/users/") &&
+				string(p[:len("/users/")]) == "/users/") ||
+			(len(p) > len("/tracks/") &&
+				(string(p[:len("/tracks/")]) == "/tracks/" || string(p[:len("/search/")]) == "/search/")) ||
+			(len(p) > len("/playlists/") &&
+				string(p[:len("/playlists/")]) == "/playlists/") ||
+			(len(p) > len("/featured_tracks/") &&
+				string(p[:len("/featured_tracks/")]) == "/featured_tracks/") {
+			goto great
 		}
-
-		switch t {
-		case "tracks":
-			p, err := sc.SearchTracks(prefs, args)
-			if err != nil {
-				log.Printf("[API] error getting tracks for %s: %s\n", cfg.B2s(q), err)
-				return err
-			}
-
-			return c.JSON(p)
-
-		case "users":
-			p, err := sc.SearchUsers(prefs, args)
-			if err != nil {
-				log.Printf("[API] error getting users for %s: %s\n", cfg.B2s(q), err)
-				return err
-			}
-
-			return c.JSON(p)
-
-		case "playlists":
-			p, err := sc.SearchPlaylists(prefs, args)
-			if err != nil {
-				log.Printf("[API] error getting playlists for %s: %s\n", cfg.B2s(q), err)
-				return err
-			}
-
-			return c.JSON(p)
-		}
-
 		return c.SendStatus(404)
-	})
+	great:
+		// api-v2 only has gzip, so we use only gzip
+		gzip := req.Header.HasAcceptEncoding("gzip")
+		req.Header.Reset()
+		req.ResetBody()
+		req.Header.SetUserAgent(cfg.UserAgent)
+		req.Header.Set("Accept-Encoding", "gzip")
 
-	r.Get("/track/:id/related", func(c fiber.Ctx) error {
-		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
-		if args == "" {
-			args = "?limit=20"
+		req.URI().SetScheme("https")
+		req.URI().SetHost("api-v2.soundcloud.com")
+		if !req.URI().QueryArgs().Has("client_id") {
+			req.URI().QueryArgs().Set("client_id", sc.ClientID)
 		}
+		req.URI().SetPathBytes(p)
 
-		p, err := (sc.Track{ID: json.Number(c.Params("id"))}).GetRelated(prefs, args)
+		resp := c.Response()
+		err := sc.DoWithRetry(sc.Httpc, req, resp)
 		if err != nil {
-			log.Printf("[API] error getting related tracks for %s: %s\n", c.Params("id"), err)
 			return err
 		}
 
-		return c.JSON(p)
+		// very big shame on you for not even implementing gzip compression
+		if !gzip && string(resp.Header.ContentEncoding()) == "gzip" {
+			p, err = resp.BodyGunzip()
+			if err == nil {
+				resp.SetBody(p)
+			}
+		}
+		return err
 	})
 
-	r.Get("/playlistByPermalink/:author/sets/:playlist", func(c fiber.Ctx) error {
-		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
-		if err != nil {
-			log.Printf("[API] error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
-			return err
-		}
-
-		return c.JSON(p)
-	})
-
-	r.Get("/playlistByPermalink/:author/sets/:playlist/tracks", func(c fiber.Ctx) error {
-		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
-		if err != nil {
-			log.Printf("[API] error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
-			return err
-		}
-
-		tracks := make([]json.Number, len(p.Tracks))
-		for i, t := range p.Tracks {
-			tracks[i] = t.ID
-		}
-
-		return c.JSON(tracks)
-	})
-
-	r.Get("/track/:id", func(c fiber.Ctx) error {
-		t, err := sc.GetTrackByID(c.Params("id"))
-		if err != nil {
-			log.Printf("[API] error getting track %s: %s\n", c.Params("id"), err)
-			return err
-		}
-
-		return c.JSON(t)
-	})
-
-	r.Get("/tracks", func(c fiber.Ctx) error {
-		ids := cfg.B2s(c.RequestCtx().QueryArgs().Peek("ids"))
-		t, err := sc.GetTracks(ids)
-		if err != nil {
-			log.Printf("[API] error getting %s tracks: %s\n", ids, err)
-			return err
-		}
-
-		return c.JSON(t)
-	})
-
-	r.Get("/trackByPermalink/:user/:track", func(c fiber.Ctx) error {
-		t, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
-		if err != nil {
-			log.Printf("[API] error getting track %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
-			return err
-		}
-
-		return c.JSON(t)
-	})
-
-	r.Get("/user/:id/tracks", func(c fiber.Ctx) error {
-		t, err := (sc.User{ID: json.Number(c.Params("id"))}).GetTracks(prefs, c.Query("pagination"))
-		if err != nil {
-			log.Printf("[API] error getting user %s tracks: %s\n", c.Params("id"), err)
-			return err
-		}
-
-		return c.JSON(t)
-	})
+	// DEPRECATED
+	legacy(r)
 }

@@ -53,20 +53,6 @@ func Load(r *fiber.App) {
 		req.SetURI(parsed)
 		req.Header.SetUserAgent(cfg.UserAgent)
 
-		resp := fasthttp.AcquireResponse()
-		//defer fasthttp.ReleaseResponse(resp) moved to proxyreader!!!
-
-		err = sc.DoWithRetry(cl, req, resp)
-		if err != nil {
-			return err
-		}
-
-		c.Response().Header.SetContentTypeBytes(resp.Header.ContentType())
-		c.Set("Cache-Control", cfg.ImageCacheControl)
-		//return c.Send(resp.Body())
-		pr := misc.AcquireProxyReader()
-		pr.Reader = resp.BodyStream()
-		pr.Resp = resp
-		return c.SendStream(pr, resp.Header.ContentLength())
+		return sc.DoWithRetry(cl, req, c.Response())
 	})
 }

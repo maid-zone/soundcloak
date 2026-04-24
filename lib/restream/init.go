@@ -29,7 +29,19 @@ func Load(r *fiber.App) {
 		DialDualStack:       cfg.DialDualStack,
 	}
 
-	r.Get("/_/restream/:author/:track", func(c fiber.Ctx) error {
+	// glue glue glue
+	r.Use("/_/restream", func(c fiber.Ctx) error {
+		uri := c.Request().URI()
+		p := uri.RequestURI()
+		b := make([]byte, 0, len(p)+len("/api"))
+		b = append(b, "/_/api/restream/"...)
+		b = append(b, p[len("/_/restream/"):]...)
+		c.Response().SetStatusCode(fiber.StatusMovedPermanently)
+		c.Response().Header.SetBytesV("Location", b)
+		return nil
+	})
+
+	r.Get("/_/api/restream/:author/:track", func(c fiber.Ctx) error {
 		p, err := preferences.Get(c)
 		if err != nil {
 			return err
@@ -68,19 +80,22 @@ func Load(r *fiber.App) {
 			}
 		}
 
-		tr, audio := t.Media.SelectCompatible(quality, true)
+		tr, audio := t.Media.SelectCompatibleRestream(quality)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
 
-		u, err := tr.GetStream(p, t.Authorization)
+		u, err := tr.GetStream("", t)
 		if err != nil {
 			return err
 		}
 
-		c.Response().Header.SetContentType(tr.Format.MimeType)
-		c.Set("Cache-Control", cfg.RestreamCacheControl)
-		c.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+sc.ToExt(audio)+`"`)
+		//req := c.Request()
+		//rng := req.Header.Peek("Range")
+		resp := c.Response()
+		resp.Header.SetContentType(tr.Format.MimeType)
+		resp.Header.Set("Cache-Control", cfg.RestreamCacheControl)
+		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+sc.ToExt(audio)+`"`)
 
 		if isDownload {
 			if t.Artwork != "" {
@@ -117,7 +132,7 @@ func Load(r *fiber.App) {
 					r := acquireInjector()
 					tag.WriteTo(r) // write out tag first because the buffers will be overwritten if you reuse the req/resp
 
-					req.SetRequestURI(u)
+					req.SetURI(u.Value.Playlist)
 					// enforce streaming here!!
 					err := sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 					if err != nil {
@@ -133,7 +148,7 @@ func Load(r *fiber.App) {
 				tag.WriteTo(r)
 				r.req = req
 				r.resp = resp
-				err := r.Setup(u, false, nil)
+				err := r.Setup(u.Value.Playlist, false, nil)
 				if err != nil {
 					return err
 				}
@@ -141,7 +156,7 @@ func Load(r *fiber.App) {
 				return c.SendStream(r)
 			case cfg.AudioAAC:
 				r := acquireReader()
-				err := r.Setup(u, true, nil)
+				err := r.Setup(u.Value.Playlist, true, nil)
 				if err != nil {
 					return err
 				}
@@ -191,28 +206,23 @@ func Load(r *fiber.App) {
 			req := fasthttp.AcquireRequest()
 			defer fasthttp.ReleaseRequest(req)
 
-			resp := fasthttp.AcquireResponse()
-
-			req.SetRequestURI(u)
+			// if len(rng) != 0 {
+			// 	req.Header.SetBytesV("Range", rng)
+			// }
+			req.SetURI(u.Value.Playlist)
 			req.Header.SetUserAgent(cfg.UserAgent)
 
-			// enforce streaming here!!
-			err := sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
-			if err != nil {
-				return err
-			}
-
-			r := misc.AcquireProxyReader()
-			r.Reader = resp.BodyStream()
-			r.Resp = resp
-			return c.SendStream(r)
+			err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
+			resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+`.mp3"`)
+			resp.Header.Del("Accept-Ranges")
+			return err
 		}
 
 		r := acquireReader()
 		if audio == cfg.AudioAAC {
-			err = r.Setup(u, true, &t.Duration)
+			err = r.Setup(u.Value.Playlist, true, &t.Duration)
 		} else {
-			err = r.Setup(u, false, nil)
+			err = r.Setup(u.Value.Playlist, false, nil)
 		}
 
 		if err != nil {

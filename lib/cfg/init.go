@@ -27,7 +27,6 @@ var DefaultPreferences Preferences
 
 // proxy images (user avatars, track/playlist covers)
 var ProxyImages = false
-var ImageCacheControl = "max-age=600, public, immutable" // browser-side 10 minutes cache by default, only used for proxied images
 
 // proxy streams (hls playlist files and track parts)
 var ProxyStreams = false
@@ -36,7 +35,7 @@ var ProxyStreams = false
 // If this setting is set to true, ProxyStreams and FullyPreloadTrack will be ignored (you could count this as a replacement for having both as true, also should be a bit more effective)
 // You can also easily download the songs this way (right click => save audio as..., the only downside is that there is no metadata)
 var Restream = false
-var RestreamCacheControl = "max-age=3600, public, immutable"
+var RestreamCacheControl = "max-age=252460800"
 
 // enable /_/info endpoint (shows if some settings are enabled/disabled)
 var InstanceInfo = true
@@ -319,11 +318,6 @@ func fromEnv() error {
 		ProxyImages = boolean(env)
 	}
 
-	env = os.Getenv("IMAGE_CACHE_CONTROL")
-	if env != "" {
-		ImageCacheControl = env
-	}
-
 	env = os.Getenv("PROXY_STREAMS")
 	if env != "" {
 		ProxyStreams = boolean(env)
@@ -523,7 +517,6 @@ func init() {
 		GetWebProfiles          *bool
 		DefaultPreferences      *Preferences
 		ProxyImages             *bool
-		ImageCacheControl       *string
 		ProxyStreams            *bool
 		Restream                *bool
 		RestreamCacheControl    *string
@@ -566,9 +559,6 @@ func init() {
 	}
 	if config.ProxyImages != nil {
 		ProxyImages = *config.ProxyImages
-	}
-	if config.ImageCacheControl != nil {
-		ImageCacheControl = *config.ImageCacheControl
 	}
 	if config.ProxyStreams != nil {
 		ProxyStreams = *config.ProxyStreams

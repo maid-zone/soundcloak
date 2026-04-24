@@ -52,7 +52,7 @@ templ Preferences(prefs cfg.Preferences) {
 			@sel("Player", []option{
 				{cfg.RestreamPlayer, "Restream Player", !cfg.Restream},
 				{cfg.HLSPlayer, "HLS Player", false},
-				{cfg.ProgressivePlayer, "Progressive Player", cfg.Restream},
+				{cfg.ProgressivePlayer, "Progressive Player", false},
 				{cfg.NonePlayer, "None", false},
 			}, *prefs.Player)
 		</label>

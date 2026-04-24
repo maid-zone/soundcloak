@@ -63,6 +63,7 @@ const (
 // for taking ptrs :)
 var MP3 = AudioMP3
 var AAC = AudioAAC
+var Progressive = ProgressivePlayer
 
 type Preferences struct {
 	Player       *string

@@ -290,9 +290,11 @@ func main() {
 	app.Use(compress.New(compress.Config{
 		Next: func(c fiber.Ctx) bool {
 			p := c.RequestCtx().Path()
-			const x = "/_/proxy"
-			const y = "/_/restream"
-			return len(p) > len(y) && (string(p[:len(x)]) == x || string(p[:len(y)]) == y)
+			// DO NOT COMPRESS
+			const x = "/_/api"
+			const y = "/_/proxy"
+			const z = "/_/static"
+			return len(p) > len(z) && (string(p[:len(x)]) == x || string(p[:len(y)]) == y || string(p[:len(z)]) == z)
 			//return strings.HasPrefix(c.Path(), "/_/static")
 		},
 		Level: compress.LevelBestSpeed,
@@ -489,26 +491,15 @@ Disallow: /`)
 		displayErr := ""
 		stream := ""
 
-		if *prefs.Player == cfg.HLSPlayer {
-			var tr *sc.Transcoding
-			tr, _ = track.Media.SelectCompatible(*prefs.HLSAudio, false)
-			if tr == nil {
-				err = sc.ErrIncompatibleStream
-			} else {
-				stream, err = tr.GetStream(prefs, track.Authorization)
-			}
-		} else if *prefs.Player == cfg.RestreamPlayer {
-			_, audio := track.Media.SelectCompatible(*prefs.RestreamAudio, true)
-			if audio == "" {
-				err = sc.ErrIncompatibleStream
-			}
+		prefs.Player = &cfg.Progressive
+		var tr *sc.Transcoding
+		tr = track.Media.SelectCompatibleProgressive()
+		if tr == nil {
+			err = sc.ErrIncompatibleStream
 		} else {
-			var tr *sc.Transcoding
-			tr = track.Media.SelectCompatibleProgressive()
-			if tr == nil {
-				err = sc.ErrIncompatibleStream
-			} else {
-				stream, err = tr.GetStream(prefs, track.Authorization)
+			stream = "/_/api/progressive" + track.Href()
+			if !cfg.ProxyStreams {
+				stream += "?redirect=true"
 			}
 		}
 
@@ -600,9 +591,9 @@ Disallow: /`)
 		proxyimages.Load(app)
 	}
 
-	if cfg.ProxyStreams {
-		proxystreams.Load(app)
-	}
+	//if cfg.ProxyStreams { // all checks now done on endpoints themselves, they redirect if disabled
+	proxystreams.Load(app)
+	//}
 
 	if cfg.EnableAPI {
 		api.Load(app)
@@ -683,7 +674,7 @@ Disallow: /`)
 		})
 
 		app.Post("/_/download/:author/:track", func(c fiber.Ctx) error {
-			return c.Redirect().To("/_/restream/" + c.Params("author") + "/" + c.Params("track") + "?metadata=true&" + strings.ReplaceAll(cfg.B2s(c.Body()), "+", "%20"))
+			return c.Redirect().To("/_/api/restream/" + c.Params("author") + "/" + c.Params("track") + "?metadata=true&" + strings.ReplaceAll(cfg.B2s(c.Body()), "+", "%20"))
 		})
 	}
 
@@ -937,25 +928,31 @@ Disallow: /`)
 		if *prefs.Player != cfg.NonePlayer {
 			if *prefs.Player == cfg.HLSPlayer {
 				var tr *sc.Transcoding
-				tr, audio = track.Media.SelectCompatible(*prefs.HLSAudio, false)
+				tr, audio = track.Media.SelectCompatibleHLS(*prefs.HLSAudio)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
-					stream, err = tr.GetStream(prefs, track.Authorization)
+					stream = "/_/api/hls" + track.Href()
+					if !*prefs.ProxyStreams {
+						stream += "?redirect_parts=true"
+					}
 				}
 			} else if *prefs.Player == cfg.RestreamPlayer {
-				_, audio = track.Media.SelectCompatible(*prefs.RestreamAudio, true)
+				stream = "/_/api/restream" + track.Href()
+				_, audio = track.Media.SelectCompatibleRestream(*prefs.RestreamAudio)
 				if audio == "" {
 					err = sc.ErrIncompatibleStream
 				}
 			} else {
 				audio = cfg.AudioMP3
-				var tr *sc.Transcoding
-				tr = track.Media.SelectCompatibleProgressive()
+				tr := track.Media.SelectCompatibleProgressive()
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
-					stream, err = tr.GetStream(prefs, track.Authorization)
+					stream = "/_/api/progressive" + track.Href()
+					if !*prefs.ProxyStreams {
+						stream += "?redirect=true"
+					}
 				}
 			}
 
@@ -1031,13 +1028,7 @@ Disallow: /`)
 			}
 		}
 
-		var downloadAudio *string
-		if cfg.Restream {
-			_, audio := track.Media.SelectCompatible(*prefs.DownloadAudio, true)
-			downloadAudio = &audio
-		}
-
-		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, downloadAudio, comments), templates.TrackHeader(prefs, track, true))
+		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, comments), templates.TrackHeader(prefs, track, true))
 	})
 
 	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {
