@@ -28,28 +28,33 @@ var TracksCache = map[string]cached[Track]{}
 var tracksCacheLock = &sync.RWMutex{}
 
 type Track struct {
-	Artwork       string      `json:"artwork_url"`
-	CreatedAt     string      `json:"created_at"`
-	Description   string      `json:"description"`
-	Genre         string      `json:"genre"`
-	Kind          string      `json:"kind"` // should always be "track"!
-	LastModified  string      `json:"last_modified"`
-	License       string      `json:"license"`
-	Permalink     string      `json:"permalink"`
-	TagList       string      `json:"tag_list"`
-	Title         string      `json:"title"`
-	ID            json.Number `json:"id"`
-	Authorization string      `json:"track_authorization"`
-	Policy        TrackPolicy `json:"policy"`
-	Station       string      `json:"station_permalink"`
-	Media         Media       `json:"media"`
-	Author        User        `json:"user"`
-	Comments      int         `json:"comment_count"`
-	Likes         int64       `json:"likes_count"`
-	Played        int64       `json:"playback_count"`
-	Reposted      int64       `json:"reposts_count"`
-	Duration      uint32      `json:"full_duration"`
-	Waveform      string      `json:"waveform_url"`
+	Artwork           string            `json:"artwork_url"`
+	CreatedAt         string            `json:"created_at"`
+	Description       string            `json:"description"`
+	Genre             string            `json:"genre"`
+	Kind              string            `json:"kind"` // should always be "track"!
+	LastModified      string            `json:"last_modified"`
+	License           string            `json:"license"`
+	Permalink         string            `json:"permalink"`
+	TagList           string            `json:"tag_list"`
+	Title             string            `json:"title"`
+	ID                json.Number       `json:"id"`
+	Authorization     string            `json:"track_authorization"`
+	Policy            TrackPolicy       `json:"policy"`
+	Station           string            `json:"station_permalink"`
+	Media             Media             `json:"media"`
+	Author            User              `json:"user"`
+	Comments          int               `json:"comment_count"`
+	Likes             int64             `json:"likes_count"`
+	Played            int64             `json:"playback_count"`
+	Reposted          int64             `json:"reposts_count"`
+	Duration          uint32            `json:"full_duration"`
+	Waveform          string            `json:"waveform_url"`
+	PublisherMetadata PublisherMetadata `json:"publisher_metadata"`
+}
+
+type PublisherMetadata struct {
+	ISRC string `json:"isrc"`
 }
 
 type TrackPolicy string

@@ -217,6 +217,9 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.License != "" {
 		<p>License: { t.License }</p>
 	}
+	if t.PublisherMetadata.ISRC != "" {
+		<p>ISRC: { t.PublisherMetadata.ISRC }</p>
+	}
 	<p>Policy: { t.Policy }</p>
 	if t.TagList != "" {
 		<p>Tags: { sc.TagListParser(t.TagList) }</p>

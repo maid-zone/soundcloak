@@ -12,12 +12,10 @@ import (
 
 // do not use
 func legacy(_r fiber.Router) {
-	r := _r.Group("/", func(c fiber.Ctx) error {
-		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
-		return c.Next()
-	})
+	r := _r.Group("/")
 	prefs := cfg.Preferences{ProxyImages: &cfg.False}
 	r.Get("/search", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		q := c.RequestCtx().QueryArgs().Peek("q")
 		t := cfg.B2s(c.RequestCtx().QueryArgs().Peek("type"))
 		args := c.RequestCtx().QueryArgs().Peek("pagination")
@@ -58,6 +56,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/track/:id/related", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		args := cfg.B2s(c.RequestCtx().QueryArgs().Peek("pagination"))
 		if args == "" {
 			args = "?limit=20"
@@ -73,6 +72,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/playlistByPermalink/:author/sets/:playlist", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
 		if err != nil {
 			log.Printf("[API] error getting %s playlist from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
@@ -83,6 +83,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/playlistByPermalink/:author/sets/:playlist/tracks", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		p, err := sc.GetPlaylist(c.Params("author") + "/sets/" + c.Params("playlist"))
 		if err != nil {
 			log.Printf("[API] error getting %s playlist tracks from %s: %s\n", c.Params("playlist"), c.Params("author"), err)
@@ -98,6 +99,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/track/:id", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		t, err := sc.GetTrackByID(c.Params("id"))
 		if err != nil {
 			log.Printf("[API] error getting track %s: %s\n", c.Params("id"), err)
@@ -108,6 +110,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/tracks", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		ids := cfg.B2s(c.RequestCtx().QueryArgs().Peek("ids"))
 		t, err := sc.GetTracks(ids)
 		if err != nil {
@@ -119,6 +122,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/trackByPermalink/:user/:track", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		t, err := sc.GetTrack(c.Params("user") + "/" + c.Params("track"))
 		if err != nil {
 			log.Printf("[API] error getting track %s from %s: %s\n", c.Params("track"), c.Params("user"), err)
@@ -129,6 +133,7 @@ func legacy(_r fiber.Router) {
 	})
 
 	r.Get("/user/:id/tracks", func(c fiber.Ctx) error {
+		c.Set("deprecated", "do not use, will be removed at an unknown point in time")
 		t, err := (sc.User{ID: json.Number(c.Params("id"))}).GetTracks(prefs, c.Query("pagination"))
 		if err != nil {
 			log.Printf("[API] error getting user %s tracks: %s\n", c.Params("id"), err)

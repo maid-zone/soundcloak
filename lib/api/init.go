@@ -13,6 +13,7 @@ func Load(a *fiber.App) {
 		p := req.URI().Path()[len("/_/api/v2"):]
 		if string(p) == "/resolve" ||
 			string(p) == "/charts/selections" ||
+			string(p) == "/tracks" ||
 			(len(p) > len("/users/") &&
 				string(p[:len("/users/")]) == "/users/") ||
 			(len(p) > len("/tracks/") &&

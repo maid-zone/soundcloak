@@ -8,7 +8,7 @@ require (
 	github.com/dlclark/regexp2/v2 v2.0.0-beta.2
 	github.com/gcottom/mp4meta v0.0.5
 	github.com/goccy/go-json v0.10.6
-	github.com/gofiber/fiber/v3 v3.1.0
+	github.com/gofiber/fiber/v3 v3.2.0
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af
 	github.com/valyala/fasthttp v1.70.0
 	golang.org/x/net v0.53.0

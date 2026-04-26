@@ -121,6 +121,7 @@ Proxy for soundcloud's `api-v2.soundcloud.com`. Instance must have `EnableAPI` e
 * `/charts/selections`
 * `/users/...`
 * `/tracks/...`
+* `/search/...`
 * `/playlists/...`
 * `/featured_tracks/...`
 
