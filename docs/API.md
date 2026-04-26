@@ -150,6 +150,10 @@ This only lets you stream tracks as mp3 128kb/s file. If you use `?redirect=true
 
 This combines both HLS (automatically converting to regular audio file) and Progressive methods, and also adds metadata injection on the fly.
 
+## Other applications using the API
+
+* [@sndcldbot](https://git.maid.zone/laptop/sndcldbot) - simple inline telegram bot, search for tracks, paste track/playlist/user link to download
+
 ## Old API
 
 Currently, it's still all working, but I plan to remove it sometime later, so please migrate everything to the new methods. Also `/_/restream/...` has been redirected to `/_/api/restream/...`
