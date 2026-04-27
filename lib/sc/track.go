@@ -385,8 +385,9 @@ func GetTracks(ids string) ([]Track, error) {
 }
 
 type CachedStream struct {
-	Playlist *fasthttp.URI
-	Base     *fasthttp.URI
+	Playlist  *fasthttp.URI
+	Base      *fasthttp.URI
+	FreshBase bool
 }
 
 var StreamCache = map[string]cached[CachedStream]{}
@@ -449,6 +450,7 @@ func (tr Transcoding) GetStream(slug string, t Track) (cached[CachedStream], err
 	err = s.Value.Playlist.Parse(nil, cfg.S2b(st.URL))
 	if err == nil {
 		s.Expires = time.Now().Add(time.Duration(t.Duration)*time.Millisecond + 105*time.Second)
+		s.Value.FreshBase = true
 		StreamCacheMut.Lock()
 		StreamCache[slug] = s
 		StreamCacheMut.Unlock()

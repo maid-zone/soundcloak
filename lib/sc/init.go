@@ -768,6 +768,20 @@ func init() {
 			}
 
 			tracksCacheLock.Unlock()
+
+			// streams are related to tracks so same as track cache clean delay :D
+			StreamCacheMut.Lock()
+
+			now = time.Now()
+			for key, val := range StreamCache {
+				if val.Expires.Before(now) {
+					delete(StreamCache, key)
+					fasthttp.ReleaseURI(val.Value.Base)
+					fasthttp.ReleaseURI(val.Value.Playlist)
+				}
+			}
+
+			StreamCacheMut.Unlock()
 		}
 	}()
 

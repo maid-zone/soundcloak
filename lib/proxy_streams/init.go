@@ -104,7 +104,6 @@ func Load(app *fiber.App) {
 			return err
 		}
 
-		parsed := false
 		s2 := s[:len(s)-len("/hls")]
 		ln := 0
 		if cl.Value.Base != nil {
@@ -124,7 +123,7 @@ func Load(app *fiber.App) {
 					continue
 				}
 
-				if !parsed {
+				if cl.Value.FreshBase {
 					if cl.Value.Base == nil {
 						cl.Value.Base = fasthttp.AcquireURI()
 					}
@@ -137,7 +136,7 @@ func Load(app *fiber.App) {
 							// only get first const
 							// /media/159660/
 							cl.Value.Base.SetPathBytes(p[:len("/media/")+i+1])
-							parsed = true
+							cl.Value.FreshBase = false
 							ln = len(cl.Value.Base.Scheme()) + len("://") + len(cl.Value.Base.Host()) + len(cl.Value.Base.Path())
 							sc.StreamCacheMut.Lock()
 							sc.StreamCache[s] = cl
@@ -185,14 +184,14 @@ func Load(app *fiber.App) {
 					continue
 				}
 
-				if !parsed {
+				if cl.Value.FreshBase {
 					if cl.Value.Base == nil {
 						cl.Value.Base = fasthttp.AcquireURI()
 					}
 					if cl.Value.Base.Parse(nil, l) == nil {
 						p := cl.Value.Base.Path()
 						cl.Value.Base.SetPathBytes(p[:len(p)-len(cl.Value.Base.LastPathSegment())])
-						parsed = true
+						cl.Value.FreshBase = false
 						sc.StreamCacheMut.Lock()
 						sc.StreamCache[s] = cl
 						sc.StreamCacheMut.Unlock()
@@ -255,8 +254,10 @@ func Load(app *fiber.App) {
 		req.Reset()
 		req.Header.SetUserAgent(cfg.UserAgent)
 		resp := c.Response()
-		if cl.Value.Base == nil {
-			cl.Value.Base = fasthttp.AcquireURI()
+		if cl.Value.FreshBase || cl.Value.Base == nil {
+			if cl.Value.Base == nil {
+				cl.Value.Base = fasthttp.AcquireURI()
+			}
 			req.SetURI(cl.Value.Playlist)
 			err := sc.DoWithRetry(httpc, req, resp)
 			if err != nil {
@@ -279,6 +280,7 @@ func Load(app *fiber.App) {
 							cl.Value.Base.SetPathBytes(p[:len("/media/")+i+1])
 						}
 					}
+					cl.Value.FreshBase = false
 					sc.StreamCacheMut.Lock()
 					sc.StreamCache[s] = cl
 					sc.StreamCacheMut.Unlock()
