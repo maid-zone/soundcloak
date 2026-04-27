@@ -776,8 +776,12 @@ func init() {
 			for key, val := range StreamCache {
 				if val.Expires.Before(now) {
 					delete(StreamCache, key)
-					fasthttp.ReleaseURI(val.Value.Base)
-					fasthttp.ReleaseURI(val.Value.Playlist)
+					if val.Value.Base != nil {
+						fasthttp.ReleaseURI(val.Value.Base)
+					}
+					if val.Value.Playlist != nil {
+						fasthttp.ReleaseURI(val.Value.Playlist)
+					}
 				}
 			}
 
