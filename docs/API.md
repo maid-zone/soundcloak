@@ -119,6 +119,7 @@ Proxy for soundcloud's `api-v2.soundcloud.com`. Instance must have `EnableAPI` e
 
 * `/resolve?url=...` (for getting info from url like `https://soundcloud.com/:user/:track`)
 * `/charts/selections`
+* `/mixed-selections`
 * `/users/...`
 * `/tracks/...`
 * `/search/...`

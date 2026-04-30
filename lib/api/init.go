@@ -11,9 +11,10 @@ func Load(a *fiber.App) {
 	r.Use("/v2", func(c fiber.Ctx) error {
 		req := c.Request()
 		p := req.URI().Path()[len("/_/api/v2"):]
-		if string(p) == "/resolve" ||
+		if string(p) == "/tracks" ||
+			string(p) == "/resolve" ||
+			string(p) == "/mixed-selections" ||
 			string(p) == "/charts/selections" ||
-			string(p) == "/tracks" ||
 			(len(p) > len("/users/") &&
 				string(p[:len("/users/")]) == "/users/") ||
 			(len(p) > len("/tracks/") &&
