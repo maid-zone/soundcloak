@@ -107,7 +107,7 @@ func Load(app *fiber.App) {
 		s2 := s[:len(s)-len("/hls")]
 		ln := 0
 		if cl.Value.Base != nil {
-			ln = len(cl.Value.Base.Scheme()) + len(cl.Value.Base.Host()) + len(cl.Value.Base.Path())
+			ln = len(cl.Value.Base.Scheme()) + len("://") + len(cl.Value.Base.Host()) + len(cl.Value.Base.Path())
 		}
 		r := c.Response()
 		if httpc == misc.HlsClient {

@@ -12,11 +12,12 @@ func Load(a *fiber.App) {
 		req := c.Request()
 		p := req.URI().Path()[len("/_/api/v2"):]
 		if string(p) == "/tracks" ||
+			string(p) == "/search" ||
 			string(p) == "/resolve" ||
 			string(p) == "/mixed-selections" ||
 			string(p) == "/charts/selections" ||
 			(len(p) > len("/users/") &&
-				string(p[:len("/users/")]) == "/users/") ||
+				(string(p[:len("/users/")]) == "/users/" || string(p[:len("/media/")]) == "/media/")) ||
 			(len(p) > len("/tracks/") &&
 				(string(p[:len("/tracks/")]) == "/tracks/" || string(p[:len("/search/")]) == "/search/")) ||
 			(len(p) > len("/playlists/") &&
