@@ -1,10 +1,8 @@
 package textparsing
 
 import (
-	"fmt"
 	"html"
 	"net/url"
-	"strings"
 
 	"github.com/dlclark/regexp2/v2"
 )
@@ -21,28 +19,38 @@ func IsEmail(s string) bool {
 func replacer(m regexp2.Match) string {
 	ent := m.Capture.String()
 
-	if strings.HasPrefix(ent, "@") {
-		return fmt.Sprintf(`<a class="link" href="/%s">%s</a>`, ent[1:], ent)
+	if ent[0] == '@' {
+		return `<a class="link" href="/` + ent[1:] + `">` + ent + `</a>`
 	}
 
-	if strings.HasPrefix(ent, "https://") || strings.HasPrefix(ent, "http://") {
+	if len(ent) > len("https://") && ent[:len("https://")] == "https://" || ent[:len("http://")] == "http://" {
 		ent = html.UnescapeString(ent)
 		parsed, err := url.Parse(ent)
 		if err == nil {
 			href := ent
-			if parsed.Host == "soundcloud.com" || strings.HasSuffix(parsed.Host, ".soundcloud.com") {
-				href = "/" + strings.Join(strings.Split(ent, "/")[3:], "/")
+			if parsed.Host == "soundcloud.com" || parsed.Host == "on.soundcloud.com" || parsed.Host == "m.soundcloud.com" || parsed.Host == "www.soundcloud.com" {
+				idx := 0
+				for i := range len(href) {
+					if href[i] == '/' {
+						idx++
+					}
+					if idx == 3 {
+						idx = i
+						break
+					}
+				}
+				href = ent[idx:]
 				if parsed.Host == "on.soundcloud.com" {
 					href = "/on" + href
 				}
 			}
 
-			return fmt.Sprintf(`<a class="link" href="%s" referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer ugc" target="_blank">%s</a>`, href, ent)
+			return `<a class="link" href="` + href + `" referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer ugc" target="_blank">` + ent + `</a>`
 		}
 	}
 
 	// Otherwise, it can only be an email
-	return fmt.Sprintf(`<a class="link" href="mailto:%s">%s</a>`, ent, ent)
+	return `<a class="link" href="mailto:` + ent + `">` + ent + `</a>`
 }
 
 func Format(text string) string {

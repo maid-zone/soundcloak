@@ -2,7 +2,7 @@
 
 | Name                             | Key                 | Default                                                                | Possible values               | Description                                                                                                                                                                                                              |
 | :--------------------------------- | --------------------- | ------------------------------------------------------------------------ | ------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Download audio                       | DownloadAudio              | "mpeg"                                                                 | "mpeg", "aac" | What [audio preset](AUDIO_PRESETS.md) should be loaded when downloading audio with metadata. Restream must be enabled on the backend                                                                                      |
+| Download audio                       | DownloadAudio              | "mpeg"                                                                 | "aac", "mpeg", "aac_lq" | What [audio preset](AUDIO_PRESETS.md) should be loaded when downloading audio with metadata. Restream must be enabled on the backend                                                                                      |
 
 # Player preferences
 
@@ -16,14 +16,21 @@
 | :-------------------- | ------------------- | ---------------------------------------- | ----------------- | :------------------------------------------------------------------------------------ |
 | Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend |
 | Fully preload track | FullyPreloadTrack | false                                  | true, false     | Fully load track when the page is loaded (track stream expires in ~5 minutes)       |
-| Streaming audio     | HLSAudio          | "mpeg"                                 | "mpeg", "aac"   | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio          |
+| Streaming audio     | HLSAudio          | "mpeg"                                 | "best", "lowest_size", "aac", "mpeg", "aac_lq"   | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio          |
 
 ## Restream Player
 
 
 | Name            | Key           | Default | Possible values               | Description                                                                |
 | :---------------- | --------------- | --------- | ------------------------------- | :--------------------------------------------------------------------------- |
-| Streaming audio | RestreamAudio | "mpeg"  | "mpeg", "aac" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
+| Streaming audio | RestreamAudio | "mpeg"  | "aac", "mpeg", "aac_lq" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
+
+## Progressive Player
+
+
+| Name            | Key           | Default | Possible values               | Description                                                                |
+| :---------------- | --------------- | --------- | ------------------------------- | :--------------------------------------------------------------------------- |
+| Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend |
 
 
 # Frontend enhancements

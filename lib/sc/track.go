@@ -28,6 +28,7 @@ var TracksCache = map[string]cached[Track]{}
 var tracksCacheLock = &sync.RWMutex{}
 
 type Track struct {
+	PublisherMetadata PublisherMetadata `json:"publisher_metadata"`
 	Artwork           string            `json:"artwork_url"`
 	CreatedAt         string            `json:"created_at"`
 	Description       string            `json:"description"`
@@ -42,6 +43,7 @@ type Track struct {
 	Authorization     string            `json:"track_authorization"`
 	Policy            TrackPolicy       `json:"policy"`
 	Station           string            `json:"station_permalink"`
+	Waveform          string            `json:"waveform_url"`
 	Media             Media             `json:"media"`
 	Author            User              `json:"user"`
 	Comments          int               `json:"comment_count"`
@@ -49,12 +51,12 @@ type Track struct {
 	Played            int64             `json:"playback_count"`
 	Reposted          int64             `json:"reposts_count"`
 	Duration          uint32            `json:"full_duration"`
-	Waveform          string            `json:"waveform_url"`
-	PublisherMetadata PublisherMetadata `json:"publisher_metadata"`
 }
 
 type PublisherMetadata struct {
-	ISRC string `json:"isrc"`
+	ISRC     string `json:"isrc"`
+	UPCorEAN string `json:"upc_or_ean"`
+	ISWC     string `json:"iswc"`
 }
 
 type TrackPolicy string
@@ -111,38 +113,20 @@ type Comment struct {
 	Timestamp int    `json:"timestamp"`
 }
 
-// func (m Media) SelectCompatible(mode string, restream bool) (*Transcoding, string) {
-// 	switch mode {
-// 	case cfg.AudioBest:
-// 	case cfg.AudioAAC:
-// 		for _, t := range m.Transcodings {
-// 			if t.Format.Protocol == ProtocolHLS && t.Preset == "aac_160k" {
-// 				return &t, cfg.AudioAAC
-// 			}
-// 		}
-// 	}
-
-// 	if restream {
-// 		for _, t := range m.Transcodings {
-// 			if t.Format.Protocol == ProtocolProgressive && t.Format.MimeType == "audio/mpeg" {
-// 				return &t, cfg.AudioMP3
-// 			}
-// 		}
-// 	}
-// 	for _, t := range m.Transcodings {
-// 		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
-// 			return &t, cfg.AudioMP3
-// 		}
-// 	}
-// 	return nil, ""
-// }
-
 func (m Media) SelectCompatibleRestream(mode string) (*Transcoding, string) {
-	var b1 *Transcoding
-	// note that best is deprecated, left for compatibility
-	if mode == cfg.AudioAAC || mode == cfg.AudioBest {
-		// reduce iterations count :)
-		var b2 *Transcoding
+	// aac - aac_160k, mp3, aac_96k
+	// mpeg - mp3, aac_160k, aac_96k
+	// aac_lq - aac_96k, mp3, aac_160k
+	// progressive mp3 preferred over hls mp3
+
+	// to do just one iteration
+	var (
+		b1 *Transcoding
+		b2 *Transcoding
+		b3 *Transcoding
+	)
+	switch mode {
+	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
 			switch t.Format.Protocol {
 			case ProtocolHLS:
@@ -150,60 +134,144 @@ func (m Media) SelectCompatibleRestream(mode string) (*Transcoding, string) {
 					return &t, cfg.AudioAAC
 				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
 					b1 = &t
+				} else if b2 == nil && t.Preset == "aac_96k" {
+					b2 = &t
 				}
 			case ProtocolProgressive:
-				if b2 == nil && t.Format.MimeType == "audio/mpeg" {
-					b2 = &t
+				if b3 == nil && t.Format.MimeType == "audio/mpeg" {
+					b3 = &t
 				}
 			}
 		}
-		// progressive prefered instead of hls because less processing
-		if b2 != nil {
-			return b2, cfg.AudioMP3
+		if b3 != nil {
+			return b3, cfg.AudioMP3
 		}
 		if b1 != nil {
 			return b1, cfg.AudioMP3
 		}
-		return nil, ""
-	}
-
-	for _, t := range m.Transcodings {
-		if t.Format.MimeType == "audio/mpeg" {
+		if b2 != nil {
+			return b2, cfg.AudioAACLQ
+		}
+	case cfg.AudioMP3:
+		for _, t := range m.Transcodings {
 			switch t.Format.Protocol {
-			case ProtocolProgressive:
-				return &t, cfg.AudioMP3
 			case ProtocolHLS:
-				b1 = &t
+				if b1 == nil && t.Preset == "aac_160k" {
+					b1 = &t
+				} else if b2 == nil && t.Format.MimeType == "audio/mpeg" {
+					b2 = &t
+				} else if b3 == nil && t.Preset == "aac_96k" {
+					b3 = &t
+				}
+			case ProtocolProgressive:
+				if t.Format.MimeType == "audio/mpeg" {
+					return &t, cfg.AudioMP3
+				}
 			}
 		}
-	}
-	if b1 != nil {
-		return b1, cfg.AudioMP3
+		if b2 != nil {
+			return b2, cfg.AudioMP3
+		}
+		if b1 != nil {
+			return b1, cfg.AudioAAC
+		}
+		if b3 != nil {
+			return b1, cfg.AudioAACLQ
+		}
+	case cfg.AudioAACLQ:
+		for _, t := range m.Transcodings {
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				if t.Preset == "aac_96k" {
+					return &t, cfg.AudioAACLQ
+				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
+					b1 = &t
+				} else if b2 == nil && t.Preset == "aac_160k" {
+					b2 = &t
+				}
+			case ProtocolProgressive:
+				if b3 == nil && t.Format.MimeType == "audio/mpeg" {
+					b3 = &t
+				}
+			}
+		}
+		if b3 != nil {
+			return b3, cfg.AudioMP3
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		if b2 != nil {
+			return b2, cfg.AudioAAC
+		}
 	}
 	return nil, ""
 }
 
 func (m Media) SelectCompatibleHLS(mode string) (*Transcoding, string) {
-	if mode == cfg.AudioAAC || mode == cfg.AudioBest {
-		var b1 *Transcoding
+	// aac - aac_160k, mp3, aac_96k
+	// mpeg - mp3, aac_160k, aac_96k
+	// aac_lq - aac_96k, mp3, aac_160k
+
+	// to do just one iteration
+	var (
+		b1 *Transcoding
+		b2 *Transcoding
+	)
+	switch mode {
+	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
 			if t.Format.Protocol == ProtocolHLS {
 				if t.Preset == "aac_160k" {
 					return &t, cfg.AudioAAC
 				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
 					b1 = &t
+				} else if b2 == nil && t.Preset == "aac_96k" {
+					b2 = &t
 				}
 			}
 		}
 		if b1 != nil {
 			return b1, cfg.AudioMP3
 		}
-		return nil, ""
-	}
-
-	for _, t := range m.Transcodings {
-		if t.Format.Protocol == ProtocolHLS && t.Format.MimeType == "audio/mpeg" {
-			return &t, cfg.AudioMP3
+		if b2 != nil {
+			return b2, cfg.AudioAACLQ
+		}
+	case cfg.AudioMP3:
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS {
+				if t.Format.MimeType == "audio/mpeg" {
+					return &t, cfg.AudioMP3
+				} else if b1 == nil && t.Preset == "aac_160k" {
+					b1 = &t
+				} else if b2 == nil && t.Preset == "aac_96k" {
+					b2 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioAAC
+		}
+		if b2 != nil {
+			return b2, cfg.AudioAACLQ
+		}
+	case cfg.AudioAACLQ:
+		for _, t := range m.Transcodings {
+			if t.Format.Protocol == ProtocolHLS {
+				if t.Preset == "aac_96k" {
+					return &t, cfg.AudioAACLQ
+				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
+					b1 = &t
+				} else if b2 == nil && t.Preset == "aac_160k" {
+					b2 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		if b2 != nil {
+			return b2, cfg.AudioAAC
 		}
 	}
 	return nil, ""
@@ -645,7 +713,7 @@ func (t Track) GetComments(prefs cfg.Preferences, args string) (*Paginated[*Comm
 
 func ToExt(audio string) string {
 	switch audio {
-	case cfg.AudioAAC:
+	case cfg.AudioAAC, cfg.AudioAACLQ:
 		return "m4a"
 	case cfg.AudioMP3:
 		return "mp3"
@@ -655,9 +723,9 @@ func ToExt(audio string) string {
 }
 
 type Waveform struct {
-	//Width   int   `json:"width"`
-	Height  uint64   `json:"height"`
 	Samples []uint64 `json:"samples"`
+	//Width   int   `json:"width"`
+	Height uint64 `json:"height"`
 }
 
 func (t *Track) RenderWaveform() templ.Component {
@@ -693,10 +761,7 @@ func (t *Track) RenderWaveform() templ.Component {
 
 	return templ.ComponentFunc(func(_ context.Context, w io.Writer) error {
 		ww := w.(*templruntime.Buffer)
-		_, err := ww.WriteString(`<svg class="waveform" viewBox="0 0 200 100" preserveAspectRatio="none"><defs><clipPath id="wf-p"><rect x="0" y="0" width="0" height="100"/></clipPath></defs><path d="`)
-		if err != nil {
-			return err
-		}
+		ww.WriteString(`<svg class="waveform" viewBox="0 0 200 100" preserveAspectRatio="none"><defs><clipPath id="wf-p"><rect x="0" y="0" width="0" height="100"/></clipPath></defs><path d="`)
 		const (
 			targetBars = 200
 			svgHeight  = 100
@@ -724,15 +789,9 @@ func (t *Track) RenderWaveform() templ.Component {
 			b = append(b, 'V')
 			b = strconv.AppendUint(b, center+h, 10)
 			count++
-			_, err = ww.Write(b)
-			if err != nil {
-				return err
-			}
+			ww.Write(b)
 		}
-		_, err = ww.WriteString(`" stroke="var(--0)" fill="none" stroke-width="0.6"/></svg><script async src="/_/static/waveform.js"></script>`)
-		if err != nil {
-			return err
-		}
+		ww.WriteString(`" stroke="var(--0)" fill="none" stroke-width="0.6"/></svg><script async src="/_/static/waveform.js"></script>`)
 		return nil
 	})
 }

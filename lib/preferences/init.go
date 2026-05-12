@@ -56,7 +56,7 @@ func Defaults(dst *cfg.Preferences) {
 	} else {
 		switch *dst.HLSAudio {
 		case cfg.AudioOpus:
-			dst.HLSAudio = &cfg.MP3
+			dst.HLSAudio = &cfg.AACLQ
 		case cfg.AudioBest:
 			dst.HLSAudio = &cfg.AAC
 		}
@@ -68,7 +68,7 @@ func Defaults(dst *cfg.Preferences) {
 	} else {
 		switch *dst.RestreamAudio {
 		case cfg.AudioOpus:
-			dst.RestreamAudio = &cfg.MP3
+			dst.RestreamAudio = &cfg.AACLQ
 		case cfg.AudioBest:
 			dst.RestreamAudio = &cfg.AAC
 		}
@@ -80,7 +80,7 @@ func Defaults(dst *cfg.Preferences) {
 	} else {
 		switch *dst.DownloadAudio {
 		case cfg.AudioOpus:
-			dst.DownloadAudio = &cfg.MP3
+			dst.DownloadAudio = &cfg.AACLQ
 		case cfg.AudioBest:
 			dst.DownloadAudio = &cfg.AAC
 		}
@@ -107,17 +107,16 @@ func Defaults(dst *cfg.Preferences) {
 	}
 }
 
-func Get(c fiber.Ctx) (cfg.Preferences, error) {
-	rawprefs := c.Cookies("prefs", "{}")
-	var p cfg.Preferences
-
-	err := json.Unmarshal(cfg.S2b(rawprefs), &p)
-	if err != nil {
-		return p, err
+func Get(c fiber.Ctx) (p cfg.Preferences, err error) {
+	rawprefs := c.Request().Header.Cookie("prefs")
+	if len(rawprefs) > 2 {
+		err = json.Unmarshal(rawprefs, &p)
+		if err != nil {
+			return
+		}
 	}
 	Defaults(&p)
-
-	return p, err
+	return
 }
 
 type PrefsForm struct {

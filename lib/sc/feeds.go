@@ -6,10 +6,10 @@ import "encoding/xml"
 // the only thing used from that module so why not drop some dead weight :)
 
 type RssFeedXml struct {
+	Channel          *RssFeed
 	XMLName          xml.Name `xml:"rss"`
 	Version          string   `xml:"version,attr"`
 	ContentNamespace string   `xml:"xmlns:content,attr"`
-	Channel          *RssFeed
 }
 
 type RssFeed struct {
@@ -25,22 +25,22 @@ type RssFeed struct {
 	LastBuildDate string `xml:"lastBuildDate,omitempty"` // updated used
 	Category      string `xml:"category,omitempty"`
 	Generator     string `xml:"generator,omitempty"`
-	//Docs           string   `xml:"docs,omitempty"`
-	//Cloud          string   `xml:"cloud,omitempty"`
-	Ttl int `xml:"ttl,omitempty"`
 	//Rating         string   `xml:"rating,omitempty"`
 	//SkipHours      string   `xml:"skipHours,omitempty"`
 	//SkipDays       string   `xml:"skipDays,omitempty"`
 	//Image          *RssImage
 	//TextInput      *RssTextInput
 	Items []*RssItem `xml:"item"`
+	//Docs           string   `xml:"docs,omitempty"`
+	//Cloud          string   `xml:"cloud,omitempty"`
+	Ttl int `xml:"ttl,omitempty"`
 }
 
 type RssItem struct {
-	XMLName     xml.Name `xml:"item"`
-	Title       string   `xml:"title"`       // required
-	Link        string   `xml:"link"`        // required
-	Description string   `xml:"description"` // required
+	XMLName     xml.Name           `xml:"item"`
+	Title       string             `xml:"title"` // required
+	Link        string             `xml:"link"`  // required
+	Description RssItemDescription // required
 	//Content     *RssContent
 	//Author    string `xml:"author,omitempty"`
 	Category string `xml:"category,omitempty"`
@@ -49,6 +49,11 @@ type RssItem struct {
 	Guid    *RssGuid // Id used
 	PubDate string   `xml:"pubDate,omitempty"` // created or updated
 	//Source  string   `xml:"source,omitempty"`
+}
+
+type RssItemDescription struct {
+	XMLName     xml.Name `xml:"description"`
+	Description string   `xml:",cdata"`
 }
 
 type RssGuid struct {

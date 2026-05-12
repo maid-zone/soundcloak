@@ -449,7 +449,7 @@ func (u *User) GenerateFeed(ctx context.Context, prefs cfg.Preferences, base str
 				continue
 			}
 
-			item.Description = buf.String()
+			item.Description.Description = buf.String()
 			f.Items = append(f.Items, &item)
 		}
 	} else {

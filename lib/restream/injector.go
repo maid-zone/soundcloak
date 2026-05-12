@@ -9,9 +9,10 @@ import (
 
 // inject some bytes before the real reader
 type injector struct {
-	leftover []byte
 	reader   io.Reader
 	resp     *fasthttp.Response
+	leftover []byte
+	offset   int
 }
 
 var injectorpool = sync.Pool{
@@ -26,20 +27,23 @@ func acquireInjector() *injector {
 
 func (r *injector) Read(buf []byte) (n int, err error) {
 	if len(r.leftover) != 0 {
-		h := min(len(buf), len(r.leftover))
+		n = copy(buf, r.leftover[r.offset:])
 
-		n = copy(buf, r.leftover[:h])
-
-		if n > len(r.leftover) {
-			r.leftover = nil
+		if r.offset+n >= len(r.leftover) {
+			r.leftover = r.leftover[:0]
+			r.offset = 0
 		} else {
-			r.leftover = r.leftover[n:]
+			r.offset += n
 		}
 
-		return
+		if n == len(buf) {
+			return
+		}
 	}
 
-	return r.reader.Read(buf)
+	m, err := r.reader.Read(buf[n:])
+	n += m
+	return
 }
 
 func (r *injector) Close() error {
@@ -49,12 +53,13 @@ func (r *injector) Close() error {
 	r.reader = nil
 	r.resp = nil
 	r.leftover = r.leftover[:0]
+	r.offset = 0
 
 	injectorpool.Put(r)
 	return nil
 }
 
-func (c *injector) Write(data []byte) (n int, err error) {
-	c.leftover = append(c.leftover, data...)
+func (r *injector) Write(data []byte) (n int, err error) {
+	r.leftover = append(r.leftover, data...)
 	return len(data), nil
 }

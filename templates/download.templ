@@ -7,6 +7,7 @@ templ sel_audio2(name string, selected string, f map[string]bool) {
 	@sel(name, []option{
 		{cfg.AudioAAC, "M4A AAC 160kb/s", f[cfg.AudioAAC]},
 		{cfg.AudioMP3, "MP3 128kb/s", f[cfg.AudioMP3]},
+		{cfg.AudioAACLQ, "M4A AAC 96kb/s", f[cfg.AudioAACLQ]},
 	}, selected)
 }
 

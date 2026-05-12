@@ -220,6 +220,12 @@ templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string,
 	if t.PublisherMetadata.ISRC != "" {
 		<p>ISRC: { t.PublisherMetadata.ISRC }</p>
 	}
+	if t.PublisherMetadata.ISWC != "" {
+		<p>ISWC: { t.PublisherMetadata.ISWC }</p>
+	}
+	if t.PublisherMetadata.UPCorEAN != "" {
+		<p>UPC/EAN: { t.PublisherMetadata.UPCorEAN }</p>
+	}
 	<p>Policy: { t.Policy }</p>
 	if t.TagList != "" {
 		<p>Tags: { sc.TagListParser(t.TagList) }</p>

@@ -235,8 +235,8 @@ func loadDefaultPreferences(loaded Preferences) {
 			fmt.Println(`"best" audio preset has been deprecated, please change it in your config. Interpreting it as "aac"`)
 			DefaultPreferences.RestreamAudio = &AAC
 		case AudioOpus:
-			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "mpeg"`)
-			DefaultPreferences.RestreamAudio = &MP3
+			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "aac_lq"`)
+			DefaultPreferences.RestreamAudio = &AACLQ
 		default:
 			DefaultPreferences.RestreamAudio = loaded.RestreamAudio
 		}
@@ -250,8 +250,8 @@ func loadDefaultPreferences(loaded Preferences) {
 			fmt.Println(`"best" audio preset has been deprecated, please change it in your config. Interpreting it as "aac"`)
 			DefaultPreferences.DownloadAudio = &AAC
 		case AudioOpus:
-			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "mpeg"`)
-			DefaultPreferences.DownloadAudio = &MP3
+			fmt.Println(`"opus" audio preset has been deprecated, please change it in your config. Interpreting it as "aac_lq"`)
+			DefaultPreferences.DownloadAudio = &AACLQ
 		default:
 			DefaultPreferences.DownloadAudio = loaded.RestreamAudio
 		}

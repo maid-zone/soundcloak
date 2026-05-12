@@ -50,19 +50,23 @@ const (
 	// DEPRECATED choose best for quality/size (AudioAAC over AudioOpus over AudioMP3)
 	AudioBest string = "best"
 
-	// 160kbps m4a AAC audio, often available (fallback to AudioMP3 if unavailable)
+	// 160kbps m4a AAC audio, often available (fallback to AudioMP3 or AudioAACLQ if unavailable)
 	AudioAAC string = "aac"
 
 	// DEPRECATED THEY REMOVED ALL OPUS ENCODING 72kbps ogg opus audio, usually available 0% of the time (fallback to AudioMP3 if unavailable)
 	AudioOpus string = "opus"
 
-	// 128kbps mp3 audio, always available, good for compatibility
+	// 128kbps mp3 audio, probably getting dropped by sc soon (fallback to AudioAAC or AudioAACLQ if unavailable)
 	AudioMP3 string = "mpeg"
+
+	// 96kbps m4a AAC audio, most recently added (fallback to AudioMP3 or AudioAAC if unavailable)
+	AudioAACLQ string = "aac_lq"
 )
 
 // for taking ptrs :)
 var MP3 = AudioMP3
 var AAC = AudioAAC
+var AACLQ = AudioAACLQ
 var Progressive = ProgressivePlayer
 
 type Preferences struct {

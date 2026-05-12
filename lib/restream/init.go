@@ -154,7 +154,7 @@ func Load(r *fiber.App) {
 				}
 
 				return c.SendStream(r)
-			case cfg.AudioAAC:
+			case cfg.AudioAAC, cfg.AudioAACLQ:
 				r := acquireReader()
 				err := r.Setup(u.Value.Playlist, true, nil)
 				if err != nil {
@@ -219,7 +219,7 @@ func Load(r *fiber.App) {
 		}
 
 		r := acquireReader()
-		if audio == cfg.AudioAAC {
+		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ {
 			err = r.Setup(u.Value.Playlist, true, &t.Duration)
 		} else {
 			err = r.Setup(u.Value.Playlist, false, nil)

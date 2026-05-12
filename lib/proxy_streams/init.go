@@ -96,7 +96,7 @@ func Load(app *fiber.App) {
 		defer fasthttp.ReleaseResponse(resp)
 
 		httpc := misc.HlsClient
-		if audio == cfg.AudioAAC {
+		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ {
 			httpc = misc.HlsAacClient
 		}
 		err = sc.DoWithRetry(httpc, req, resp)
@@ -105,12 +105,13 @@ func Load(app *fiber.App) {
 		}
 
 		s2 := s[:len(s)-len("/hls")]
-		ln := 0
-		if cl.Value.Base != nil {
-			ln = len(cl.Value.Base.Scheme()) + len("://") + len(cl.Value.Base.Host()) + len(cl.Value.Base.Path())
-		}
 		r := c.Response()
 		if httpc == misc.HlsClient {
+			ln := 0
+			if cl.Value.Base != nil {
+				ln = len(cl.Value.Base.Scheme()) + len("://") + len(cl.Value.Base.Host()) + len(cl.Value.Base.Path())
+			}
+
 			for l := range bytes.SplitSeq(resp.Body(), newline) {
 				if len(l) == 0 {
 					r.AppendBody(newline)

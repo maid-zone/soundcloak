@@ -34,4 +34,5 @@ You can subscribe to `<instance>/_/rss/<username>` in your feed reader program. 
 
 # Extra notes
 
-If you find music that you like, make sure to download it! Stuff that's on there may be deleted or changed at any moment, without any warning or ability to experience it again, unless you download it for yourself. Download button is available if `Restream` is enabled in backend config. You can configure audio preset for downloading in preferences page. For easily and quickly downloading entire users or playlists, you can use my tool [scrip](https://git.maid.zone/laptop/scrip)
+If you find music that you like, make sure to download it! Stuff that's on there may be deleted or changed at any moment, without any warning or ability to experience it again, unless you download it for yourself. Download button is available if `Restream` is enabled in backend config. You can configure audio preset for downloading in preferences page. 
+<!-- For easily and quickly downloading entire users or playlists, you can use my tool [scrip](https://git.maid.zone/laptop/scrip) (its not really maintained, maybe in the future?) -->

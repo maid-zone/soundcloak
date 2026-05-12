@@ -648,8 +648,9 @@ Disallow: /`)
 			}
 
 			disabled_formats := map[string]bool{
-				cfg.AudioAAC: true,
-				cfg.AudioMP3: true,
+				cfg.AudioAAC:   true,
+				cfg.AudioMP3:   true,
+				cfg.AudioAACLQ: true,
 			}
 			for _, tr := range t.Media.Transcodings {
 				switch tr.Format.Protocol {
@@ -658,6 +659,8 @@ Disallow: /`)
 						disabled_formats[cfg.AudioAAC] = false
 					} else if tr.Format.MimeType == "audio/mpeg" {
 						disabled_formats[cfg.AudioMP3] = false
+					} else if tr.Preset == "aac_96k" {
+						disabled_formats[cfg.AudioAACLQ] = false
 					}
 				case sc.ProtocolProgressive:
 					if tr.Format.MimeType == "audio/mpeg" {
@@ -667,7 +670,7 @@ Disallow: /`)
 			}
 
 			if disabled_formats[*p.DownloadAudio] {
-				p.DownloadAudio = &cfg.MP3
+				p.DownloadAudio = &cfg.AACLQ
 			}
 
 			return r(c, "Download "+t.Title+" by "+t.Author.Username, templates.DownloadTrack(p, t, disabled_formats), nil)
