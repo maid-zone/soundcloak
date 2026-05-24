@@ -5,19 +5,19 @@ go 1.26.3
 require (
 	github.com/a-h/templ v0.3.1020
 	github.com/bogem/id3v2/v2 v2.1.4
-	github.com/dlclark/regexp2/v2 v2.0.2
+	github.com/dlclark/regexp2/v2 v2.1.0
 	github.com/gcottom/mp4meta v0.0.5
 	github.com/goccy/go-json v0.10.6
-	github.com/gofiber/fiber/v3 v3.2.0
+	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af
 	github.com/valyala/fasthttp v1.71.0
-	golang.org/x/net v0.54.0
+	golang.org/x/net v0.55.0
 )
 
 require (
 	git.maid.zone/stuff/soundcloakctl v0.0.0-20260424203915-ef7e565cf76f // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
-	github.com/abema/go-mp4 v1.5.0 // indirect
+	github.com/abema/go-mp4 v1.6.0 // indirect
 	github.com/aler9/writerseeker v1.1.0 // indirect
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -26,7 +26,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gofiber/schema v1.7.1 // indirect
-	github.com/gofiber/utils/v2 v2.0.5 // indirect
+	github.com/gofiber/utils/v2 v2.0.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -37,10 +37,10 @@ require (
 	github.com/sunfish-shogi/bufseekio v0.1.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 )

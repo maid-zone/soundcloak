@@ -33,7 +33,10 @@ func Load(a *fiber.App) {
 		req.Header.Reset()
 		req.ResetBody()
 		req.Header.SetUserAgent(cfg.UserAgent)
-		req.Header.Set("Accept-Encoding", "gzip")
+		req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+		if cfg.UseTokensInAPI {
+			sc.Authorize(req)
+		}
 
 		req.URI().SetScheme("https")
 		req.URI().SetHost("api-v2.soundcloud.com")

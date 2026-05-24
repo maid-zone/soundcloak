@@ -28,6 +28,7 @@ templ sel(name string, options []option, selected string) {
 
 templ sel_audio(name string, selected string) {
 	@sel(name, []option{
+		{cfg.AudioAACHQ, "M4A AAC 256kb/s", len(cfg.AccountTokens)==0},
 		{cfg.AudioAAC, "M4A AAC 160kb/s", false},
 		{cfg.AudioMP3, "MP3 128kb/s", false},
 		{cfg.AudioAACLQ, "M4A AAC 96kb/s", false},

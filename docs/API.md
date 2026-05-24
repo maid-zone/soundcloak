@@ -84,7 +84,7 @@ Proxy an image through this instance. Instance must have `ProxyImages` enabled. 
 
 Get an [HLS](https://en.wikipedia.org/wiki/HTTP_Live_Streaming) playlist for streaming the track. Query parameters:
 
-* `audio`: force the audio. Can be `aac`, `mpeg` or `aac_lq`. By default, uses value from preferences
+* `audio`: force the audio. Can be `aac_hq`, `aac`, `mpeg` or `aac_lq`. By default, uses value from preferences
 * `redirect`: if should redirect to playlist on soundcloud's CDN. By default `false`
 * `redirect_parts`: if should redirect to the track parts on soundcloud's CDN. If `ProxyStreams` is disabled on server, will be `true` by default, otherwise `false`
 
@@ -104,7 +104,7 @@ Get an MP3 file of the track. Query parameters:
 
 Get an MP3 or Fragmented M4A file of the track, with metadata injected if needed. Instance must have `Restream` enabled for this to work. Query parameters:
 
-* `audio`: force the audio. Can be `aac`, `mpeg` or `aac_lq`. By default, uses value from preferences
+* `audio`: force the audio. Can be `aac_hq`, `aac`, `mpeg` or `aac_lq`. By default, uses value from preferences
 * `metadata`: if should inject metadata. By default `false`. Metadata values are taken from track on soundcloud
 * `title`: override title in metadata
 * `genre`: override genre in metadata

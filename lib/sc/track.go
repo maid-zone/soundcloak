@@ -114,10 +114,189 @@ type Comment struct {
 }
 
 func (m Media) SelectCompatibleRestream(mode string) (*Transcoding, string) {
-	// aac - aac_160k, mp3, aac_96k
-	// mpeg - mp3, aac_160k, aac_96k
-	// aac_lq - aac_96k, mp3, aac_160k
+	// aac_hq - aac_256k, aac_160k, mp3,      aac_96k
+	// aac    - aac_160k, aac_256k, mp3,      aac_96k
+	// mpeg   - mp3,      aac_256k, aac_160k, aac_96k
+	// aac_lq - aac_96k,  mp3,      aac_160k, aac_256k
 	// progressive mp3 preferred over hls mp3
+
+	// to do just one iteration
+	var (
+		b1 *Transcoding
+		b2 *Transcoding
+		b3 *Transcoding
+		b4 *Transcoding
+	)
+	switch mode {
+	case cfg.AudioAACHQ:
+		for _, t := range m.Transcodings {
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				switch t.Preset {
+				case "aac_256k":
+					return &t, cfg.AudioAACHQ
+				case "aac_160k":
+					if b1 == nil {
+						b1 = &t
+					}
+				case "aac_96k":
+					if b4 == nil {
+						b4 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b3 == nil {
+							b3 = &t
+						}
+					}
+				}
+			case ProtocolProgressive:
+				if b2 == nil && t.Format.MimeType == "audio/mpeg" {
+					b2 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioAAC
+		}
+		if b2 != nil {
+			return b2, cfg.AudioMP3
+		}
+		if b3 != nil {
+			return b3, cfg.AudioMP3
+		}
+		if b4 != nil {
+			return b4, cfg.AudioAACLQ
+		}
+	case cfg.AudioAAC:
+		for _, t := range m.Transcodings {
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				switch t.Preset {
+				case "aac_160k":
+					return &t, cfg.AudioAAC
+				case "aac_256k":
+					if b1 == nil {
+						b1 = &t
+					}
+				case "aac_96k":
+					if b4 == nil {
+						b4 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b3 == nil {
+							b3 = &t
+						}
+					}
+				}
+			case ProtocolProgressive:
+				if b2 == nil && t.Format.MimeType == "audio/mpeg" {
+					b2 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioAACHQ
+		}
+		if b2 != nil {
+			return b2, cfg.AudioMP3
+		}
+		if b3 != nil {
+			return b3, cfg.AudioMP3
+		}
+		if b4 != nil {
+			return b4, cfg.AudioAACLQ
+		}
+	case cfg.AudioMP3:
+		for _, t := range m.Transcodings {
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				switch t.Preset {
+				case "aac_256k":
+					if b2 == nil {
+						b2 = &t
+					}
+				case "aac_160k":
+					if b3 == nil {
+						b3 = &t
+					}
+				case "aac_96k":
+					if b4 == nil {
+						b4 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b1 == nil {
+							b1 = &t
+						}
+					}
+				}
+			case ProtocolProgressive:
+				return &t, cfg.AudioMP3
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		if b2 != nil {
+			return b2, cfg.AudioAACHQ
+		}
+		if b3 != nil {
+			return b3, cfg.AudioAAC
+		}
+		if b4 != nil {
+			return b4, cfg.AudioAACLQ
+		}
+	case cfg.AudioAACLQ:
+		for _, t := range m.Transcodings {
+			switch t.Format.Protocol {
+			case ProtocolHLS:
+				switch t.Preset {
+				case "aac_96k":
+					return &t, cfg.AudioAACLQ
+				case "aac_160k":
+					if b3 == nil {
+						b3 = &t
+					}
+				case "aac_256k":
+					if b4 == nil {
+						b4 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b2 == nil {
+							b2 = &t
+						}
+					}
+				}
+			case ProtocolProgressive:
+				if b1 == nil && t.Format.MimeType == "audio/mpeg" {
+					b1 = &t
+				}
+			}
+		}
+		if b1 != nil {
+			return b1, cfg.AudioMP3
+		}
+		if b2 != nil {
+			return b2, cfg.AudioMP3
+		}
+		if b3 != nil {
+			return b3, cfg.AudioAAC
+		}
+		if b4 != nil {
+			return b4, cfg.AudioAACHQ
+		}
+	}
+	return nil, ""
+}
+
+func (m Media) SelectCompatibleHLS(mode string) (*Transcoding, string) {
+	// aac_hq - aac_256k, aac_160k, mp3,      aac_96k
+	// aac    - aac_160k, aac_256k, mp3,      aac_96k
+	// mpeg   - mp3,      aac_256k, aac_160k, aac_96k
+	// aac_lq - aac_96k,  mp3,      aac_160k, aac_256k
 
 	// to do just one iteration
 	var (
@@ -126,144 +305,122 @@ func (m Media) SelectCompatibleRestream(mode string) (*Transcoding, string) {
 		b3 *Transcoding
 	)
 	switch mode {
-	case cfg.AudioAAC:
+	case cfg.AudioAACHQ:
 		for _, t := range m.Transcodings {
-			switch t.Format.Protocol {
-			case ProtocolHLS:
-				if t.Preset == "aac_160k" {
-					return &t, cfg.AudioAAC
-				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
-					b1 = &t
-				} else if b2 == nil && t.Preset == "aac_96k" {
-					b2 = &t
-				}
-			case ProtocolProgressive:
-				if b3 == nil && t.Format.MimeType == "audio/mpeg" {
-					b3 = &t
+			if t.Format.Protocol == ProtocolHLS {
+				switch t.Preset {
+				case "aac_256k":
+					return &t, cfg.AudioAACHQ
+				case "aac_160k":
+					if b1 == nil {
+						b1 = &t
+					}
+				case "aac_96k":
+					if b3 == nil {
+						b3 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b2 == nil {
+							b2 = &t
+						}
+					}
 				}
 			}
-		}
-		if b3 != nil {
-			return b3, cfg.AudioMP3
 		}
 		if b1 != nil {
-			return b1, cfg.AudioMP3
-		}
-		if b2 != nil {
-			return b2, cfg.AudioAACLQ
-		}
-	case cfg.AudioMP3:
-		for _, t := range m.Transcodings {
-			switch t.Format.Protocol {
-			case ProtocolHLS:
-				if b1 == nil && t.Preset == "aac_160k" {
-					b1 = &t
-				} else if b2 == nil && t.Format.MimeType == "audio/mpeg" {
-					b2 = &t
-				} else if b3 == nil && t.Preset == "aac_96k" {
-					b3 = &t
-				}
-			case ProtocolProgressive:
-				if t.Format.MimeType == "audio/mpeg" {
-					return &t, cfg.AudioMP3
-				}
-			}
+			return b1, cfg.AudioAAC
 		}
 		if b2 != nil {
 			return b2, cfg.AudioMP3
 		}
-		if b1 != nil {
-			return b1, cfg.AudioAAC
-		}
 		if b3 != nil {
-			return b1, cfg.AudioAACLQ
+			return b3, cfg.AudioAACLQ
 		}
-	case cfg.AudioAACLQ:
-		for _, t := range m.Transcodings {
-			switch t.Format.Protocol {
-			case ProtocolHLS:
-				if t.Preset == "aac_96k" {
-					return &t, cfg.AudioAACLQ
-				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
-					b1 = &t
-				} else if b2 == nil && t.Preset == "aac_160k" {
-					b2 = &t
-				}
-			case ProtocolProgressive:
-				if b3 == nil && t.Format.MimeType == "audio/mpeg" {
-					b3 = &t
-				}
-			}
-		}
-		if b3 != nil {
-			return b3, cfg.AudioMP3
-		}
-		if b1 != nil {
-			return b1, cfg.AudioMP3
-		}
-		if b2 != nil {
-			return b2, cfg.AudioAAC
-		}
-	}
-	return nil, ""
-}
-
-func (m Media) SelectCompatibleHLS(mode string) (*Transcoding, string) {
-	// aac - aac_160k, mp3, aac_96k
-	// mpeg - mp3, aac_160k, aac_96k
-	// aac_lq - aac_96k, mp3, aac_160k
-
-	// to do just one iteration
-	var (
-		b1 *Transcoding
-		b2 *Transcoding
-	)
-	switch mode {
 	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
 			if t.Format.Protocol == ProtocolHLS {
-				if t.Preset == "aac_160k" {
+				switch t.Preset {
+				case "aac_160k":
 					return &t, cfg.AudioAAC
-				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
-					b1 = &t
-				} else if b2 == nil && t.Preset == "aac_96k" {
-					b2 = &t
+				case "aac_256k":
+					if b1 == nil {
+						b1 = &t
+					}
+				case "aac_96k":
+					if b3 == nil {
+						b3 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b2 == nil {
+							b2 = &t
+						}
+					}
 				}
 			}
 		}
 		if b1 != nil {
-			return b1, cfg.AudioMP3
+			return b1, cfg.AudioAACHQ
 		}
 		if b2 != nil {
-			return b2, cfg.AudioAACLQ
+			return b2, cfg.AudioMP3
+		}
+		if b3 != nil {
+			return b3, cfg.AudioAACLQ
 		}
 	case cfg.AudioMP3:
 		for _, t := range m.Transcodings {
 			if t.Format.Protocol == ProtocolHLS {
-				if t.Format.MimeType == "audio/mpeg" {
-					return &t, cfg.AudioMP3
-				} else if b1 == nil && t.Preset == "aac_160k" {
-					b1 = &t
-				} else if b2 == nil && t.Preset == "aac_96k" {
-					b2 = &t
+				switch t.Preset {
+				case "aac_256k":
+					if b1 == nil {
+						b1 = &t
+					}
+				case "aac_160k":
+					if b2 == nil {
+						b2 = &t
+					}
+				case "aac_96k":
+					if b3 == nil {
+						b3 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						return &t, cfg.AudioMP3
+					}
 				}
 			}
 		}
 		if b1 != nil {
-			return b1, cfg.AudioAAC
+			return b1, cfg.AudioAACHQ
 		}
 		if b2 != nil {
-			return b2, cfg.AudioAACLQ
+			return b2, cfg.AudioAAC
+		}
+		if b3 != nil {
+			return b3, cfg.AudioAACLQ
 		}
 	case cfg.AudioAACLQ:
 		for _, t := range m.Transcodings {
 			if t.Format.Protocol == ProtocolHLS {
-				if t.Preset == "aac_96k" {
+				switch t.Preset {
+				case "aac_96k":
 					return &t, cfg.AudioAACLQ
-				} else if b1 == nil && t.Format.MimeType == "audio/mpeg" {
-					b1 = &t
-				} else if b2 == nil && t.Preset == "aac_160k" {
-					b2 = &t
+				case "aac_160k":
+					if b2 == nil {
+						b2 = &t
+					}
+				case "aac_256k":
+					if b3 == nil {
+						b3 = &t
+					}
+				default:
+					if t.Format.MimeType == "audio/mpeg" {
+						if b1 == nil {
+							b1 = &t
+						}
+					}
 				}
 			}
 		}
@@ -272,6 +429,9 @@ func (m Media) SelectCompatibleHLS(mode string) (*Transcoding, string) {
 		}
 		if b2 != nil {
 			return b2, cfg.AudioAAC
+		}
+		if b3 != nil {
+			return b3, cfg.AudioAACHQ
 		}
 	}
 	return nil, ""
@@ -429,6 +589,7 @@ func GetTracks(ids string) ([]Track, error) {
 	req.SetURI(uri)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	Authorize(req)
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
@@ -481,6 +642,7 @@ func (tr Transcoding) GetStream(slug string, t Track) (cached[CachedStream], err
 	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.URI().QueryArgs().Set("track_authorization", t.Authorization)
 	req.Header.SetUserAgent(cfg.UserAgent)
+	Authorize(req)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 
 	resp := fasthttp.AcquireResponse()
@@ -583,6 +745,7 @@ func GetTrackByID(id string) (Track, error) {
 	baseUriReq(req)
 	req.URI().SetPath("/tracks/" + id)
 	req.URI().QueryArgs().Set("client_id", ClientID)
+	Authorize(req)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 

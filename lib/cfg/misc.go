@@ -50,16 +50,19 @@ const (
 	// DEPRECATED choose best for quality/size (AudioAAC over AudioOpus over AudioMP3)
 	AudioBest string = "best"
 
-	// 160kbps m4a AAC audio, often available (fallback to AudioMP3 or AudioAACLQ if unavailable)
+	// 256kbps m4a AAC audio, you need account with subscription (fallback to AudioAAC, AudioMP3 or AudioAACLQ if unavailable)
+	AudioAACHQ string = "aac_hq"
+
+	// 160kbps m4a AAC audio, often available (fallback to AudioAACHQ, AudioMP3 or AudioAACLQ if unavailable)
 	AudioAAC string = "aac"
 
 	// DEPRECATED THEY REMOVED ALL OPUS ENCODING 72kbps ogg opus audio, usually available 0% of the time (fallback to AudioMP3 if unavailable)
 	AudioOpus string = "opus"
 
-	// 128kbps mp3 audio, probably getting dropped by sc soon (fallback to AudioAAC or AudioAACLQ if unavailable)
+	// 128kbps mp3 audio, probably getting dropped by sc soon (fallback to AudioAACHQ, AudioAAC or AudioAACLQ if unavailable)
 	AudioMP3 string = "mpeg"
 
-	// 96kbps m4a AAC audio, most recently added (fallback to AudioMP3 or AudioAAC if unavailable)
+	// 96kbps m4a AAC audio, most recently added (fallback to AudioMP3, AudioAAC or AudioAACHQ if unavailable)
 	AudioAACLQ string = "aac_lq"
 )
 

@@ -63,8 +63,8 @@ var PlaylistTTL = 20 * time.Minute
 // delay between cleanup of playlist cache
 var PlaylistCacheCleanDelay = PlaylistTTL / 4
 
-// recommended to keep it Firefox 148 to align with TLS fingerprint i guess
-var UserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0"
+// best keep it same as tls fingerprint
+var UserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0"
 
 // override the extractor
 var ClientID = ""
@@ -79,6 +79,14 @@ var DialDualStack = false
 
 // Spoof TLS fingerprint
 var SpoofTLS = true
+
+// you can use accounts with go+ to get 256k aac quality
+// keep in mind that soundcloak is not an official app, and soundcloud could possibly detect it and ban/restrict your accounts
+// if multiple tokens are provided == they are balanced between using round-robin
+var AccountTokens = []string{}
+
+// use above tokens for the /_/api/v2 as well (if enabled)
+var UseTokensInAPI = false
 
 // // // some webserver configuration, put here to make it easier to configure what you need // // //
 // more info can be found here: https://docs.gofiber.io/api/fiber#config
@@ -438,6 +446,22 @@ func fromEnv() error {
 		SpoofTLS = boolean(env)
 	}
 
+	env = os.Getenv("ACCOUNT_TOKENS")
+	if env != "" {
+		var p []string
+		err := json.Unmarshal(S2b(env), &p)
+		if err != nil {
+			return err
+		}
+
+		AccountTokens = p
+	}
+
+	env = os.Getenv("USE_TOKENS_IN_API")
+	if env != "" {
+		UseTokensInAPI = boolean(env)
+	}
+
 	env = os.Getenv("NETWORK")
 	if env != "" {
 		Network = env
@@ -535,6 +559,8 @@ func init() {
 		SoundcloudApiProxy      *string
 		DialDualStack           *bool
 		SpoofTLS                *bool
+		AccountTokens           *[]string
+		UseTokensInAPI          *bool
 		Network                 *string
 		Addr                    *string
 		UnixSocketPerms         *string
@@ -610,6 +636,12 @@ func init() {
 	}
 	if config.SpoofTLS != nil {
 		SpoofTLS = *config.SpoofTLS
+	}
+	if config.AccountTokens != nil {
+		AccountTokens = *config.AccountTokens
+	}
+	if config.UseTokensInAPI != nil {
+		UseTokensInAPI = *config.UseTokensInAPI
 	}
 	if config.Network != nil {
 		Network = *config.Network

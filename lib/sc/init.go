@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -26,6 +27,20 @@ import (
 
 var ProxyErr = errors.New("could not connect to proxy")
 var parsedproxy string
+
+var auth_state atomic.Int64
+
+func Authorize(req *fasthttp.Request) {
+	switch len(cfg.AccountTokens) {
+	case 0:
+		return
+	case 1:
+		req.Header.Set("Authorization", cfg.AccountTokens[0])
+	default:
+		// req.Header.Set("Authorization", cfg.AccountTokens[rand.IntN(len(cfg.AccountTokens))])
+		req.Header.Set("Authorization", cfg.AccountTokens[int(auth_state.Add(1))%len(cfg.AccountTokens)])
+	}
+}
 
 // don't jus leak the proxy like that lol
 func scrub(err error) error {
@@ -314,6 +329,7 @@ func Resolve(path string, out any) error {
 	req.URI().QueryArgs().Set("client_id", ClientID)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	Authorize(req)
 
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
@@ -354,6 +370,7 @@ func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
 		req.SetRequestURI(p.NextHref)
 	}
 	req.URI().QueryArgs().Set("client_id", ClientID)
+	Authorize(req)
 	req.Header.SetUserAgent(cfg.UserAgent)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9") // you get captcha without it :)
@@ -531,6 +548,186 @@ var underlying fasthttp.DialFunc = func(addr string) (net.Conn, error) {
 }
 
 func utls_dial(addr string) (net.Conn, error) {
+	conn, err := underlying(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+
+	uconn := utls.UClient(conn, &utls.Config{
+		ServerName:                         host,
+		OmitEmptyPsk:                       true,
+		ClientSessionCache:                 tls_cache,
+		PreferSkipResumptionOnNilExtension: false,
+	}, utls.HelloCustom)
+	spec := &utls.ClientHelloSpec{
+		TLSVersMin: utls.VersionTLS12,
+		TLSVersMax: utls.VersionTLS13,
+		CipherSuites: []uint16{
+			utls.TLS_AES_128_GCM_SHA256,
+			utls.TLS_CHACHA20_POLY1305_SHA256,
+			utls.TLS_AES_256_GCM_SHA384,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+			utls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			utls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			//utls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+			//utls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			utls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			utls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+		CompressionMethods: []uint8{
+			0x0, // no compression
+		},
+		Extensions: make([]utls.TLSExtension, 0, 18),
+	}
+	spec.Extensions = append(spec.Extensions,
+		&utls.SNIExtension{},
+		&utls.ExtendedMasterSecretExtension{},
+		&utls.RenegotiationInfoExtension{
+			Renegotiation: utls.RenegotiateOnceAsClient,
+		},
+		&utls.SupportedCurvesExtension{
+			Curves: []utls.CurveID{
+				utls.X25519MLKEM768,
+				utls.X25519,
+				utls.CurveP256,
+				utls.CurveP384,
+				utls.CurveP521,
+				0x0100,
+				0x0101,
+			},
+		},
+		&utls.SupportedPointsExtension{
+			SupportedPoints: []uint8{
+				0x0, // uncompressed
+			},
+		},
+	)
+
+	// tls1.2 - session tickets for resumption
+	// tls1.3 - preshared keys
+	// firefox doesn't include sessionticket ext if preshared keys were used
+	if s, ok := tls_cache.Get(host); !ok || s.Vers() == utls.VersionTLS12 {
+		spec.Extensions = append(spec.Extensions, &utls.SessionTicketExtension{})
+	}
+
+	var alpn_ext *utls.ALPNExtension
+	if host == "api-v2.soundcloud.com" {
+		// api-v2 has no h2, and fasthttp have no h2, so we can safely spoof h2 :P
+		// maybe in the future I will have to rewrite to golang's http for using h2
+		alpn_ext = &utls.ALPNExtension{
+			AlpnProtocols: []string{
+				"h2",
+				"http/1.1",
+			},
+		}
+	} else {
+		alpn_ext = &utls.ALPNExtension{
+			AlpnProtocols: []string{
+				"http/1.1",
+			},
+		}
+	}
+
+	spec.Extensions = append(spec.Extensions,
+		alpn_ext,
+		&utls.StatusRequestExtension{},
+		&utls.FakeDelegatedCredentialsExtension{
+			SupportedSignatureAlgorithms: []utls.SignatureScheme{
+				utls.ECDSAWithP256AndSHA256,
+				utls.ECDSAWithP384AndSHA384,
+				utls.ECDSAWithP521AndSHA512,
+				utls.ECDSAWithSHA1,
+			},
+		},
+		&utls.SCTExtension{},
+		&utls.KeyShareExtension{
+			KeyShares: append(
+				utls.ReuseHybridAndClassicalKeyShares(
+					utls.KeyShare{
+						Group: utls.X25519MLKEM768,
+					},
+					utls.KeyShare{
+						Group: utls.X25519,
+					},
+				),
+				utls.KeyShare{
+					Group: utls.CurveP256,
+				},
+			),
+		},
+		&utls.SupportedVersionsExtension{
+			Versions: []uint16{
+				utls.VersionTLS13,
+				utls.VersionTLS12,
+			},
+		},
+		&utls.SignatureAlgorithmsExtension{
+			SupportedSignatureAlgorithms: []utls.SignatureScheme{
+				utls.ECDSAWithP256AndSHA256,
+				utls.ECDSAWithP384AndSHA384,
+				utls.ECDSAWithP521AndSHA512,
+				utls.PSSWithSHA256,
+				utls.PSSWithSHA384,
+				utls.PSSWithSHA512,
+				utls.PKCS1WithSHA256,
+				utls.PKCS1WithSHA384,
+				utls.PKCS1WithSHA512,
+				utls.ECDSAWithSHA1,
+				utls.PKCS1WithSHA1,
+			},
+		},
+		&utls.PSKKeyExchangeModesExtension{
+			Modes: []uint8{
+				utls.PskModeDHE,
+			},
+		},
+		&utls.FakeRecordSizeLimitExtension{
+			Limit: 0x4001,
+		},
+		&utls.UtlsCompressCertExtension{Algorithms: []utls.CertCompressionAlgo{
+			utls.CertCompressionZlib,
+			utls.CertCompressionBrotli,
+			utls.CertCompressionZstd,
+		}},
+		&utls.GREASEEncryptedClientHelloExtension{
+			CandidateCipherSuites: []utls.HPKESymmetricCipherSuite{
+				{
+					KdfId:  dicttls.HKDF_SHA256,
+					AeadId: dicttls.AEAD_AES_128_GCM,
+				},
+				{
+					KdfId:  dicttls.HKDF_SHA256,
+					AeadId: dicttls.AEAD_CHACHA20_POLY1305,
+				},
+			},
+			CandidatePayloadLens: []uint16{223}, // +16: 239
+		},
+		&utls.UtlsPreSharedKeyExtension{})
+	uconn.ApplyPreset(spec)
+
+	err = uconn.Handshake()
+	if err != nil {
+		uconn.Close()
+		return nil, err
+	}
+
+	return uconn, nil
+
+}
+
+func utls_dial2(addr string) (net.Conn, error) {
 	conn, err := underlying(addr)
 	if err != nil {
 		return nil, err
