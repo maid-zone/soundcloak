@@ -876,7 +876,7 @@ func (t Track) GetComments(prefs cfg.Preferences, args string) (*Paginated[*Comm
 
 func ToExt(audio string) string {
 	switch audio {
-	case cfg.AudioAAC, cfg.AudioAACLQ:
+	case cfg.AudioAACHQ, cfg.AudioAAC, cfg.AudioAACLQ:
 		return "m4a"
 	case cfg.AudioMP3:
 		return "mp3"
