@@ -96,7 +96,7 @@ func Load(app *fiber.App) {
 		defer fasthttp.ReleaseResponse(resp)
 
 		httpc := misc.HlsClient
-		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ {
+		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ || audio == cfg.AudioAACHQ {
 			httpc = misc.HlsAacClient
 		}
 		err = sc.DoWithRetry(httpc, req, resp)
