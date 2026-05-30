@@ -1,5 +1,5 @@
-git.maid.zone/stuff/soundcloakctl v0.0.0-20260424203915-ef7e565cf76f h1:+TIeX8zqw4qAEm+TyohLxuzw2BLVT1vluo8AeFUTOSE=
-git.maid.zone/stuff/soundcloakctl v0.0.0-20260424203915-ef7e565cf76f/go.mod h1:AX7VoScL1iKNX0EMCT8TsPMOLQIUDk3nPGYAzvfMTnc=
+git.maid.zone/stuff/soundcloakctl v0.0.0-20260530153525-364d377da90f h1:eQ9G/6eUgJP8nclYaFWYHuuj0k0omdvYRaHv5ioBl4k=
+git.maid.zone/stuff/soundcloakctl v0.0.0-20260530153525-364d377da90f/go.mod h1:zGCl4UhxBXeQAH7pR7BEO6YRjVw3qTZsp/g96odhHcg=
 github.com/a-h/parse v0.0.0-20250122154542-74294addb73e h1:HjVbSQHy+dnlS6C3XajZ69NYAb5jbGNfHanvm1+iYlo=
 github.com/a-h/parse v0.0.0-20250122154542-74294addb73e/go.mod h1:3mnrkvGpurZ4ZrTDbYU84xhwXW2TjTKShSwjRi2ihfQ=
 github.com/a-h/templ v0.3.1020 h1:ypAT/L5ySWEnZ6Zft/5yfoWXYYkhFNvEFOeeqecg4tw=
