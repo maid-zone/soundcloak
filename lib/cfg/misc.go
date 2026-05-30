@@ -96,9 +96,10 @@ type Preferences struct {
 
 	// Check above for more info
 	// Probably best to keep all at "mpeg" by default for compatibility
-	HLSAudio      *string //
-	RestreamAudio *string // You can actually use anything here and above
-	DownloadAudio *string // "aac" may not play well with some players due to it being in segmented format (maybe i will write something to remux it in the future)
+	HLSAudio         *string //
+	RestreamAudio    *string // You can actually use anything here and above
+	ProgressiveAudio *string // "mpeg" for free, "aac_hq" for go+ accounts
+	DownloadAudio    *string // "aac" may not play well with some players due to it being in segmented format (maybe i will write something to remux it in the future)
 
 	ShowAudio *bool // display audio (aac/mpeg) under track player
 
@@ -109,6 +110,8 @@ type Preferences struct {
 	KeepPlayerFocus *bool // keep player element in focus
 
 	Waveform *bool // show waveform
+
+	DRM *bool // allow playing DRM tracks with HLS player (widevine, decryption on your device)
 }
 
 func B2s(b []byte) string {

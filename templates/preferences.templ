@@ -35,6 +35,13 @@ templ sel_audio(name string, selected string) {
 	}, selected)
 }
 
+templ sel_audio_prog(name string, selected string) {
+	@sel(name, []option{
+		{cfg.AudioAACHQ, "M4A AAC 256kb/s", len(cfg.AccountTokens)==0},
+		{cfg.AudioMP3, "MP3 128kb/s", false},
+	}, selected)
+}
+
 templ js() {
 	<span class="js">(requires JS)</span>
 }
@@ -100,6 +107,10 @@ templ Preferences(prefs cfg.Preferences) {
 						@checkbox("ProxyStreams", *prefs.ProxyStreams)
 					</label>
 				}
+				<label>
+					Streaming audio:
+					@sel_audio_prog("ProgressiveAudio", *prefs.ProgressiveAudio)
+				</label>
 			case cfg.HLSPlayer:
 				if cfg.ProxyStreams {
 					<label>
@@ -114,6 +125,10 @@ templ Preferences(prefs cfg.Preferences) {
 				<label>
 					Streaming audio:
 					@sel_audio("HLSAudio", *prefs.HLSAudio)
+				</label>
+				<label>
+					Widevine DRM:
+					@checkbox("DRM", *prefs.DRM)
 				</label>
 			case cfg.RestreamPlayer:
 				<label>

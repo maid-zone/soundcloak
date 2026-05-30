@@ -156,10 +156,10 @@ func defaultPreferences() {
 	p2 := AutoplayNormal
 	DefaultPreferences.DefaultAutoplayMode = &p2
 
-	p3 := AudioMP3
-	DefaultPreferences.HLSAudio = &p3
-	DefaultPreferences.RestreamAudio = &p3
-	DefaultPreferences.DownloadAudio = &p3
+	DefaultPreferences.HLSAudio = &MP3
+	DefaultPreferences.RestreamAudio = &MP3
+	DefaultPreferences.ProgressiveAudio = &MP3
+	DefaultPreferences.DownloadAudio = &MP3
 
 	DefaultPreferences.ShowAudio = &False
 
@@ -167,6 +167,7 @@ func defaultPreferences() {
 	DefaultPreferences.DynamicLoadComments = &False
 	DefaultPreferences.KeepPlayerFocus = &False
 	DefaultPreferences.Waveform = &False
+	DefaultPreferences.DRM = &False
 }
 
 func loadDefaultPreferences(loaded Preferences) {
@@ -252,6 +253,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.RestreamAudio = &MP3
 	}
 
+	if loaded.ProgressiveAudio != nil {
+		DefaultPreferences.ProgressiveAudio = loaded.ProgressiveAudio
+	} else {
+		DefaultPreferences.ProgressiveAudio = &MP3
+	}
+
 	if loaded.DownloadAudio != nil {
 		switch *loaded.DownloadAudio {
 		case AudioBest:
@@ -295,6 +302,12 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.Waveform = loaded.Waveform
 	} else {
 		DefaultPreferences.Waveform = &False
+	}
+
+	if loaded.DRM != nil {
+		DefaultPreferences.DRM = loaded.DRM
+	} else {
+		DefaultPreferences.DRM = &False
 	}
 }
 

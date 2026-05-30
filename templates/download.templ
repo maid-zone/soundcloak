@@ -5,7 +5,7 @@ import "git.maid.zone/stuff/soundcloak/lib/cfg"
 
 templ sel_audio2(name string, selected string, f map[string]bool) {
 	@sel(name, []option{
-		{cfg.AudioAAC, "M4A AAC 256kb/s", f[cfg.AudioAACHQ]},
+		{cfg.AudioAACHQ, "M4A AAC 256kb/s", f[cfg.AudioAACHQ]},
 		{cfg.AudioAAC, "M4A AAC 160kb/s", f[cfg.AudioAAC]},
 		{cfg.AudioMP3, "MP3 128kb/s", f[cfg.AudioMP3]},
 		{cfg.AudioAACLQ, "M4A AAC 96kb/s", f[cfg.AudioAACLQ]},
@@ -23,6 +23,9 @@ templ DownloadTrack(prefs cfg.Preferences, t sc.Track, disabled_formats map[stri
 	<h1><a href={templ.SafeURL(t.Href())} id="title">{ t.Title }</a></h1>
 	if t.Policy == sc.PolicySnip {
 		<h2>Full track not available, only a 30-second snippet.</h2>
+	}
+	if t.Media.HasDRM() {
+		<h2>Soundcloud is forcing DRM for this track. Downloads most likely won't work</h2>
 	}
 	// just nice script to redirect you back to track page :)
 	<form method="post" autocomplete="off" onsubmit="setTimeout(function(){location='/'+location.pathname.split('/').slice(3).join('/')},7500)">

@@ -56,7 +56,7 @@ func fixDuration(data []byte, duration *uint32) {
 	}
 }
 
-func (r *reader) Setup(url *fasthttp.URI, aac bool, duration *uint32) error {
+func (r *reader) Setup(url *fasthttp.URI, aac bool, legacy bool, duration *uint32) error {
 	if r.req == nil {
 		r.req = fasthttp.AcquireRequest()
 	}
@@ -68,11 +68,13 @@ func (r *reader) Setup(url *fasthttp.URI, aac bool, duration *uint32) error {
 	r.req.SetURI(url)
 	r.req.Header.SetUserAgent(cfg.UserAgent)
 
-	if aac {
-		r.client = misc.HlsAacClient
-		r.duration = duration
-	} else {
+	if legacy {
 		r.client = misc.HlsClient
+	} else {
+		r.client = misc.HlsAacClient
+	}
+	if aac {
+		r.duration = duration
 	}
 
 	err := sc.DoWithRetry(r.client, r.req, r.resp)

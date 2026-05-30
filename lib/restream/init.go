@@ -66,7 +66,7 @@ func Load(r *fiber.App) {
 				quality = *p.RestreamAudio
 			}
 		}
-
+		var tr *sc.Transcoding
 		if isDownload {
 			var s []byte
 			if s = c.RequestCtx().QueryArgs().Peek("title"); len(s) > 0 {
@@ -78,9 +78,11 @@ func Load(r *fiber.App) {
 			if s = c.RequestCtx().QueryArgs().Peek("author"); len(s) > 0 {
 				t.Author.Username = cfg.B2s(s)
 			}
+			tr = t.Media.SelectCompatibleDownload(quality)
+		} else {
+			tr = t.Media.SelectCompatibleRestream(quality)
 		}
 
-		tr, audio := t.Media.SelectCompatibleRestream(quality)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -95,14 +97,14 @@ func Load(r *fiber.App) {
 		resp := c.Response()
 		resp.Header.SetContentType(tr.Format.MimeType)
 		resp.Header.Set("Cache-Control", cfg.RestreamCacheControl)
-		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+sc.ToExt(audio)+`"`)
+		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+tr.ToExt()+`"`)
 
 		if isDownload {
 			if t.Artwork != "" {
 				t.Artwork = strings.Replace(t.Artwork, "t500x500", "original", 1)
 			}
 
-			switch audio {
+			switch tr.SoundcloakPreset {
 			case cfg.AudioMP3:
 				req := fasthttp.AcquireRequest()
 				resp := fasthttp.AcquireResponse()
@@ -148,7 +150,7 @@ func Load(r *fiber.App) {
 				tag.WriteTo(r)
 				r.req = req
 				r.resp = resp
-				err := r.Setup(u.Value.Playlist, false, nil)
+				err := r.Setup(u.Value.Playlist, false, true, nil)
 				if err != nil {
 					return err
 				}
@@ -156,7 +158,7 @@ func Load(r *fiber.App) {
 				return c.SendStream(r)
 			case cfg.AudioAACHQ, cfg.AudioAAC, cfg.AudioAACLQ:
 				r := acquireReader()
-				err := r.Setup(u.Value.Playlist, true, nil)
+				err := r.Setup(u.Value.Playlist, true, tr.Legacy, nil)
 				if err != nil {
 					return err
 				}
@@ -213,16 +215,16 @@ func Load(r *fiber.App) {
 			req.Header.SetUserAgent(cfg.UserAgent)
 
 			err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
-			resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+`.mp3"`)
+			resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+tr.ToExt()+`"`)
 			resp.Header.Del("Accept-Ranges")
 			return err
 		}
 
 		r := acquireReader()
-		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ || audio == cfg.AudioAACHQ {
-			err = r.Setup(u.Value.Playlist, true, &t.Duration)
+		if tr.SoundcloakPreset == cfg.AudioAACHQ || tr.SoundcloakPreset == cfg.AudioAAC || tr.SoundcloakPreset == cfg.AudioAACLQ {
+			err = r.Setup(u.Value.Playlist, true, tr.Legacy, &t.Duration)
 		} else {
-			err = r.Setup(u.Value.Playlist, false, nil)
+			err = r.Setup(u.Value.Playlist, false, true, nil)
 		}
 
 		if err != nil {

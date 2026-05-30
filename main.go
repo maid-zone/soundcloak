@@ -489,17 +489,17 @@ Disallow: /`)
 		track.Postfix(prefs, true)
 
 		displayErr := ""
-		stream := ""
+		var stream sc.Stream
 
 		prefs.Player = &cfg.Progressive
 		var tr *sc.Transcoding
-		tr = track.Media.SelectCompatibleProgressive()
+		tr = track.Media.SelectCompatibleProgressive(prefs)
 		if tr == nil {
 			err = sc.ErrIncompatibleStream
 		} else {
-			stream = "/_/api/progressive" + track.Href()
+			stream.URL = "/_/api/progressive" + track.Href()
 			if !cfg.ProxyStreams {
-				stream += "?redirect=true"
+				stream.URL += "?redirect=true"
 			}
 		}
 
@@ -510,7 +510,7 @@ Disallow: /`)
 			}
 		}
 
-		return render(c, templates.TrackEmbed(prefs, track, stream, displayErr))
+		return render(c, templates.TrackEmbed(prefs, track, tr, stream, displayErr))
 	})
 
 	app.Get("/tags/:tag", func(c fiber.Ctx) error {
@@ -664,9 +664,13 @@ Disallow: /`)
 					case "aac_96k":
 						disabled_formats[cfg.AudioAACLQ] = false
 					default:
-						if tr.Format.MimeType == "audio/mpeg" {
+						switch tr.Format.MimeType {
+						case "audio/mpeg":
 							disabled_formats[cfg.AudioMP3] = false
+						case `audio/mp4; codecs="mp4a.40.2"`:
+							disabled_formats[cfg.AudioAACHQ] = false
 						}
+
 					}
 				case sc.ProtocolProgressive:
 					if tr.Format.MimeType == "audio/mpeg" {
@@ -931,36 +935,43 @@ Disallow: /`)
 		track.Postfix(prefs, true)
 
 		displayErr := ""
-		stream := ""
-		audio := ""
+		var stream sc.Stream
+		var tr *sc.Transcoding
 
 		if *prefs.Player != cfg.NonePlayer {
 			if *prefs.Player == cfg.HLSPlayer {
-				var tr *sc.Transcoding
-				tr, audio = track.Media.SelectCompatibleHLS(*prefs.HLSAudio)
+				tr = track.Media.SelectCompatibleAnyHLS(prefs)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
-					stream = "/_/api/hls" + track.Href()
+					stream.URL = "/_/api/hls" + track.Href()
 					if !*prefs.ProxyStreams {
-						stream += "?redirect_parts=true"
+						stream.URL += "?redirect_parts=true"
+					}
+					if tr.HasDRM() {
+						var cs sc.Cached[sc.CachedStream]
+						cs, err = tr.GetStream("", track)
+						if *prefs.ProxyStreams {
+							stream.License = "/_/api/wv?license_token=" + cs.Value.License
+						} else {
+							stream.License = "https://license.media-streaming.soundcloud.cloud/playback/widevine?license_token=" + cs.Value.License
+						}
 					}
 				}
 			} else if *prefs.Player == cfg.RestreamPlayer {
-				stream = "/_/api/restream" + track.Href()
-				_, audio = track.Media.SelectCompatibleRestream(*prefs.RestreamAudio)
-				if audio == "" {
+				stream.URL = "/_/api/restream" + track.Href()
+				tr = track.Media.SelectCompatibleRestream(*prefs.RestreamAudio)
+				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				}
 			} else {
-				audio = cfg.AudioMP3
-				tr := track.Media.SelectCompatibleProgressive()
+				tr = track.Media.SelectCompatibleProgressive(prefs)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
-					stream = "/_/api/progressive" + track.Href()
+					stream.URL = "/_/api/progressive" + track.Href()
 					if !*prefs.ProxyStreams {
-						stream += "?redirect=true"
+						stream.URL += "?redirect=true"
 					}
 				}
 			}
@@ -1037,7 +1048,8 @@ Disallow: /`)
 			}
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, audio, comments), templates.TrackHeader(prefs, track, true))
+		// its so much arguments i should do something about it maybe lol
+		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, tr, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, comments), templates.TrackHeader(prefs, track, true))
 	})
 
 	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {

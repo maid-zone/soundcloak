@@ -10,7 +10,7 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 )
 
-var PlaylistsCache = map[string]cached[Playlist]{}
+var PlaylistsCache = map[string]Cached[Playlist]{}
 var playlistsCacheLock = &sync.RWMutex{}
 
 // Functions/structures related to playlists
@@ -59,7 +59,7 @@ func GetPlaylist(permalink string) (Playlist, error) {
 	}
 
 	playlistsCacheLock.Lock()
-	PlaylistsCache[permalink] = cached[Playlist]{Value: p, Expires: time.Now().Add(cfg.PlaylistTTL)}
+	PlaylistsCache[permalink] = Cached[Playlist]{Value: p, Expires: time.Now().Add(cfg.PlaylistTTL)}
 	playlistsCacheLock.Unlock()
 
 	return p, nil

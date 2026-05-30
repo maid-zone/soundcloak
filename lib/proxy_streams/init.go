@@ -2,7 +2,6 @@ package proxystreams
 
 import (
 	"bytes"
-	"strings"
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
@@ -28,7 +27,7 @@ func lastSegment(p []byte) []byte {
 	}
 	i2 := bytes.IndexByte(p[i:], '?')
 	if i2 == -1 {
-		i2 = len(p)
+		i2 = len(p) - i
 	}
 	return p[i : i+i2]
 }
@@ -49,6 +48,11 @@ func Load(app *fiber.App) {
 	// this also hides away the long ephemeral URLs behind the server, like restream does
 	// but still gives you an option to get redirected there (for example if you got ProxyStreams disabled)
 	app.Get("/_/api/hls/*", func(c fiber.Ctx) error {
+		p, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
 		s := c.Path()[len("/_/api/hls/"):]
 		t, err := sc.GetTrack(s)
 		if err != nil {
@@ -56,18 +60,12 @@ func Load(app *fiber.App) {
 		}
 
 		var forcedQuality = c.RequestCtx().QueryArgs().Peek("audio")
-		var quality string
 		if len(forcedQuality) != 0 {
-			quality = cfg.B2s(forcedQuality)
-		} else {
-			p, err := preferences.Get(c)
-			if err != nil {
-				return err
-			}
-			quality = *p.HLSAudio
+			v := cfg.B2s(forcedQuality)
+			p.HLSAudio = &v
 		}
 
-		tr, audio := t.Media.SelectCompatibleHLS(quality)
+		tr := t.Media.SelectCompatibleAnyHLS(p)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -79,9 +77,10 @@ func Load(app *fiber.App) {
 		}
 
 		req := c.Request()
+		r := c.Response()
 		if string(req.URI().QueryArgs().Peek("redirect")) == "true" {
-			c.Response().SetStatusCode(fiber.StatusFound)
-			c.Response().Header.SetBytesV("Location", cl.Value.Playlist.FullURI())
+			r.SetStatusCode(fiber.StatusFound)
+			r.Header.SetBytesV("Location", cl.Value.Playlist.FullURI())
 			return nil
 		}
 		var params []byte
@@ -96,7 +95,7 @@ func Load(app *fiber.App) {
 		defer fasthttp.ReleaseResponse(resp)
 
 		httpc := misc.HlsClient
-		if audio == cfg.AudioAAC || audio == cfg.AudioAACLQ || audio == cfg.AudioAACHQ {
+		if !tr.Legacy {
 			httpc = misc.HlsAacClient
 		}
 		err = sc.DoWithRetry(httpc, req, resp)
@@ -104,8 +103,6 @@ func Load(app *fiber.App) {
 			return err
 		}
 
-		s2 := s[:len(s)-len("/hls")]
-		r := c.Response()
 		if httpc == misc.HlsClient {
 			ln := 0
 			if cl.Value.Base != nil {
@@ -119,7 +116,30 @@ func Load(app *fiber.App) {
 				}
 
 				if l[0] == '#' {
-					r.AppendBody(l)
+					// #EXT-X-MAP:URI="..."
+					const x = `#EXT-X-MAP:URI="`
+					if len(l) > len(x) && string(l[:len(x)]) == x {
+						if cl.Value.LegacyHlsAacInit == nil {
+							cl.Value.LegacyHlsAacInit = fasthttp.AcquireURI()
+						}
+						if cl.Value.LegacyHlsAacInit.Parse(nil, l[len(x):len(l)-1]) != nil {
+							continue
+						}
+						sc.StreamCacheMut.Lock()
+						sc.StreamCache[s] = cl
+						sc.StreamCacheMut.Unlock()
+
+						r.AppendBodyString(`#EXT-X-MAP:URI="/_/proxy/hls/`)
+						r.AppendBodyString(s)
+						if len(params) == 0 {
+							r.AppendBodyString(`?init=true"`)
+						} else {
+							r.AppendBody(params)
+							r.AppendBodyString(`&init=true"`)
+						}
+					} else {
+						r.AppendBody(l)
+					}
 					r.AppendBody(newline)
 					continue
 				}
@@ -157,7 +177,7 @@ func Load(app *fiber.App) {
 				// /0/31762
 
 				r.AppendBodyString("/_/proxy/hls/")
-				r.AppendBodyString(s2)
+				r.AppendBodyString(s)
 				r.AppendBody(l)
 				r.AppendBody(params)
 				r.AppendBody(newline)
@@ -174,7 +194,7 @@ func Load(app *fiber.App) {
 					const x = `#EXT-X-MAP:URI="`
 					if len(l) > len(x) && string(l[:len(x)]) == x {
 						r.AppendBodyString(`#EXT-X-MAP:URI="/_/proxy/hls/`)
-						r.AppendBodyString(s2)
+						r.AppendBodyString(s)
 						r.AppendBody(lastSegment(l[len(x) : len(l)-1]))
 						r.AppendBody(params)
 						r.AppendBodyString(`"`)
@@ -200,7 +220,7 @@ func Load(app *fiber.App) {
 				}
 
 				r.AppendBodyString("/_/proxy/hls/")
-				r.AppendBodyString(s2)
+				r.AppendBodyString(s)
 				r.AppendBody(lastSegment(l))
 				r.AppendBody(params)
 				r.AppendBody(newline)
@@ -210,13 +230,14 @@ func Load(app *fiber.App) {
 		return nil
 	})
 
-	app.Get("/_/proxy/hls/:author/:track/:quality/:preset/*", func(c fiber.Ctx) error {
+	app.Get("/_/proxy/hls/:author/:track/:quality/:preset/:protocol/*", func(c fiber.Ctx) error {
 		req := c.Request()
 		p := c.Params("preset")
-		aac := strings.HasPrefix(p, "aac_")
-		s := c.Params("author") + "/" + c.Params("track") + "/" + c.Params("quality") + "/" + p + "/hls"
+		aac := string(p) == "aac_256k" || string(p) == "aac_160k" || string(p) == "aac_96k"
+		protocol := c.Params("protocol")
+		s := c.Params("author") + "/" + c.Params("track") + "/" + c.Params("quality") + "/" + p + "/" + protocol
 		_s := c.Request().URI().Path()
-		fp := string(_s[len("/_/proxy/hls/")+len(s)-len("/hls")+1:])
+		fp := string(_s[len("/_/proxy/hls/")+len(s):])
 		//fmt.Println(s, string(_s), fp)
 		sc.StreamCacheMut.RLock()
 		cl, ok := sc.StreamCache[s]
@@ -230,7 +251,7 @@ func Load(app *fiber.App) {
 			q := c.Params("quality")
 			var transcoding *sc.Transcoding
 			for _, tr := range t.Media.Transcodings {
-				if tr.Format.Protocol == sc.ProtocolHLS && tr.Quality == q && tr.Preset == p {
+				if tr.Format.Protocol == sc.Protocol(protocol) && tr.Quality == q && tr.Preset == p {
 					transcoding = &tr
 					break
 				}
@@ -252,6 +273,7 @@ func Load(app *fiber.App) {
 		}
 
 		redir := !cfg.ProxyStreams || string(req.URI().QueryArgs().Peek("redirect")) == "true"
+		init := string(req.URI().QueryArgs().Peek("init")) == "true"
 		req.Reset()
 		req.Header.SetUserAgent(cfg.UserAgent)
 		resp := c.Response()
@@ -265,7 +287,24 @@ func Load(app *fiber.App) {
 				return err
 			}
 			for l := range bytes.SplitSeq(resp.Body(), newline) {
-				if len(l) == 0 || l[0] == '#' {
+				if len(l) == 0 {
+					continue
+				}
+
+				if l[0] == '#' {
+					// #EXT-X-MAP:URI="..."
+					const x = `#EXT-X-MAP:URI="`
+					if len(l) > len(x) && string(l[:len(x)]) == x {
+						if cl.Value.LegacyHlsAacInit == nil {
+							cl.Value.LegacyHlsAacInit = fasthttp.AcquireURI()
+						}
+						if cl.Value.LegacyHlsAacInit.Parse(nil, l[len(x):len(l)-1]) != nil {
+							continue
+						}
+						sc.StreamCacheMut.Lock()
+						sc.StreamCache[s] = cl
+						sc.StreamCacheMut.Unlock()
+					}
 					continue
 				}
 
@@ -288,6 +327,17 @@ func Load(app *fiber.App) {
 					break
 				}
 			}
+		}
+
+		if init && cl.Value.LegacyHlsAacInit != nil {
+			if redir {
+				resp.SetStatusCode(fiber.StatusFound)
+				resp.Header.SetBytesV("Location", cl.Value.LegacyHlsAacInit.FullURI())
+				return nil
+			}
+
+			req.SetURI(cl.Value.LegacyHlsAacInit)
+			return sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 		}
 
 		req.SetURI(cl.Value.Base)
@@ -313,13 +363,24 @@ func Load(app *fiber.App) {
 	})
 
 	app.Get("/_/api/progressive/*", func(c fiber.Ctx) error {
+		p, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
 		s := c.Path()[len("/_/api/progressive/"):]
 		t, err := sc.GetTrack(s)
 		if err != nil {
 			return err
 		}
 
-		tr := t.Media.SelectCompatibleProgressive()
+		var forcedQuality = c.RequestCtx().QueryArgs().Peek("audio")
+		if len(forcedQuality) != 0 {
+			v := cfg.B2s(forcedQuality)
+			p.ProgressiveAudio = &v
+		}
+
+		tr := t.Media.SelectCompatibleProgressive(p)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -346,10 +407,24 @@ func Load(app *fiber.App) {
 		req.SetURI(cl.Value.Playlist)
 		req.Header.SetUserAgent(cfg.UserAgent)
 		err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
-		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+`.mp3"`)
+		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+`.`+tr.ToExt()+`"`)
 		resp.Header.Del("Accept-Ranges")
 		return err
 	})
+
+	if cfg.ProxyStreams {
+		app.Post("/_/api/wv", func(c fiber.Ctx) error {
+			req := c.Request()
+			req.Header.Reset()
+			req.Header.SetUserAgent(cfg.UserAgent)
+			req.Header.SetMethod("POST")
+			req.URI().SetScheme("https")
+			req.URI().SetHost("license.media-streaming.soundcloud.cloud")
+			req.URI().SetPath("/playback/widevine")
+
+			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
+		})
+	}
 
 	// deprecated kind of, will remove at some point
 	if cfg.ProxyStreams {

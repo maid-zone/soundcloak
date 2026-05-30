@@ -101,7 +101,7 @@ var ErrScriptNotFound = errors.New("script not found")
 var ErrIDNotFound = errors.New("clientid not found")
 var ErrKindNotCorrect = errors.New("entity of incorrect kind")
 
-type cached[T any] struct {
+type Cached[T any] struct {
 	Value   T
 	Expires time.Time
 }

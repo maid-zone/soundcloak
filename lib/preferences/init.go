@@ -74,6 +74,10 @@ func Defaults(dst *cfg.Preferences) {
 		}
 	}
 
+	if dst.ProgressiveAudio == nil {
+		dst.ProgressiveAudio = cfg.DefaultPreferences.ProgressiveAudio
+	}
+
 	// only remains mp3 and aac
 	if dst.DownloadAudio == nil {
 		dst.DownloadAudio = cfg.DefaultPreferences.DownloadAudio
@@ -105,6 +109,10 @@ func Defaults(dst *cfg.Preferences) {
 	if dst.Waveform == nil {
 		dst.Waveform = cfg.DefaultPreferences.Waveform
 	}
+
+	if dst.DRM == nil {
+		dst.DRM = cfg.DefaultPreferences.DRM
+	}
 }
 
 func Get(c fiber.Ctx) (p cfg.Preferences, err error) {
@@ -130,12 +138,14 @@ type PrefsForm struct {
 	DefaultAutoplayMode      string
 	HLSAudio                 string
 	RestreamAudio            string
+	ProgressiveAudio         string
 	DownloadAudio            string
 	ShowAudio                string
 	SearchSuggestions        string
 	DynamicLoadComments      string
 	KeepPlayerFocus          string
 	Waveform                 string
+	DRM                      string
 }
 
 type Export struct {
@@ -225,6 +235,14 @@ func Load(r *fiber.App) {
 				old.FullyPreloadTrack = &cfg.False
 			}
 
+			switch p.DRM {
+			case on:
+				old.DRM = &cfg.True
+			case "":
+				old.DRM = &cfg.False
+
+			}
+
 			old.HLSAudio = &p.HLSAudio
 		}
 
@@ -234,6 +252,10 @@ func Load(r *fiber.App) {
 			}
 
 			old.DownloadAudio = &p.DownloadAudio
+		}
+
+		if *old.Player == cfg.ProgressivePlayer {
+			old.ProgressiveAudio = &p.ProgressiveAudio
 		}
 
 		if cfg.ProxyImages {

@@ -19,7 +19,7 @@ import (
 
 // Functions/structures related to users
 
-var UsersCache = map[string]cached[User]{}
+var UsersCache = map[string]Cached[User]{}
 var usersCacheLock = &sync.RWMutex{}
 
 type User struct {
@@ -122,7 +122,7 @@ func GetUser(permalink string) (User, error) {
 	u.Fix(true)
 
 	usersCacheLock.Lock()
-	UsersCache[permalink] = cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
+	UsersCache[permalink] = Cached[User]{Value: u, Expires: time.Now().Add(cfg.UserTTL)}
 	usersCacheLock.Unlock()
 
 	return u, err

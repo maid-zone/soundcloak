@@ -38,7 +38,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
 	if needPlayer && *prefs.Player == cfg.HLSPlayer {
-		<script src="/_/static/external/hls.light.min.js"></script>
+		<script src="/_/static/external/hls.min.js"></script>
 	}
 }
 
@@ -68,31 +68,33 @@ func next(c *sc.Track, t *sc.Track, p *sc.Playlist, mode string, volume string) 
 	return r
 }
 
-templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string, audio string) {
+templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string) {
 	if *prefs.Player == cfg.NonePlayer {
 		{{ return }}
 	}
 	if displayErr == "" {
-		if stream != "" {
+		if stream.URL != "" {
 			<audio 
 				id="track" 
-				src={ stream } 
+				src={ stream.URL } 
 				controls 
 				autoplay?={ autoplay }
 			if nextTrack != nil {
 				data-next={ next(&track, nextTrack, playlist, mode, "") } 
 				volume={ volume }	
 			}
+			if *prefs.FullyPreloadTrack {
+				preload="yes"
+			}
+			if stream.License != "" {
+				license={ stream.License }
+			}
 			></audio>
 		}
 		if *prefs.Player == cfg.HLSPlayer {
 			<script
 				async
-			if *prefs.FullyPreloadTrack {
-				src="/_/static/player_preload.js"
-			} else {
 				src="/_/static/player.js"
-			}
 			></script>
 		} else if nextTrack != nil {
 			<script async src="/_/static/restream.js"></script>
@@ -121,9 +123,23 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, stream string, displayE
 				<p>Only a 30-second snippet is available.</p>
 			</div>
 		}
+		if track.Media.HasDRM() {
+			<div>
+				<p>Soundcloud is enforcing DRM on this track, so it may not be able to play.
+				switch *prefs.Player {
+					case cfg.HLSPlayer:
+						if !*prefs.DRM {
+							<a href="/_/preferences">You can enable DRM in preferences</a> and in your browser settings
+						}
+					case cfg.RestreamPlayer, cfg.ProgressivePlayer:
+						<a href="/_/preferences">You can enable HLS player and DRM in preferences</a>. You must also enable it in your browser settings
+				}
+			</p>
+			</div>
+		}
 		if *prefs.ShowAudio {
 			<div>
-				<p>Audio: { audio }</p>
+				<p>Audio: { transcoding.SoundcloakPreset }</p>
 			</div>
 		}
 	} else {
@@ -160,12 +176,12 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, stream string, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, audio string, comments *sc.Paginated[*sc.Comment]) {
+templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, comments *sc.Paginated[*sc.Comment]) {
 	if t.Artwork != "" {
 		<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
 	}
 	<h1>{ t.Title }</h1>
-	@TrackPlayer(prefs, t, stream, displayErr, autoplay, nextTrack, playlist, volume, mode, audio)
+	@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
 	if displayErr == "" && cfg.Restream {
 		<div style="display: flex; margin-bottom: 1rem;">
 			<a class="btn" href={ templ.SafeURL("/_/download" + t.Href()) }>download</a>
@@ -277,7 +293,7 @@ templ Comments(comments *sc.Paginated[*sc.Comment]) {
 	}
 }
 
-templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr string) {
+templ TrackEmbed(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -291,7 +307,7 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, stream string, displayErr st
 				<img src={ t.Artwork } width="300px"/>
 			}
 			<h1>{ t.Title }</h1>
-			@TrackPlayer(prefs, t, stream, displayErr, false, nil, nil, "", "", "")
+			@TrackPlayer(prefs, t, tr, stream, displayErr, false, nil, nil, "", "")
 			@UserItem(&t.Author)
 		</body>
 	</html>
