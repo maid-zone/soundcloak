@@ -1,6 +1,7 @@
 package sc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -77,6 +78,19 @@ const (
 	ProtocolCTREncryptedHLS Protocol = "ctr-encrypted-hls" // google's widevine && microsoft playready
 	ProtocolCBCEncryptedHLS Protocol = "cbc-encrypted-hls" // apple's fairplay
 )
+
+func FairPlayCapable(ua string) bool {
+	if !strings.Contains(ua, "AppleWebKit") {
+		return false
+	}
+	for _, s := range []string{"Chrome", "CriOS", "Firefox", "FxiOS", "Edg", "OPR", "SamsungBrowser", "Yandex"} {
+		if strings.Contains(ua, s) {
+			return false
+		}
+	}
+	return strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad") ||
+		strings.Contains(ua, "iPod") || strings.Contains(ua, "Mac")
+}
 
 type Format struct {
 	Protocol Protocol `json:"protocol"`
@@ -672,7 +686,7 @@ func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
 	return nil
 }
 
-func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
+func (m Media) SelectCompatibleHLSDRM(mode string, drm Protocol) *Transcoding {
 	// aac_hq - aac_256k, aac_160k, mp3,      aac_96k
 	// aac    - aac_160k, aac_256k, mp3,      aac_96k
 	// mpeg   - mp3,      aac_256k, aac_160k, aac_96k
@@ -685,7 +699,7 @@ func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
 	switch mode {
 	case cfg.AudioAACHQ:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
+			if t.Format.Protocol == drm {
 				switch t.Preset {
 				case "aac_256k":
 					t.SoundcloakPreset = cfg.AudioAACHQ
@@ -718,7 +732,7 @@ func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
 		}
 	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
+			if t.Format.Protocol == drm {
 				switch t.Preset {
 				case "aac_256k":
 					if b[0] == nil {
@@ -751,7 +765,7 @@ func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
 		}
 	case cfg.AudioMP3:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
+			if t.Format.Protocol == drm {
 				switch t.Preset {
 				case "aac_256k":
 					if b[0] == nil {
@@ -784,7 +798,7 @@ func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
 		}
 	case cfg.AudioAACLQ:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
+			if t.Format.Protocol == drm {
 				switch t.Preset {
 				case "aac_256k":
 					if b[2] == nil {
@@ -869,9 +883,9 @@ func (m Media) HasDRM() bool {
 	return false
 }
 
-func (m Media) SelectCompatibleAnyHLS(prefs cfg.Preferences) *Transcoding {
+func (m Media) SelectCompatibleAnyHLS(prefs cfg.Preferences, drm Protocol) *Transcoding {
 	if *prefs.DRM {
-		t := m.SelectCompatibleHLSDRM(*prefs.HLSAudio)
+		t := m.SelectCompatibleHLSDRM(*prefs.HLSAudio, drm)
 		if t != nil {
 			return t
 		}
@@ -1052,6 +1066,7 @@ type CachedStream struct {
 	LegacyHlsAacInit *fasthttp.URI
 	License          string
 	FreshBase        bool
+	KeyID            string
 }
 
 var StreamCache = map[string]Cached[CachedStream]{}
@@ -1121,6 +1136,58 @@ func (tr Transcoding) GetStream(slug string, t Track) (Cached[CachedStream], err
 		StreamCacheMut.Unlock()
 	}
 	return s, err
+}
+
+func (tr Transcoding) FairPlayKeyID(slug string, t Track) string {
+	if slug == "" {
+		slug = tr.Slug(t)
+	}
+
+	StreamCacheMut.RLock()
+	s, ok := StreamCache[slug]
+	StreamCacheMut.RUnlock()
+	if ok && s.Value.KeyID != "" {
+		return s.Value.KeyID
+	}
+
+	cs, err := tr.GetStream(slug, t)
+	if err != nil {
+		return ""
+	}
+
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+	req.SetURI(cs.Value.Playlist)
+	req.Header.SetUserAgent(cfg.UserAgent)
+
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+	if err := DoWithRetry(misc.HlsAacClient, req, resp); err != nil {
+		return ""
+	}
+	body, err := resp.BodyUncompressed()
+	if err != nil {
+		body = resp.Body()
+	}
+
+	i := bytes.Index(body, []byte(`URI="skd://`))
+	if i == -1 {
+		return ""
+	}
+	rest := body[i+len(`URI="skd://`):]
+	keyID := rest
+	if j := bytes.IndexByte(rest, '"'); j != -1 {
+		keyID = rest[:j]
+	}
+	if len(keyID) != 32 {
+		return ""
+	}
+
+	cs.Value.KeyID = string(keyID)
+	StreamCacheMut.Lock()
+	StreamCache[slug] = cs
+	StreamCacheMut.Unlock()
+	return cs.Value.KeyID
 }
 
 func (tr Transcoding) GetUncachedStream(slug string, t Track) (Stream, error) {

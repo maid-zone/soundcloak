@@ -111,7 +111,7 @@ type Preferences struct {
 
 	Waveform *bool // show waveform
 
-	DRM *bool // allow playing DRM tracks with HLS player (widevine, decryption on your device)
+	DRM *bool // allow playing DRM tracks with HLS player (widevine on non-Apple, fairplay on Safari; decryption on your device)
 }
 
 func B2s(b []byte) string {

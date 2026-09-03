@@ -937,10 +937,14 @@ Disallow: /`)
 		displayErr := ""
 		var stream sc.Stream
 		var tr *sc.Transcoding
+		var drmProtocol sc.Protocol = sc.ProtocolCTREncryptedHLS
+		if sc.FairPlayCapable(string(c.UserAgent())) {
+			drmProtocol = sc.ProtocolCBCEncryptedHLS
+		}
 
 		if *prefs.Player != cfg.NonePlayer {
 			if *prefs.Player == cfg.HLSPlayer {
-				tr = track.Media.SelectCompatibleAnyHLS(prefs)
+				tr = track.Media.SelectCompatibleAnyHLS(prefs, drmProtocol)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
@@ -951,7 +955,11 @@ Disallow: /`)
 					if tr.HasDRM() {
 						var cs sc.Cached[sc.CachedStream]
 						cs, err = tr.GetStream("", track)
-						if *prefs.ProxyStreams {
+						if err != nil {
+							displayErr = err.Error()
+						} else if tr.Format.Protocol == sc.ProtocolCBCEncryptedHLS {
+							stream.License = "/_/api/fp?license_token=" + cs.Value.License + "&assetId=" + tr.FairPlayKeyID("", track)
+						} else if *prefs.ProxyStreams {
 							stream.License = "/_/api/wv?license_token=" + cs.Value.License
 						} else {
 							stream.License = "https://license.media-streaming.soundcloud.cloud/playback/widevine?license_token=" + cs.Value.License

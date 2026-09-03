@@ -7,7 +7,10 @@ if (Hls.isSupported()) {
     var lic = audio.getAttribute("license");
     if (lic) {
         opts.emeEnabled = true;
-        opts.drmSystems = { "com.widevine.alpha": { "licenseUrl": lic } };
+        opts.drmSystems = {
+            "com.widevine.alpha": { "licenseUrl": lic },
+            "com.apple.fps": { "licenseUrl": lic, "serverCertificateUrl": lic }
+        };
     }
     var hls = new Hls(opts);
     hls.loadSource(audio.src);

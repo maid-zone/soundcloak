@@ -118,6 +118,11 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 		if *prefs.Waveform {
 			@track.RenderWaveform()
 		}
+		if *prefs.Player == cfg.HLSPlayer && !cfg.Restream && !cfg.ProxyStreams {
+			<div>
+				<p>HLS playback is not configured correctly. ProxyStreams or Restream must be enabled.</p>
+			</div>
+		}
 		if track.Policy == sc.PolicySnip {
 			<div>
 				<p>Only a 30-second snippet is available.</p>
@@ -134,7 +139,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 					case cfg.RestreamPlayer, cfg.ProgressivePlayer:
 						<a href="/_/preferences">You can enable HLS player and DRM in preferences</a>. You must also enable it in your browser settings
 				}
-			</p>
+				</p>
 			</div>
 		}
 		if *prefs.ShowAudio {
