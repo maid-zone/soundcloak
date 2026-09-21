@@ -15,7 +15,7 @@ require (
 )
 
 require (
-	git.maid.zone/stuff/soundcloakctl v0.0.0-20260530153525-364d377da90f // indirect
+	git.maid.zone/stuff/soundcloakctl v0.0.0-20260921180848-04fa51075962 // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/abema/go-mp4 v1.7.3 // indirect
 	github.com/aler9/writerseeker v1.1.0 // indirect
@@ -24,7 +24,7 @@ require (
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/dlclark/regexp2cg v0.4.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/gofiber/schema v1.8.7 // indirect
 	github.com/gofiber/utils/v2 v2.5.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -36,6 +36,8 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sunfish-shogi/bufseekio v0.1.0 // indirect
+	github.com/tdewolff/minify/v2 v2.24.17 // indirect
+	github.com/tdewolff/parse/v2 v2.8.16 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
