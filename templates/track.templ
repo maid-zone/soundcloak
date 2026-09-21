@@ -9,7 +9,21 @@ import (
 
 templ TrackButtons(current string, track sc.Track) {
 	<div class="btns">
-		for _, b := range [...]btn{{"related tracks", "/recommended", false, false},{"in albums", "/albums", false, false},{"in playlists", "/sets", false, false},{"track station", "/discover/sets/"+track.Station, true, false},{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true}} {
+		{{
+			buttons := []btn{
+				{"related tracks", "/recommended", false, false},
+				{"in albums", "/albums", false, false},
+				{"in playlists", "/sets", false, false},
+				{"track station", "/discover/sets/"+track.Station, true, false},
+				{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true},
+			}
+
+			if cfg.Restream {
+				buttons = append(buttons, btn{"download", "/_/download" + track.Href(), true, false})
+			}
+		}}
+
+		for _, b := range buttons {
 			<a
 			if b.text == current {
 				class="btn active"
@@ -74,22 +88,24 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 	}
 	if displayErr == "" {
 		if stream.URL != "" {
-			<audio 
-				id="track" 
-				src={ stream.URL } 
-				controls 
-				autoplay?={ autoplay }
-			if nextTrack != nil {
-				data-next={ next(&track, nextTrack, playlist, mode, "") } 
-				volume={ volume }	
-			}
-			if *prefs.FullyPreloadTrack {
-				preload="yes"
-			}
-			if stream.License != "" {
-				license={ stream.License }
-			}
-			></audio>
+			<div id="track-wrapper">
+				<audio 
+					id="track" 
+					src={ stream.URL } 
+					controls 
+					autoplay?={ autoplay }
+				if nextTrack != nil {
+					data-next={ next(&track, nextTrack, playlist, mode, "") } 
+					volume={ volume }	
+				}
+				if *prefs.FullyPreloadTrack {
+					preload="yes"
+				}
+				if stream.License != "" {
+					license={ stream.License }
+				}
+				></audio>
+			</div>
 		}
 		if *prefs.Player == cfg.HLSPlayer {
 			<script
@@ -180,16 +196,14 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	if t.Artwork != "" {
 		<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
 	}
-	<h1>{ t.Title }</h1>
+	<div class="track-title-block">
+		<div class="track-title">{ t.Title }</div>
+		if t.Genre != "" {
+			<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+		}
+	</div>
 	@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
-	if displayErr == "" && cfg.Restream {
-		<div style="display: flex; margin-bottom: 1rem;">
-			<a class="btn" href={ templ.SafeURL("/_/download" + t.Href()) }>download</a>
-		</div>
-	}
-	if t.Genre != "" {
-		<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
-	}
+	
 	if nextTrack != nil {
 		<details open style="margin-bottom: 1rem;">
 			<summary>Playback info</summary>
