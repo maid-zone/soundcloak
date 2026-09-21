@@ -279,10 +279,6 @@ func main() {
 		ReadBufferSize:   4096 * 2,
 	})
 
-	if cfg.Debug {
-		app.Server().Logger = fasthttp.Logger(log.New(os.Stdout, "", log.LstdFlags))
-	}
-
 	if !cfg.Debug { // you wanna catch any possible panics as soon as possible
 		app.Use(recover.New())
 	}

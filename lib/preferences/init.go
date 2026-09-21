@@ -115,12 +115,39 @@ func Defaults(dst *cfg.Preferences) {
 	}
 }
 
+// handrolled cookie parser
+// because fasthttp version 1.72.0 won't parse cookies with " ; \
+// https://github.com/valyala/fasthttp/commit/eb82c9a13addbe488f69cbf530444bb2561fd083
 func Get(c fiber.Ctx) (p cfg.Preferences, err error) {
-	rawprefs := c.Request().Header.Cookie("prefs")
-	if len(rawprefs) > 2 {
-		err = json.Unmarshal(rawprefs, &p)
-		if err != nil {
-			return
+	b := c.Request().Header.Peek("Cookie")
+	if len(b) != 0 {
+		isKey := true
+		k := 0
+		for i, v := range b {
+			if v == '=' && isKey {
+				isKey = false
+				for b[k] == ' ' {
+					k++
+				}
+				if string(b[k:i]) == "prefs" {
+					i++
+					end := len(b)
+					for j, c := range b[i:] {
+						if c == ';' {
+							end = j + i
+							break
+						}
+					}
+					err = json.Unmarshal(b[i:end], &p)
+					if err != nil {
+						return
+					}
+					break
+				}
+			} else if v == ';' {
+				isKey = true
+				k = i + 1
+			}
 		}
 	}
 	Defaults(&p)
@@ -184,7 +211,7 @@ func Load(r *fiber.App) {
 
 	r.Post("/_/preferences", func(c fiber.Ctx) error {
 		var p PrefsForm
-		err := c.Bind().Body(&p)
+		err := c.Bind().Form(&p)
 		if err != nil {
 			return err
 		}
@@ -228,19 +255,16 @@ func Load(r *fiber.App) {
 		}
 
 		if *old.Player == cfg.HLSPlayer {
-			switch p.FullyPreloadTrack {
-			case on:
+			if p.FullyPreloadTrack == on {
 				old.FullyPreloadTrack = &cfg.True
-			case "":
+			} else {
 				old.FullyPreloadTrack = &cfg.False
 			}
 
-			switch p.DRM {
-			case on:
+			if p.DRM == on {
 				old.DRM = &cfg.True
-			case "":
+			} else {
 				old.DRM = &cfg.False
-
 			}
 
 			old.HLSAudio = &p.HLSAudio
@@ -259,10 +283,9 @@ func Load(r *fiber.App) {
 		}
 
 		if cfg.ProxyImages {
-			switch p.ProxyImages {
-			case on:
+			if p.ProxyImages == on {
 				old.ProxyImages = &cfg.True
-			case "":
+			} else {
 				old.ProxyImages = &cfg.False
 			}
 		}
