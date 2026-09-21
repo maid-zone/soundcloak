@@ -92,8 +92,8 @@ func Load(r *fiber.App) {
 			return err
 		}
 
-		//req := c.Request()
-		//rng := req.Header.Peek("Range")
+		range_ := c.Request().Header.Peek("Range")
+
 		resp := c.Response()
 		resp.Header.SetContentType(tr.Format.MimeType)
 		resp.Header.Set("Cache-Control", cfg.RestreamCacheControl)
@@ -208,15 +208,15 @@ func Load(r *fiber.App) {
 			req := fasthttp.AcquireRequest()
 			defer fasthttp.ReleaseRequest(req)
 
-			// if len(rng) != 0 {
-			// 	req.Header.SetBytesV("Range", rng)
-			// }
+			if len(range_) != 0 {
+				req.Header.SetBytesV("Range", range_)
+			}
 			req.SetURI(u.Value.Playlist)
 			req.Header.SetUserAgent(cfg.UserAgent)
 
 			err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 			resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+tr.ToExt()+`"`)
-			resp.Header.Del("Accept-Ranges")
+			resp.Header.Set("Accept-Ranges", "bytes")
 			return err
 		}
 
