@@ -2,6 +2,7 @@ package proxystreams
 
 import (
 	"bytes"
+	"encoding/base64"
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
@@ -65,7 +66,12 @@ func Load(app *fiber.App) {
 			p.HLSAudio = &v
 		}
 
-		tr := t.Media.SelectCompatibleAnyHLS(p)
+		var drmProtocol sc.Protocol = sc.ProtocolCTREncryptedHLS
+		if sc.FairPlayCapable(string(c.RequestCtx().UserAgent())) {
+			drmProtocol = sc.ProtocolCBCEncryptedHLS
+		}
+
+		tr := t.Media.SelectCompatibleAnyHLS(p, drmProtocol)
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -425,6 +431,49 @@ func Load(app *fiber.App) {
 			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
 		})
 	}
+
+	app.All("/_/api/fp", func(c fiber.Ctx) error {
+		req := c.Request()
+		method := string(c.Method())
+
+		req.Header.Reset()
+		req.Header.SetMethod(method)
+		req.Header.SetUserAgent(cfg.UserAgent)
+		req.URI().SetScheme("https")
+		req.URI().SetHost("license.media-streaming.soundcloud.cloud")
+		req.URI().SetPath("/playback/fairplay")
+
+		if method == "GET" {
+			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
+		}
+
+		spc := base64.StdEncoding.EncodeToString(req.Body())
+		assetID := string(req.URI().QueryArgs().Peek("assetId"))
+		req.ResetBody()
+		req.Header.SetMethod(method)
+		req.Header.SetUserAgent(cfg.UserAgent)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.URI().SetScheme("https")
+		req.URI().SetHost("license.media-streaming.soundcloud.cloud")
+		req.URI().SetPath("/playback/fairplay")
+		req.SetBodyString("spc=" + spc + "&assetId=" + assetID)
+
+		if err := sc.DoWithRetry(misc.HlsAacClient, req, c.Response()); err != nil {
+			return err
+		}
+
+		if c.Response().StatusCode() == 200 {
+			ckc := c.Response().Body()
+			ckc = bytes.TrimSpace(ckc)
+			dec, err := base64.StdEncoding.DecodeString(string(ckc))
+			if err == nil {
+				c.Response().ResetBody()
+				c.Response().SetBody(dec)
+				c.Response().Header.Set("Content-Type", "application/octet-stream")
+			}
+		}
+		return nil
+	})
 
 	// deprecated kind of, will remove at some point
 	if cfg.ProxyStreams {

@@ -26,6 +26,7 @@ import (
 )
 
 var ProxyErr = errors.New("could not connect to proxy")
+var ErrHLSNotConfigured = errors.New("HLS unavailable: enable Restream or ProxyStreams")
 var parsedproxy string
 
 var auth_state atomic.Int64
@@ -293,6 +294,10 @@ func DoWithRetryAll(httpc *fasthttp.Client, req *fasthttp.Request, resp *fasthtt
 
 // Since the http client is setup to always keep connections idle (great for speed, no need to open a new one everytime), those connections may be closed by soundcloud after some time of inactivity, this ensures that we retry those requests that fail due to the connection closing/timing out
 func DoWithRetry(httpc *fasthttp.HostClient, req *fasthttp.Request, resp *fasthttp.Response) (err error) {
+	if httpc == nil {
+		return ErrHLSNotConfigured
+	}
+
 	for range 10 {
 		err = httpc.Do(req, resp)
 		if err == nil {
