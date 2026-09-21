@@ -300,11 +300,25 @@ templ Comments(comments *sc.Paginated[*sc.Comment]) {
 			}
 			/>
 			<div class="comment">
-				<h3 class="link"><a href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a></h3>
+				<h3>
+					<a class="link" href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a>
+					at
+					<a class="link jump-to-timestamp" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
+				</h3>
 				<p>{ c.Body }</p>
 			</div>
 		</div>
 	}
+
+	<script>
+		document.querySelectorAll('.jump-to-timestamp').forEach(function(el) {
+			el.addEventListener('click', function() {
+				var audio = document.querySelector('#track')
+				audio.currentTime = el.dataset.timestamp / 1000
+				audio.play()
+			})
+		})
+	</script>
 }
 
 templ TrackEmbed(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string) {
