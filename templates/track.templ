@@ -261,31 +261,18 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 		<p>Tags: { sc.TagListParser(t.TagList) }</p>
 	}
 	<h1>Comments</h1>
-	if *prefs.DynamicLoadComments {
-		if comments != nil {
-			<div id="comments">
-				@Comments(comments)
-			</div>
-			<script async src="/_/static/comments.js"></script>
-			if comments.NextHref != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
-			}
-		} else {
-			<div id="comments"></div>
-			<script async src="/_/static/comments.js"></script>
-			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
+	if comments != nil {
+		<div id="comments">
+			@Comments(comments)
+		</div>
+		<script async src="/_/static/comments.js"></script>
+		if comments.NextHref != "" {
+			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
 		}
 	} else {
-		if comments != nil {
-			<div>
-				@Comments(comments)
-			</div>
-			if comments.NextHref != "" {
-				<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer">more comments</a>
-			}
-		} else {
-			<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1">load comments</a>
-		}
+		<div id="comments"></div>
+		<script async src="/_/static/comments.js"></script>
+		<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
 	}
 }
 
@@ -303,22 +290,12 @@ templ Comments(comments *sc.Paginated[*sc.Comment]) {
 				<h3>
 					<a class="link" href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a>
 					at
-					<a class="link jump-to-timestamp" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
+					<a class="link" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
 				</h3>
 				<p>{ c.Body }</p>
 			</div>
 		</div>
 	}
-
-	<script>
-		document.querySelectorAll('.jump-to-timestamp').forEach(function(el) {
-			el.addEventListener('click', function() {
-				var audio = document.querySelector('#track')
-				audio.currentTime = el.dataset.timestamp / 1000
-				audio.play()
-			})
-		})
-	</script>
 }
 
 templ TrackEmbed(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string) {

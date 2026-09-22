@@ -1,7 +1,6 @@
 package cfg
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -106,8 +105,6 @@ type Preferences struct {
 
 	SearchSuggestions *bool // load search suggestions on main page
 
-	DynamicLoadComments *bool // dynamic comments loader without leaving track page
-
 	KeepPlayerFocus *bool // keep player element in focus
 
 	Waveform *bool // show waveform
@@ -123,18 +120,24 @@ func S2b(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
 }
 
-func FormatTimecode(timecode int) (r string) {
+func n(b byte) byte {
+	return b/10 + '0'
+}
+
+func n2(b byte) byte {
+	return b%10 + '0'
+}
+
+func FormatTimecode(timecode int) string {
 	timecode /= 1000
-	seconds := timecode % 60
-	minutes := (timecode / 60) % 60
-	hours := timecode / 3600
-
-	if hours > 0 {
-		r = fmt.Sprintf("%d:", hours)
+	seconds := byte(timecode % 60)
+	minutes := byte((timecode / 60) % 60)
+	hours := byte(timecode / 3600)
+	if hours != 0 {
+		return string([]byte{n(hours), n2(hours), ':', n(minutes), n2(minutes), ':', n(seconds), n2(seconds)})
+	} else {
+		return string([]byte{n(minutes), n2(minutes), ':', n(seconds), n2(seconds)})
 	}
-
-	r = fmt.Sprintf("%s%d:%02d", r, minutes, seconds)
-	return
 }
 
 func init() {
@@ -149,7 +152,7 @@ func init() {
 		if !strings.HasPrefix(Repo, "http") {
 			s := strings.Split(Repo, "@")
 			s = strings.Split(s[1], ":")
-			CommitURL = "https://" + s[0] + "/" + s[1]
+			CommitURL = "https://" + strings.Join(s, "/")
 		} else {
 			CommitURL = strings.TrimSuffix(Repo, "/")
 		}

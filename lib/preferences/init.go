@@ -98,10 +98,6 @@ func Defaults(dst *cfg.Preferences) {
 		dst.SearchSuggestions = cfg.DefaultPreferences.SearchSuggestions
 	}
 
-	if dst.DynamicLoadComments == nil {
-		dst.DynamicLoadComments = cfg.DefaultPreferences.DynamicLoadComments
-	}
-
 	if dst.KeepPlayerFocus == nil {
 		dst.KeepPlayerFocus = cfg.DefaultPreferences.KeepPlayerFocus
 	}
@@ -169,7 +165,6 @@ type PrefsForm struct {
 	DownloadAudio            string
 	ShowAudio                string
 	SearchSuggestions        string
-	DynamicLoadComments      string
 	KeepPlayerFocus          string
 	Waveform                 string
 	DRM                      string
@@ -300,12 +295,6 @@ func Load(r *fiber.App) {
 			old.SearchSuggestions = &cfg.True
 		} else {
 			old.SearchSuggestions = &cfg.False
-		}
-
-		if p.DynamicLoadComments == on {
-			old.DynamicLoadComments = &cfg.True
-		} else {
-			old.DynamicLoadComments = &cfg.False
 		}
 
 		if p.KeepPlayerFocus == on {

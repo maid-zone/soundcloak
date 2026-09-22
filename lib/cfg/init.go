@@ -164,7 +164,6 @@ func defaultPreferences() {
 	DefaultPreferences.ShowAudio = &False
 
 	DefaultPreferences.SearchSuggestions = &False
-	DefaultPreferences.DynamicLoadComments = &False
 	DefaultPreferences.KeepPlayerFocus = &False
 	DefaultPreferences.Waveform = &False
 	DefaultPreferences.DRM = &False
@@ -284,12 +283,6 @@ func loadDefaultPreferences(loaded Preferences) {
 		DefaultPreferences.SearchSuggestions = loaded.SearchSuggestions
 	} else {
 		DefaultPreferences.SearchSuggestions = &False
-	}
-
-	if loaded.DynamicLoadComments != nil {
-		DefaultPreferences.DynamicLoadComments = loaded.DynamicLoadComments
-	} else {
-		DefaultPreferences.DynamicLoadComments = &False
 	}
 
 	if loaded.KeepPlayerFocus != nil {
