@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -120,6 +121,20 @@ func B2s(b []byte) string {
 
 func S2b(s string) []byte {
 	return unsafe.Slice(unsafe.StringData(s), len(s))
+}
+
+func FormatTimecode(timecode int) (r string) {
+	timecode /= 1000
+	seconds := timecode % 60
+	minutes := (timecode / 60) % 60
+	hours := timecode / 3600
+
+	if hours > 0 {
+		r = fmt.Sprintf("%d:", hours)
+	}
+
+	r = fmt.Sprintf("%s%d:%02d", r, minutes, seconds)
+	return
 }
 
 func init() {
