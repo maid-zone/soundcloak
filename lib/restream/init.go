@@ -216,7 +216,7 @@ func Load(r *fiber.App) {
 
 			err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 			resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+"."+tr.ToExt()+`"`)
-			resp.Header.Set("Accept-Ranges", "bytes")
+			//resp.Header.Set("Accept-Ranges", "bytes")
 			return err
 		}
 
