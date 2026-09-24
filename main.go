@@ -266,7 +266,11 @@ func render(c fiber.Ctx, t templ.Component) error {
 }
 
 func r(c fiber.Ctx, title string, content, head templ.Component) error {
-	return render(c, templates.Base(title, content, head))
+	return render(c, templates.Base(title, content, head, templates.HeaderOptions{}))
+}
+
+func renderWithOptions(c fiber.Ctx, title string, content, head templ.Component, options templates.HeaderOptions) error {
+	return render(c, templates.Base(title, content, head, options))
 }
 
 func main() {
@@ -378,45 +382,48 @@ Disallow: /`)
 			}
 		}
 
+		queryStr := cfg.B2s(q)
+
+		options := templates.HeaderOptions{
+			SearchQuery: queryStr,
+			SearchType:  t,
+		}
+
 		switch t {
 		case "any":
-			q := cfg.B2s(q)
 			p, err := sc.Search(prefs, args)
 			if err != nil {
-				log.Printf("error getting any for %s: %s\n", q, err)
+				log.Printf("error getting any for %s: %s\n", queryStr, err)
 				return err
 			}
 
-			return r(c, q, templates.Search(p, prefs, q), templates.MainPageHead(prefs))
+			return renderWithOptions(c, queryStr, templates.Search(p, prefs, queryStr), templates.MainPageHead(prefs), options)
 		case "tracks":
-			q := cfg.B2s(q)
 			p, err := sc.SearchTracks(prefs, args)
 			if err != nil {
-				log.Printf("error getting tracks for %s: %s\n", q, err)
+				log.Printf("error getting tracks for %s: %s\n", queryStr, err)
 				return err
 			}
 
-			return r(c, "tracks: "+q, templates.SearchTracks(p, prefs, q), templates.MainPageHead(prefs))
+			return renderWithOptions(c, "tracks: "+queryStr, templates.SearchTracks(p, prefs, queryStr), templates.MainPageHead(prefs), options)
 
 		case "users":
-			q := cfg.B2s(q)
 			p, err := sc.SearchUsers(prefs, args)
 			if err != nil {
-				log.Printf("error getting users for %s: %s\n", q, err)
+				log.Printf("error getting users for %s: %s\n", queryStr, err)
 				return err
 			}
 
-			return r(c, "users: "+q, templates.SearchUsers(p, prefs, q), templates.MainPageHead(prefs))
+			return renderWithOptions(c, "users: "+queryStr, templates.SearchUsers(p, prefs, queryStr), templates.MainPageHead(prefs), options)
 
 		case "playlists":
-			q := cfg.B2s(q)
 			p, err := sc.SearchPlaylists(prefs, args)
 			if err != nil {
-				log.Printf("error getting playlists for %s: %s\n", q, err)
+				log.Printf("error getting playlists for %s: %s\n", queryStr, err)
 				return err
 			}
 
-			return r(c, "playlists: "+q, templates.SearchPlaylists(p, prefs, q), templates.MainPageHead(prefs))
+			return renderWithOptions(c, "playlists: "+queryStr, templates.SearchPlaylists(p, prefs, queryStr), templates.MainPageHead(prefs), options)
 		}
 
 		return c.SendStatus(404)

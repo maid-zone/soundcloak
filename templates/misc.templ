@@ -70,8 +70,6 @@ templ UserPlaylistTrackItem(pl *sc.UserPlaylistTrack) {
 }
 
 templ Search(p *sc.Paginated[*sc.UserPlaylistTrack], prefs cfg.Preferences, content string) {
-	@searchbar(prefs, content, "any")
-	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } results</span>
 	<br/>
 	<br/>
@@ -85,25 +83,4 @@ templ Search(p *sc.Paginated[*sc.UserPlaylistTrack], prefs cfg.Preferences, cont
 			<a class="btn" href={ templ.SafeURL("?type=any&pagination=" + url.QueryEscape(p.NextHref[sc.H+len("/search?"):])) } rel="noreferrer">more results</a>
 		}
 	}
-}
-
-templ searchbar(p cfg.Preferences, content string, typ string) {
-	<form action="/search">
-		<div style="position:relative">
-			<div style="display:flex;gap:.5rem">
-				<input id="q" name="q" type="text" autocomplete="off" autofill="off" value={content} style="padding:.5rem.6rem;flex-grow:1"/>
-				@sel("type", []option{
-					{"any", "Anything", false},
-					{"tracks", "Tracks", false},
-					{"users", "Users", false},
-					{"playlists", "Playlists", false},
-				}, typ)
-			</div>
-			if *p.SearchSuggestions {
-				<ul id="search-suggestions" style="display:none"></ul>
-				<script async src="/_/static/index.js"></script>
-			}
-		</div>
-		<input type="submit" value="Search" class="btn" style="width:100%;margin-top:.5rem"/>
-	</form>
 }

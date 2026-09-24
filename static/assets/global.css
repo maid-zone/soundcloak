@@ -171,7 +171,7 @@ select:focus {
 
 .waveform {
   width: 100%;
-  height: 8rem;
+  height: 7rem;
   display: block;
 }
 
@@ -354,4 +354,22 @@ select:focus {
 	display: flex;
 	gap: 1em;
 	align-items: center;
+}
+
+.header {
+	display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-search {
+	display: flex;
+    gap: .5rem;
+    flex: 1;
+    max-width: 500px;
+}
+
+.header-search-query {
+	padding: 7px 10px;
+	flex: 1;
 }

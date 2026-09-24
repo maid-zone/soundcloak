@@ -361,8 +361,6 @@ templ TrackEmbed(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream s
 }
 
 templ SearchTracks(p *sc.Paginated[*sc.Track], prefs cfg.Preferences, content string) {
-	@searchbar(prefs, content, "tracks")
-	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } tracks</span>
 	<br/>
 	<br/>

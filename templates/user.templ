@@ -284,8 +284,6 @@ templ UserFollowing(prefs cfg.Preferences, u sc.User, p *sc.Paginated[*sc.User])
 }
 
 templ SearchUsers(p *sc.Paginated[*sc.User], prefs cfg.Preferences, content string) {
-	@searchbar(prefs,content, "users")
-	<br>
 	<span>Found { strconv.FormatInt(p.Total, 10) } users</span>
 	<br/>
 	<br/>
