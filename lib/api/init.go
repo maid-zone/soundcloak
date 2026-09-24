@@ -60,7 +60,4 @@ func Load(a *fiber.App) {
 		}
 		return err
 	})
-
-	// DEPRECATED
-	legacy(r)
 }

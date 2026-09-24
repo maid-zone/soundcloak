@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -1022,7 +1023,7 @@ Disallow: /`)
 		}
 
 		// its so much arguments i should do something about it maybe lol
-		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, tr, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, comments), templates.TrackHeader(prefs, track, true))
+		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, tr, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, comments, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")), templates.TrackHeader(prefs, track, true))
 	})
 
 	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {
@@ -1049,12 +1050,19 @@ Disallow: /`)
 
 		if comm.NextHref != "" {
 			misc.Log(comm.NextHref)
-			c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.NextHref, "/comments?")[1]))
+			c.Set(
+				"next",
+				"?pagination="+
+					url.QueryEscape(comm.NextHref[sc.H+len("/tracks/")+len(id)+len("/comments?"):])+
+					"&last_ts="+
+					strconv.FormatInt(int64(comm.Collection[len(comm.Collection)-1].Timestamp), 10),
+			)
+			//c.Set("next", "?pagination="+url.QueryEscape(strings.Split(comm.NextHref, "/comments?")[1]))
 		} else {
 			c.Set("next", "done")
 		}
 
-		return render(c, templates.Comments(comm))
+		return render(c, templates.Comments(comm, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")))
 	})
 
 	app.Get("/_/rss/:user", func(c fiber.Ctx) error {

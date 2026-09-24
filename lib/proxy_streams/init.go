@@ -398,17 +398,17 @@ func Load(app *fiber.App) {
 			resp.Header.SetBytesV("Location", cl.Value.Playlist.FullURI())
 			return nil
 		}
-		// rng := req.Header.Peek("Range")
+		rng := req.Header.Peek("Range")
 		req.Reset()
-		// if len(rng) != 0 {
-		// 	req.Header.SetBytesV("Range", rng)
-		// }
+		if len(rng) != 0 {
+			req.Header.SetBytesV("Range", rng)
+		}
 
 		req.SetURI(cl.Value.Playlist)
 		req.Header.SetUserAgent(cfg.UserAgent)
 		err = sc.DoWithRetry(misc.HlsStreamingOnlyClient, req, resp)
 		resp.Header.Set("Content-Disposition", `attachment; filename="`+t.Permalink+`.`+tr.ToExt()+`"`)
-		resp.Header.Del("Accept-Ranges")
+		//resp.Header.Del("Accept-Ranges")
 		return err
 	})
 
@@ -424,10 +424,5 @@ func Load(app *fiber.App) {
 
 			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
 		})
-	}
-
-	// deprecated kind of, will remove at some point
-	if cfg.ProxyStreams {
-		legacy(app.Group("/_/proxy/streams"))
 	}
 }

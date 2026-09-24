@@ -5,6 +5,7 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 templ TrackButtons(prefs cfg.Preferences, current string, track sc.Track) {
@@ -61,29 +62,36 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 }
 
 func next(c *sc.Track, t *sc.Track, p *sc.Playlist, mode string, volume string) string {
-	r := t.Href()
+	r := strings.Builder{}
+	r.Grow(len(t.Href()) + len("autoplay=true") + 1)
+	r.WriteString(t.Href())
 
 	if p != nil {
-		r += "?playlist=" + p.Href()[1:]
+		r.WriteString("?playlist=")
+		r.WriteString(p.Href()[1:])
 		if mode != "" {
-			r += "&mode=" + mode
+			r.WriteString("&mode=")
+			r.WriteString(mode)
 		}
-		r += "&"
+		r.WriteByte('&')
 	} else {
-		r += "?"
+		r.WriteByte('?')
 
 		if c != nil {
-			r += "prev=" + string(c.ID) + "&"
+			r.WriteString("prev=")
+			r.WriteString(string(c.ID))
+			r.WriteByte('&')
 		}
 	}
 
-	r += "autoplay=true"
+	r.WriteString("autoplay=true")
 
 	if volume != "" {
-		r += "&volume=" + volume
+		r.WriteString("&volume=")
+		r.WriteString(volume)
 	}
 
-	return r
+	return r.String()
 }
 
 templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, nextTrack *sc.Track, playlist *sc.Playlist, volume string, mode string) {
@@ -247,7 +255,7 @@ templ DownloadModal(prefs cfg.Preferences, t sc.Track) {
 	</form>
 }
 
-templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, comments *sc.Paginated[*sc.Comment]) {
+templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, comments *sc.Paginated[*sc.Comment], lastCommentTime int) {
 	<div class="track-block">
 		<div class="track-main">
 			<div class="track-title-block">
@@ -336,7 +344,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	<h1>Comments</h1>
 	if comments != nil {
 		<div id="comments">
-			@Comments(comments)
+			@Comments(comments, lastCommentTime)
 		</div>
 		<script async src="/_/static/comments.js"></script>
 		if comments.NextHref != "" {
@@ -349,8 +357,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	}
 }
 
-templ Comments(comments *sc.Paginated[*sc.Comment]) {
-	{{ lastTime := -1 }}
+templ Comments(comments *sc.Paginated[*sc.Comment], lastTime int) {
 	for _, c := range comments.Collection {
 		{{
 			isReply := lastTime == c.Timestamp
