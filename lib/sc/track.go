@@ -1425,7 +1425,7 @@ func (t *Track) RenderWaveform() templ.Component {
 			count++
 			ww.Write(b)
 		}
-		ww.WriteString(`" stroke="var(--0)" fill="none" stroke-width="0.6"/></svg><script async src="/_/static/waveform.js"></script>`)
+		ww.WriteString(`" stroke="var(--0)" fill="none" stroke-width="0.6"/></svg>`)
 		return nil
 	})
 }

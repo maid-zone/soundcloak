@@ -105,6 +105,17 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 					license={ stream.License }
 				}
 				></audio>
+
+				if *prefs.Waveform {
+					<div class="waveform-wrapper hidden">
+						@track.RenderWaveform()
+						<div class="waveform-overlay">
+							<div class="waveform-time waveform-start" data-time="0"></div>
+							<div class="waveform-time waveform-end" data-time={track.Duration / 1000}></div>
+						</div>
+					</div>
+					<script async src="/_/static/waveform.js"></script>
+				}
 			</div>
 		}
 		if *prefs.Player == cfg.HLSPlayer {
@@ -131,9 +142,6 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 			player in the preferences. It works without JavaScript.</a>
 		</noscript>
 		
-		if *prefs.Waveform {
-			@track.RenderWaveform()
-		}
 		if track.Policy == sc.PolicySnip {
 			<div>
 				<p>Only a 30-second snippet is available.</p>
@@ -192,17 +200,54 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 	}
 }
 
+templ TrackMetaItem(icon templ.Component, alt string, number int64) {
+	<div class="track-meta-item tooltip">
+		<div class="tooltip-content-wrapper">
+			<div class="tooltip-content">
+				{alt}
+			</div>
+		</div>
+		<div class="track-meta-icon">
+			@icon
+		</div>
+		<div class="track-meta-number">
+			{ strconv.FormatInt(number, 10) }
+		</div>
+	</div>
+}
+
 templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, comments *sc.Paginated[*sc.Comment]) {
-	if t.Artwork != "" {
-		<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
-	}
-	<div class="track-title-block">
-		<div class="track-title">{ t.Title }</div>
-		if t.Genre != "" {
-			<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+	<div class="track-block">
+		<div class="track-main">
+			<div class="track-title-block">
+				<div class="track-title-left">
+					if *prefs.Waveform {
+						<div class="play-button paused">
+							<div class="icon-paused">
+								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.346 11.58a.5.5 0 0 1 0 .84L7.77 20.506a.5.5 0 0 1-.77-.42V3.914a.5.5 0 0 1 .77-.42l12.576 8.084Z" fill="currentColor"></path></svg>
+							</div>
+							<div class="icon-playing">
+								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 4.5c0-.276-.252-.5-.563-.5H5.563C5.252 4 5 4.224 5 4.5v15c0 .276.252.5.563.5h3.875c.31 0 .562-.224.562-.5v-15ZM19 4.5c0-.276-.252-.5-.563-.5h-3.875c-.31 0-.562.224-.562.5v15c0 .276.252.5.563.5h3.874c.311 0 .563-.224.563-.5v-15Z" fill="currentColor"></path></svg>
+							</div>
+						</div>
+					}
+					<div class="track-title">{ t.Title }</div>
+				</div>
+				if t.Genre != "" {
+					<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+				}
+			</div>
+			@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
+			<div class="track-meta">
+				@TrackMetaItem(PlayIcon(), "Plays", t.Played)
+				@TrackMetaItem(LikeIcon(), "Likes", t.Likes)
+				@TrackMetaItem(RepostIcon(), "Reposts", t.Reposted)
+			</div>
+		</div>
+		if t.Artwork != "" {
+			<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
 		}
 	</div>
-	@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
 	
 	if nextTrack != nil {
 		<details open style="margin-bottom: 1rem;">
@@ -237,9 +282,6 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	// </div>
 	<br/>
 	@Description(prefs, t.Description, nil)
-	<p>{ strconv.FormatInt(t.Likes, 10) } likes</p>
-	<p>{ strconv.FormatInt(t.Played, 10) } plays</p>
-	<p>{ strconv.FormatInt(t.Reposted, 10) } reposts</p>
 	if t.CreatedAt != "" {
 		<p>Created: { t.CreatedAt }</p>
 	}

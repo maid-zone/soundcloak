@@ -16,7 +16,7 @@ body {
   background-color: var(--primary);
   color: var(--text);
   padding: 0 1.5rem 1.5rem 1.5rem;
-  max-width: 50rem;
+  max-width: 80rem;
   margin-inline: auto;
   line-height: 1.15;
 }
@@ -171,13 +171,11 @@ select:focus {
 
 .waveform {
   width: 100%;
-  height: 4rem;
+  height: 8rem;
   display: block;
-  margin-bottom: 1rem;
 }
 
 .track-title-block {
-	margin: 0.67em 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -192,9 +190,168 @@ select:focus {
 
 #track-wrapper {
 	position: relative;
-    margin-bottom: .67em;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 #track {
 	width: 100%;
+}
+
+.track-block {
+	display: flex;
+    gap: 2rem;
+    justify-content: space-between;
+	margin-bottom: 1rem;
+}
+
+.track-main {
+	flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 700px) {
+	.track-block {
+		flex-direction: column-reverse;
+		gap: 1rem;
+	}
+
+	.track-main {
+		gap: 1rem;
+	}
+}
+
+.track-meta-icon > svg, .track-meta-icon {
+	width: 16px;
+	height: 16px;
+}
+
+.track-meta-item {
+	display: flex;
+	gap: .1rem;
+	align-items: center;
+}
+
+.track-meta {
+	display: flex;
+	gap: .5rem;
+}
+
+.tooltip {
+	position: relative;
+}
+
+.tooltip-content-wrapper {
+	transition: opacity .2s, bottom .2s;
+	opacity: 0;
+	z-index: -1;
+	position: absolute;
+	bottom: 90%;
+	width: 100%;
+	display: flex;
+	flex-direction: column-reverse;
+	align-items: center;
+	border-bottom: 5px solid transparent;
+	font-size: 14px;
+	animation: tooltip-z-index-out .2s;
+}
+
+.tooltip:hover > .tooltip-content-wrapper {
+	bottom: 100%;
+	opacity: 1;
+	z-index: 1000;
+	animation: unset;
+}
+
+.tooltip-filler {
+	height: 100%;
+	width: 100%;
+	opacity: 0;
+	z-index: -1;
+	padding-top: 5px;
+}
+
+.tooltip-content {
+	background: #000a;
+	padding: 7px;
+	border-radius: 5px;
+	position: relative;
+	margin-top: 4px;
+}
+
+.tooltip-content::before {
+	content: '';
+	border: 4px black solid;
+	transform: rotate(45deg);
+	position: absolute;
+	bottom: -4px;
+	left: calc(50% - 4px);
+}
+
+@keyframes tooltip-z-index-out {
+	100% { z-index: -1 }
+	0% { z-index: 1000 }
+}
+
+.waveform-wrapper {
+	position: relative;
+}
+
+.waveform-overlay {
+	position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    right: 0;
+    bottom: 0;
+    font-size: 12px;
+}
+
+.waveform-time {
+    background: black;
+    display: inline-block;
+	padding: 1px;
+}
+
+.waveform-start {
+	color: var(--accent);
+}
+
+.play-button {
+	cursor: pointer;
+}
+
+.play-button svg {
+	width: 32px;
+	height: 32px;
+}
+
+.play-button > div {
+    background: var(--primary);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+	border: 3px solid var(--0);
+}
+
+.play-button.playing .icon-paused, .play-button.paused .icon-playing {
+	display: none;
+}
+
+.hidden {
+	display: none;
+}
+
+.track-title-left {
+	display: flex;
+	gap: 1em;
+	align-items: center;
 }
