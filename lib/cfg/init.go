@@ -165,7 +165,7 @@ func defaultPreferences() {
 
 	DefaultPreferences.SearchSuggestions = &False
 	DefaultPreferences.KeepPlayerFocus = &False
-	DefaultPreferences.Waveform = &False
+	DefaultPreferences.Waveform = &True
 	DefaultPreferences.DRM = &False
 }
 
@@ -294,7 +294,7 @@ func loadDefaultPreferences(loaded Preferences) {
 	if loaded.Waveform != nil {
 		DefaultPreferences.Waveform = loaded.Waveform
 	} else {
-		DefaultPreferences.Waveform = &False
+		DefaultPreferences.Waveform = &True
 	}
 
 	if loaded.DRM != nil {
