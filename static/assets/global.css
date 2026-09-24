@@ -434,3 +434,7 @@ select:open {
 	align-items: center;
 	margin-bottom: .35rem;
 }
+
+.listing-reply {
+	margin-left: 2rem;
+}

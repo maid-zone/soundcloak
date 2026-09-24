@@ -357,8 +357,20 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 }
 
 templ Comments(comments *sc.Paginated[*sc.Comment]) {
+	{{ lastTime := -1 }}
 	for _, c := range comments.Collection {
-		<div class="listing">
+		{{
+			isReply := lastTime == c.Timestamp
+			lastTime = c.Timestamp
+		}}
+
+		<div
+			if isReply {
+				class="listing listing-reply"
+			} else {
+				class="listing"
+			}
+		>
 			<img
 			if c.Author.Avatar != "" {
 				src={ c.Author.Avatar }
