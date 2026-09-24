@@ -1429,3 +1429,40 @@ func (t *Track) RenderWaveform() templ.Component {
 		return nil
 	})
 }
+
+func (t *Track) GetDisabledFormats() map[string]bool {
+	disabled_formats := map[string]bool{
+		cfg.AudioAACHQ: true,
+		cfg.AudioAAC:   true,
+		cfg.AudioMP3:   true,
+		cfg.AudioAACLQ: true,
+	}
+
+	for _, tr := range t.Media.Transcodings {
+		switch tr.Format.Protocol {
+		case ProtocolHLS:
+			switch tr.Preset {
+			case "aac_256k":
+				disabled_formats[cfg.AudioAACHQ] = false
+			case "aac_160k":
+				disabled_formats[cfg.AudioAAC] = false
+			case "aac_96k":
+				disabled_formats[cfg.AudioAACLQ] = false
+			default:
+				switch tr.Format.MimeType {
+				case "audio/mpeg":
+					disabled_formats[cfg.AudioMP3] = false
+				case `audio/mp4; codecs="mp4a.40.2"`:
+					disabled_formats[cfg.AudioAACHQ] = false
+				}
+
+			}
+		case ProtocolProgressive:
+			if tr.Format.MimeType == "audio/mpeg" {
+				disabled_formats[cfg.AudioMP3] = false
+			}
+		}
+	}
+
+	return disabled_formats
+}

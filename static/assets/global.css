@@ -278,14 +278,6 @@ select:open {
 	animation: unset;
 }
 
-.tooltip-filler {
-	height: 100%;
-	width: 100%;
-	opacity: 0;
-	z-index: -1;
-	padding-top: 5px;
-}
-
 .tooltip-content {
 	background: #000a;
 	padding: 7px;
@@ -388,4 +380,57 @@ select:open {
 	padding: 7px 10px;
 	flex: 1;
 	width: 100px;
+}
+
+.modal-cond {
+	display: none;
+}
+
+.modal-cond:checked ~ .modal {
+	display: flex;
+}
+
+.modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 500;
+	justify-content: center;
+	align-items: center;
+}
+
+.modal-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: #0006;
+}
+
+.modal-content-wrapper {
+	z-index: 500;
+	background: var(--primary);
+	padding: 2rem 4rem;
+	border: 2px solid var(--0);
+	position: relative;
+}
+
+.modal-close {
+	cursor: pointer;
+	width: 32px;
+    height: 32px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.download-metadata {
+	display: flex;
+	gap: .5rem;
+	align-items: center;
+	margin-bottom: .35rem;
 }

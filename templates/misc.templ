@@ -84,3 +84,21 @@ templ Search(p *sc.Paginated[*sc.UserPlaylistTrack], prefs cfg.Preferences, cont
 		}
 	}
 }
+
+templ Modal(modalId string, content templ.Component) {
+	{{ id := "modal-" + modalId + "-open" }}
+
+	<div>
+		<input id={id} name={id} class="modal-cond" type="checkbox">
+
+		<div class="modal">
+			<label class="modal-backdrop" for={id}></label>
+			<div class="modal-content-wrapper">
+				<label class="modal-close" for={id}>@CloseIcon()</label>
+				<div class="modal-content">
+					@content
+				</div>
+			</div>
+		</div>
+	</div>
+}

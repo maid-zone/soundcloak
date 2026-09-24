@@ -7,7 +7,11 @@ import (
 	"strconv"
 )
 
-templ TrackButtons(current string, track sc.Track) {
+templ TrackButtons(prefs cfg.Preferences, current string, track sc.Track) {
+	if cfg.Restream {
+		@Modal("download", DownloadModal(prefs, track))
+	}
+
 	<div class="btns">
 		{{
 			buttons := []btn{
@@ -16,10 +20,6 @@ templ TrackButtons(current string, track sc.Track) {
 				{"in playlists", "/sets", false, false},
 				{"track station", "/discover/sets/"+track.Station, true, false},
 				{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true},
-			}
-
-			if cfg.Restream {
-				buttons = append(buttons, btn{"download", "/_/download" + track.Href(), true, false})
 			}
 		}}
 
@@ -41,6 +41,10 @@ templ TrackButtons(current string, track sc.Track) {
 				}
 			}
 			>{ b.text }</a>
+		}
+
+		if cfg.Restream {
+			<label class="btn" for="modal-download-open">download</label>
 		}
 	</div>
 }
@@ -216,6 +220,40 @@ templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 	</div>
 }
 
+templ DownloadModal(prefs cfg.Preferences, t sc.Track) {
+	<h1><a href={templ.SafeURL(t.Href())} id="title">{ t.Title }</a></h1>
+
+	if t.Policy == sc.PolicySnip {
+		<h2>Full track not available, only a 30-second snippet.</h2>
+	}
+	if t.Media.HasDRM() {
+		<h2>Soundcloud is forcing DRM for this track. Downloads most likely won't work</h2>
+	}
+
+	<form action={"/_/download" + t.Href()} method="post" autocomplete="off">
+		@sel_audio2("audio", *prefs.RestreamAudio, t.GetDisabledFormats())
+		<details style="margin-top: 1rem; margin-bottom: 1rem">
+			<summary>File metadata</summary>
+			
+			<label class="download-metadata">
+				Title:
+				@text("title", t.Title)
+			</label>
+
+			<label class="download-metadata">
+				Author:
+				@text("author", t.Author.Username)
+			</label>
+
+			<label class="download-metadata">
+				Genre:
+				@text("genre", t.Genre)
+			</label>
+		</details>
+		<input type="submit" value="Download" class="btn" style="margin-top: 1rem;"/>
+	</form>
+}
+
 templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Stream, displayErr string, autoplay bool, playlist *sc.Playlist, nextTrack *sc.Track, volume string, mode string, comments *sc.Paginated[*sc.Comment]) {
 	<div class="track-block">
 		<div class="track-main">
@@ -273,7 +311,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 		</details>
 	}
 	@UserItem(&t.Author)
-	@TrackButtons("", t)
+	@TrackButtons(prefs, "", t)
 	// <div style="display: flex; gap: 1rem">
 	// 	<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + t.Href()) }>view on soundcloud</a>
 	// 	if cfg.Restream {
@@ -376,12 +414,12 @@ templ SearchTracks(p *sc.Paginated[*sc.Track], prefs cfg.Preferences, content st
 	}
 }
 
-templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
+templ RelatedTracks(prefs cfg.Preferences, t sc.Track, p *sc.Paginated[*sc.Track]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
-	@TrackButtons("related tracks", t)
+	@TrackButtons(prefs, "related tracks", t)
 	<br/>
 	if len(p.Collection) == 0 {
 		<p>no more results</p>
@@ -395,12 +433,12 @@ templ RelatedTracks(t sc.Track, p *sc.Paginated[*sc.Track]) {
 	}
 }
 
-templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
+templ TrackInAlbums(prefs cfg.Preferences, t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
-	@TrackButtons("in albums", t)
+	@TrackButtons(prefs, "in albums", t)
 	<br/>
 	if len(p.Collection) == 0 {
 		<p>no more albums</p>
@@ -414,12 +452,12 @@ templ TrackInAlbums(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 	}
 }
 
-templ TrackInPlaylists(t sc.Track, p *sc.Paginated[*sc.Playlist]) {
+templ TrackInPlaylists(prefs cfg.Preferences, t sc.Track, p *sc.Paginated[*sc.Playlist]) {
 	if t.Artwork != "" {
 		<img src={ t.Artwork } width="300px"/>
 	}
 	<h1><a href={ templ.SafeURL(t.Href()) }>{ t.Title }</a></h1>
-	@TrackButtons("in playlists", t)
+	@TrackButtons(prefs, "in playlists", t)
 	<br/>
 	if len(p.Collection) == 0 {
 		<p>no more playlists</p>

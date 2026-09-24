@@ -650,37 +650,7 @@ Disallow: /`)
 				return err
 			}
 
-			disabled_formats := map[string]bool{
-				cfg.AudioAACHQ: true,
-				cfg.AudioAAC:   true,
-				cfg.AudioMP3:   true,
-				cfg.AudioAACLQ: true,
-			}
-			for _, tr := range t.Media.Transcodings {
-				switch tr.Format.Protocol {
-				case sc.ProtocolHLS:
-					switch tr.Preset {
-					case "aac_256k":
-						disabled_formats[cfg.AudioAACHQ] = false
-					case "aac_160k":
-						disabled_formats[cfg.AudioAAC] = false
-					case "aac_96k":
-						disabled_formats[cfg.AudioAACLQ] = false
-					default:
-						switch tr.Format.MimeType {
-						case "audio/mpeg":
-							disabled_formats[cfg.AudioMP3] = false
-						case `audio/mp4; codecs="mp4a.40.2"`:
-							disabled_formats[cfg.AudioAACHQ] = false
-						}
-
-					}
-				case sc.ProtocolProgressive:
-					if tr.Format.MimeType == "audio/mpeg" {
-						disabled_formats[cfg.AudioMP3] = false
-					}
-				}
-			}
+			disabled_formats := t.GetDisabledFormats()
 
 			if disabled_formats[*p.DownloadAudio] {
 				p.DownloadAudio = &cfg.MP3
@@ -1214,7 +1184,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.RelatedTracks(track, rel), templates.TrackHeader(prefs, track, false))
+		return r(c, track.Title+" by "+track.Author.Username, templates.RelatedTracks(prefs, track, rel), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/sets", func(c fiber.Ctx) error {
@@ -1236,7 +1206,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(track, p), templates.TrackHeader(prefs, track, false))
+		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(prefs, track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/albums", func(c fiber.Ctx) error {
@@ -1258,7 +1228,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInAlbums(track, p), templates.TrackHeader(prefs, track, false))
+		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInAlbums(prefs, track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	// cute
