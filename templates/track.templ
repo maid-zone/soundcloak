@@ -223,13 +223,6 @@ templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 templ DownloadModal(prefs cfg.Preferences, t sc.Track) {
 	<h1><a href={templ.SafeURL(t.Href())} id="title">{ t.Title }</a></h1>
 
-	if t.Policy == sc.PolicySnip {
-		<h2>Full track not available, only a 30-second snippet.</h2>
-	}
-	if t.Media.HasDRM() {
-		<h2>Soundcloud is forcing DRM for this track. Downloads most likely won't work</h2>
-	}
-
 	<form action={"/_/download" + t.Href()} method="post" autocomplete="off">
 		@sel_audio2("audio", *prefs.RestreamAudio, t.GetDisabledFormats())
 		<details style="margin-top: 1rem; margin-bottom: 1rem">

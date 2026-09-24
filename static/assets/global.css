@@ -25,11 +25,12 @@ body {
   color: var(--accent);
 }
 
-#sc > h1 {
-	margin: 0;
+#sc>h1 {
+  margin: 0;
 }
 
-input, select {
+input,
+select {
   font-family: inherit;
   font-size: 100%;
   line-height: 1.15;
@@ -58,7 +59,8 @@ input {
   border-style: solid;
 }
 
-input:focus, input[type="submit"]:hover {
+input:focus,
+input[type="submit"]:hover {
   border-color: var(--accent);
   border-style: solid;
   outline: none;
@@ -98,13 +100,13 @@ input:focus, input[type="submit"]:hover {
   border-color: var(--accent);
 }
 
-.listing > img {
+.listing>img {
   width: 4rem;
   object-fit: cover;
   height: 4rem;
 }
 
-.listing > .meta {
+.listing>.meta {
   flex-grow: 0;
   display: flex;
   flex-direction: column;
@@ -113,18 +115,18 @@ input:focus, input[type="submit"]:hover {
   gap: 0.25rem;
 }
 
-.listing > .meta > h3 {
+.listing>.meta>h3 {
   margin: 0;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
 }
 
-.listing > .meta > span {
+.listing>.meta>span {
   color: var(--accent);
 }
 
-.listing > .meta > p {
+.listing>.meta>p {
   margin: 0;
 }
 
@@ -134,7 +136,7 @@ details {
   padding: 0.5rem 0.75rem;
 }
 
-details > summary:hover {
+details>summary:hover {
   cursor: pointer;
 }
 
@@ -155,7 +157,7 @@ select {
 }
 
 input[type="submit"] {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 select:open {
@@ -177,7 +179,7 @@ select:open {
   text-decoration: underline;
 }
 
-.listing > .comment > h3 {
+.listing>.comment>h3 {
   margin: 0;
 }
 
@@ -188,253 +190,260 @@ select:open {
 }
 
 .track-title-block {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .5rem;
-    justify-content: space-between;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  justify-content: space-between;
 }
 
 .track-title {
-	font-family: "fixed", monospace, system-ui;
-    font-size: 2em;
+  font-family: "fixed", monospace, system-ui;
+  font-size: 2em;
 }
 
 #track-wrapper {
-	position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 #track {
-	width: 100%;
+  width: 100%;
 }
 
 .track-block {
-	display: flex;
-    gap: 2rem;
-    justify-content: space-between;
-	margin-bottom: 1rem;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
 .track-main {
-	flex: 1;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 700px) {
-	.track-block {
-		flex-direction: column-reverse;
-		gap: 1rem;
-	}
+  .track-block {
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
 
-	.track-main {
-		gap: 1rem;
-	}
+  .track-main {
+    gap: 1rem;
+  }
 }
 
-.track-meta-icon > svg, .track-meta-icon {
-	width: 16px;
-	height: 16px;
+.track-meta-icon>svg,
+.track-meta-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .track-meta-item {
-	display: flex;
-	gap: .1rem;
-	align-items: center;
+  display: flex;
+  gap: .1rem;
+  align-items: center;
 }
 
 .track-meta {
-	display: flex;
-	gap: .5rem;
+  display: flex;
+  gap: .5rem;
 }
 
 .tooltip {
-	position: relative;
+  position: relative;
 }
 
 .tooltip-content-wrapper {
-	transition: opacity .2s, bottom .2s;
-	opacity: 0;
-	z-index: -1;
-	position: absolute;
-	bottom: 90%;
-	width: 100%;
-	display: flex;
-	flex-direction: column-reverse;
-	align-items: center;
-	border-bottom: 5px solid transparent;
-	font-size: 14px;
-	animation: tooltip-z-index-out .2s;
+  transition: opacity .2s, bottom .2s;
+  opacity: 0;
+  z-index: -1;
+  position: absolute;
+  bottom: 90%;
+  width: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  border-bottom: 5px solid transparent;
+  font-size: 14px;
+  animation: tooltip-z-index-out .2s;
 }
 
-.tooltip:hover > .tooltip-content-wrapper {
-	bottom: 100%;
-	opacity: 1;
-	z-index: 1000;
-	animation: unset;
+.tooltip:hover>.tooltip-content-wrapper {
+  bottom: 100%;
+  opacity: 1;
+  z-index: 1000;
+  animation: unset;
 }
 
 .tooltip-content {
-	background: #000a;
-	padding: 7px;
-	border-radius: 5px;
-	position: relative;
-	margin-top: 4px;
+  background: #000a;
+  padding: 7px;
+  border-radius: 5px;
+  position: relative;
+  margin-top: 4px;
 }
 
 .tooltip-content::before {
-	content: '';
-	border: 4px black solid;
-	transform: rotate(45deg);
-	position: absolute;
-	bottom: -4px;
-	left: calc(50% - 4px);
+  content: '';
+  border: 4px black solid;
+  transform: rotate(45deg);
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - 4px);
 }
 
 @keyframes tooltip-z-index-out {
-	100% { z-index: -1 }
-	0% { z-index: 1000 }
+  100% {
+    z-index: -1
+  }
+
+  0% {
+    z-index: 1000
+  }
 }
 
 .waveform-wrapper {
-	position: relative;
+  position: relative;
 }
 
 .waveform-overlay {
-	position: absolute;
-    top: 0;
-    left: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    right: 0;
-    bottom: 0;
-    font-size: 12px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  right: 0;
+  bottom: 0;
+  font-size: 12px;
 }
 
 .waveform-time {
-    background: black;
-    display: inline-block;
-	padding: 1px;
+  background: black;
+  display: inline-block;
+  padding: 1px;
 }
 
 .waveform-start {
-	color: var(--accent);
+  color: var(--accent);
 }
 
 .play-button {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .play-button svg {
-	width: 32px;
-	height: 32px;
+  width: 32px;
+  height: 32px;
 }
 
-.play-button > div {
-    background: var(--primary);
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-	border: 3px solid var(--0);
+.play-button>div {
+  background: var(--primary);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 3px solid var(--0);
 }
 
-.play-button.playing .icon-paused, .play-button.paused .icon-playing {
-	display: none;
+.play-button.playing .icon-paused,
+.play-button.paused .icon-playing {
+  display: none;
 }
 
 .hidden {
-	display: none;
+  display: none;
 }
 
 .track-title-left {
-	display: flex;
-	gap: 1em;
-	align-items: center;
+  display: flex;
+  gap: 1em;
+  align-items: center;
 }
 
 .header {
-	display: flex;
-    align-items: center;
-    justify-content: space-between;
-	margin: 1.5rem 0;
-    flex-wrap: wrap;
-    gap: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .header-search {
-	display: flex;
-    gap: .5rem;
-    flex: 1;
-    max-width: 500px;
+  display: flex;
+  gap: .5rem;
+  flex: 1;
+  max-width: 500px;
 }
 
 .header-search-query {
-	padding: 7px 10px;
-	flex: 1;
-	width: 100px;
+  padding: 7px 10px;
+  flex: 1;
+  width: 100px;
 }
 
 .modal-cond {
-	display: none;
+  display: none;
 }
 
-.modal-cond:checked ~ .modal {
-	display: flex;
+.modal-cond:checked~.modal {
+  display: flex;
 }
 
 .modal {
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-	z-index: 500;
-	justify-content: center;
-	align-items: center;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 500;
+  justify-content: center;
+  align-items: center;
 }
 
 .modal-backdrop {
-	position: fixed;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-	background: #0006;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: #0006;
 }
 
 .modal-content-wrapper {
-	z-index: 500;
-	background: var(--primary);
-	padding: 2rem 4rem;
-	border: 2px solid var(--0);
-	position: relative;
+  z-index: 500;
+  background: var(--primary);
+  padding: 2rem 4rem;
+  border: 2px solid var(--0);
+  position: relative;
 }
 
 .modal-close {
-	cursor: pointer;
-	width: 32px;
-    height: 32px;
-    position: absolute;
-    top: 10px;
-    right: 10px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
 .download-metadata {
-	display: flex;
-	gap: .5rem;
-	align-items: center;
-	margin-bottom: .35rem;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .35rem;
 }
 
 .listing-reply {
-	margin-left: 2rem;
+  margin-left: 2rem;
 }

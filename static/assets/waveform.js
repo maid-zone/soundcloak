@@ -33,7 +33,7 @@ path2.setAttribute("clip-path", "url(#wf-p)");
 svg.appendChild(path2);
 
 if (audio && svg && clip) {
-	audio.classList.add('hidden')
+	//audio.classList.add('hidden')
 	wrapper.classList.remove('hidden')
 
     clip.setAttribute("width", "0");
