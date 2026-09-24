@@ -201,7 +201,7 @@ func Load(r *fiber.App) {
 		}
 
 		c.Response().Header.SetContentType("text/html")
-		return templates.Base("preferences", templates.Preferences(p), nil, templates.HeaderOptions{}).Render(context.Background(), c)
+		return templates.Base(p, "preferences", templates.Preferences(p), nil, templates.HeaderOptions{}).Render(context.Background(), c)
 	})
 
 	r.Post("/_/preferences", func(c fiber.Ctx) error {

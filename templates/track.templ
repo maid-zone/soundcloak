@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 )
 
 templ TrackButtons(prefs cfg.Preferences, current string, track sc.Track) {
@@ -284,12 +285,12 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 			</div>
 		</div>
 		if t.Artwork != "" {
-			<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px"/>
+			<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px" height="300px"/>
 		}
 	</div>
 	
 	if nextTrack != nil {
-		<details open style="margin-bottom: 1rem;">
+		<details open style="margin-bottom: 1rem;" id="pbinfo">
 			<summary>Playback info</summary>
 			if playlist != nil {
 				<h2>In playlist:</h2>
@@ -299,14 +300,14 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 			@TrackItem(nextTrack, true, next(&t, nextTrack, playlist, mode, volume))
 			<div style="display: flex; gap: 1rem">
 				if playlist != nil {
-					<a href={ templ.SafeURL(t.Href()) } class="btn">Stop playlist playback</a>
+					<a href={ templ.SafeURL(t.Href()) } class="btn" onclick="event.preventDefault(); stoppb()">Stop playlist playback</a>
 					if mode != cfg.AutoplayRandom {
 						<a href={ templ.SafeURL(next(nil, &t, playlist, cfg.AutoplayRandom, volume)) } class="btn">Switch to random mode</a>
 					} else {
 						<a href={ templ.SafeURL(next(nil, &t, playlist, cfg.AutoplayNormal, volume)) } class="btn">Switch to normal mode</a>
 					}
 				} else {
-					<a href={ templ.SafeURL(t.Href() + "?playRelated=false") } class="btn">Stop playback</a>
+					<a href={ templ.SafeURL(t.Href() + "?playRelated=false") } class="btn" onclick="event.preventDefault(); stoppb()">Stop playback</a>
 				}
 			</div>
 		</details>
@@ -344,7 +345,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	<h1>Comments</h1>
 	if comments != nil {
 		<div id="comments">
-			@Comments(comments, lastCommentTime)
+			@Comments(prefs, comments, lastCommentTime)
 		</div>
 		<script async src="/_/static/comments.js"></script>
 		if comments.NextHref != "" {
@@ -357,7 +358,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	}
 }
 
-templ Comments(comments *sc.Paginated[*sc.Comment], lastTime int) {
+templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastTime int) {
 	for _, c := range comments.Collection {
 		{{
 			isReply := lastTime == c.Timestamp
@@ -384,7 +385,13 @@ templ Comments(comments *sc.Paginated[*sc.Comment], lastTime int) {
 					at
 					<a class="link" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
 				</h3>
-				<p>{ c.Body }</p>
+				<p>
+					if *prefs.ParseDescriptions {
+						@templ.Raw(textparsing.Format(c.Body))
+					} else {
+						{ c.Body }
+					}
+				</p>
 			</div>
 		</div>
 	}

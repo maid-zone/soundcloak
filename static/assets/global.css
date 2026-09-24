@@ -447,3 +447,23 @@ select:open {
 .listing-reply {
   margin-left: 2rem;
 }
+
+#search-suggestions {
+    list-style: none;
+    position: absolute;
+    background-color: var(--secondary);
+    margin: 0;
+    padding: 1rem;
+    padding-bottom: 0;
+    width: -moz-available;
+    width: -webkit-fill-available;
+    margin-top: 40px;
+}
+
+#search-suggestions > li {
+    padding-bottom: 1rem;
+}
+
+#search-suggestions > li:hover {
+    cursor: pointer;
+}

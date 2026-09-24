@@ -25,6 +25,7 @@ function getSuggestions() {
                 e.textContent = data[i];
                 e.onclick = function () {
                     input.value = this.textContent;
+                    input.parentElement.submit();
                     searchSuggestions.style.display = 'none';
                 }
                 cloned.appendChild(e);

@@ -22,8 +22,14 @@ if (volume) {
 }
 
 var next = audio.getAttribute("data-next");
+function gonext() {
+    location = next + '&volume=' + audio.volume;
+}
 if (next) {
-    audio.addEventListener("ended", function () {
-        location = next + "&volume=" + audio.volume;
-    });
+    audio.addEventListener('ended', gonext);
+}
+
+function stoppb() {
+    audio.removeEventListener('ended', gonext);
+    document.getElementById('pbinfo').remove();
 }

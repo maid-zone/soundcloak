@@ -266,12 +266,12 @@ func render(c fiber.Ctx, t templ.Component) error {
 	return t.Render(c.RequestCtx(), c.Response().BodyWriter())
 }
 
-func r(c fiber.Ctx, title string, content, head templ.Component) error {
-	return render(c, templates.Base(title, content, head, templates.HeaderOptions{}))
+func r(c fiber.Ctx, p cfg.Preferences, title string, content, head templ.Component) error {
+	return render(c, templates.Base(p, title, content, head, templates.HeaderOptions{}))
 }
 
-func renderWithOptions(c fiber.Ctx, title string, content, head templ.Component, options templates.HeaderOptions) error {
-	return render(c, templates.Base(title, content, head, options))
+func renderWithOptions(c fiber.Ctx, p cfg.Preferences, title string, content, head templ.Component, options templates.HeaderOptions) error {
+	return render(c, templates.Base(p, title, content, head, options))
 }
 
 func main() {
@@ -330,7 +330,7 @@ func main() {
 				return err
 			}
 
-			return r(c, "", templates.MainPage(prefs), templates.MainPageHead(prefs))
+			return r(c, prefs, "", templates.MainPage(), nil)
 		}
 
 		app.Get("/", mainPageHandler)
@@ -398,7 +398,7 @@ Disallow: /`)
 				return err
 			}
 
-			return renderWithOptions(c, queryStr, templates.Search(p, prefs, queryStr), templates.MainPageHead(prefs), options)
+			return renderWithOptions(c, prefs, queryStr, templates.Search(p, prefs, queryStr), nil, options)
 		case "tracks":
 			p, err := sc.SearchTracks(prefs, args)
 			if err != nil {
@@ -406,7 +406,7 @@ Disallow: /`)
 				return err
 			}
 
-			return renderWithOptions(c, "tracks: "+queryStr, templates.SearchTracks(p, prefs, queryStr), templates.MainPageHead(prefs), options)
+			return renderWithOptions(c, prefs, "tracks: "+queryStr, templates.SearchTracks(p, prefs, queryStr), nil, options)
 
 		case "users":
 			p, err := sc.SearchUsers(prefs, args)
@@ -415,7 +415,7 @@ Disallow: /`)
 				return err
 			}
 
-			return renderWithOptions(c, "users: "+queryStr, templates.SearchUsers(p, prefs, queryStr), templates.MainPageHead(prefs), options)
+			return renderWithOptions(c, prefs, "users: "+queryStr, templates.SearchUsers(p, prefs, queryStr), nil, options)
 
 		case "playlists":
 			p, err := sc.SearchPlaylists(prefs, args)
@@ -424,7 +424,7 @@ Disallow: /`)
 				return err
 			}
 
-			return renderWithOptions(c, "playlists: "+queryStr, templates.SearchPlaylists(p, prefs, queryStr), templates.MainPageHead(prefs), options)
+			return renderWithOptions(c, prefs, "playlists: "+queryStr, templates.SearchPlaylists(p, prefs, queryStr), nil, options)
 		}
 
 		return c.SendStatus(404)
@@ -530,7 +530,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, "Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil)
+		return r(c, prefs, "Recent tracks tagged "+tag, templates.RecentTracks(tag, p), nil)
 	})
 
 	app.Get("/tags/:tag/popular-tracks", func(c fiber.Ctx) error {
@@ -551,7 +551,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, "Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil)
+		return r(c, prefs, "Popular tracks tagged "+tag, templates.PopularTracks(tag, p), nil)
 	})
 
 	app.Get("/tags/:tag/playlists", func(c fiber.Ctx) error {
@@ -573,7 +573,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, "Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil)
+		return r(c, prefs, "Playlists tagged "+tag, templates.TaggedPlaylists(tag, p), nil)
 	})
 
 	app.Get("/discover", func(c fiber.Ctx) error {
@@ -582,13 +582,28 @@ Disallow: /`)
 			return err
 		}
 
-		selections, err := sc.GetSelections(prefs) // There is no pagination
+		selections, err := sc.GetMixedSelections(prefs) // There is no pagination
 		if err != nil {
-			log.Printf("error getting selections: %s\n", err)
+			log.Printf("error getting mixed selections: %s\n", err)
 			return err
 		}
 
-		return r(c, "Discover", templates.Discover(selections), nil)
+		return r(c, prefs, "Discover", templates.Selection("Discover Playlists", selections), nil)
+	})
+
+	app.Get("/charts", func(c fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		selections, err := sc.GetChartSelections(prefs) // There is no pagination
+		if err != nil {
+			log.Printf("error getting chart selections: %s\n", err)
+			return err
+		}
+
+		return r(c, prefs, "Charts", templates.Selection("Top Charts", selections), nil)
 	})
 
 	if cfg.ProxyImages {
@@ -657,7 +672,7 @@ Disallow: /`)
 				p.DownloadAudio = &cfg.MP3
 			}
 
-			return r(c, "Download "+t.Title+" by "+t.Author.Username, templates.DownloadTrack(p, t, disabled_formats), nil)
+			return r(c, p, "Download "+t.Title+" by "+t.Author.Username, templates.DownloadTrack(p, t, disabled_formats), nil)
 		})
 
 		app.Post("/_/download/:author/:track", func(c fiber.Ctx) error {
@@ -760,7 +775,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserPlaylists(prefs, user, pl), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/albums", func(c fiber.Ctx) error {
@@ -782,7 +797,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserAlbums(prefs, user, pl), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/reposts", func(c fiber.Ctx) error {
@@ -804,7 +819,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserReposts(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/likes", func(c fiber.Ctx) error {
@@ -826,7 +841,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserLikes(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/popular-tracks", func(c fiber.Ctx) error {
@@ -848,7 +863,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserTopTracks(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/followers", func(c fiber.Ctx) error {
@@ -870,7 +885,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserFollowers(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/following", func(c fiber.Ctx) error {
@@ -892,7 +907,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserFollowing(prefs, user, p), templates.UserHeader(user))
 	})
 
 	app.Get("/:user/:track", func(c fiber.Ctx) error {
@@ -1023,7 +1038,7 @@ Disallow: /`)
 		}
 
 		// its so much arguments i should do something about it maybe lol
-		return r(c, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, tr, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, comments, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")), templates.TrackHeader(prefs, track, true))
+		return r(c, prefs, track.Title+" by "+track.Author.Username, templates.Track(prefs, track, tr, stream, displayErr, string(c.RequestCtx().QueryArgs().Peek("autoplay")) == "true", playlist, nextTrack, c.Query("volume"), mode, comments, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")), templates.TrackHeader(prefs, track, true))
 	})
 
 	app.Get("/_/partials/comments/:id", func(c fiber.Ctx) error {
@@ -1062,7 +1077,7 @@ Disallow: /`)
 			c.Set("next", "done")
 		}
 
-		return render(c, templates.Comments(comm, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")))
+		return render(c, templates.Comments(prefs, comm, c.Request().URI().QueryArgs().GetUintOrZero("last_ts")))
 	})
 
 	app.Get("/_/rss/:user", func(c fiber.Ctx) error {
@@ -1113,7 +1128,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr))
+		return r(c, prefs, usr.Username, templates.User(prefs, usr, p), templates.UserHeader(usr))
 	})
 
 	app.Get("/:user/sets/:playlist", func(c fiber.Ctx) error {
@@ -1147,7 +1162,7 @@ Disallow: /`)
 			playlist.MissingTracks = strings.Join(next, ",")
 		}
 
-		return r(c, playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist))
+		return r(c, prefs, playlist.Title+" by "+playlist.Author.Username, templates.Playlist(prefs, playlist), templates.PlaylistHeader(playlist))
 	})
 
 	app.Get("/:user/_/related", func(c fiber.Ctx) error {
@@ -1169,7 +1184,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, user.Username, templates.UserRelated(prefs, user, rel), templates.UserHeader(user))
+		return r(c, prefs, user.Username, templates.UserRelated(prefs, user, rel), templates.UserHeader(user))
 	})
 
 	// I'd like to make this "related" but keeping it "recommended" to have the same url as soundcloud
@@ -1192,7 +1207,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.RelatedTracks(prefs, track, rel), templates.TrackHeader(prefs, track, false))
+		return r(c, prefs, track.Title+" by "+track.Author.Username, templates.RelatedTracks(prefs, track, rel), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/sets", func(c fiber.Ctx) error {
@@ -1214,7 +1229,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(prefs, track, p), templates.TrackHeader(prefs, track, false))
+		return r(c, prefs, track.Title+" by "+track.Author.Username, templates.TrackInPlaylists(prefs, track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	app.Get("/:user/:track/albums", func(c fiber.Ctx) error {
@@ -1236,7 +1251,7 @@ Disallow: /`)
 			return err
 		}
 
-		return r(c, track.Title+" by "+track.Author.Username, templates.TrackInAlbums(prefs, track, p), templates.TrackHeader(prefs, track, false))
+		return r(c, prefs, track.Title+" by "+track.Author.Username, templates.TrackInAlbums(prefs, track, p), templates.TrackHeader(prefs, track, false))
 	})
 
 	// cute

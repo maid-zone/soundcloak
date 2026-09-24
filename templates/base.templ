@@ -7,7 +7,7 @@ type HeaderOptions struct {
 	SearchType string
 }
 
-templ Base(title string, content templ.Component, head templ.Component, options HeaderOptions) {
+templ Base(p cfg.Preferences, title string, content templ.Component, head templ.Component, options HeaderOptions) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -41,6 +41,10 @@ templ Base(title string, content templ.Component, head templ.Component, options 
 						{"users", "Users", false},
 						{"playlists", "Playlists", false},
 					}, options.SearchType)
+					if *p.SearchSuggestions {
+						<ul id="search-suggestions" style="display:none"></ul>
+						<script async src="/_/static/search.js"></script>
+					}
 					<input class="header-search-submit" type="submit" value="Search" class="btn">
 				</form>
 			</div>
@@ -49,13 +53,7 @@ templ Base(title string, content templ.Component, head templ.Component, options 
 	</html>
 }
 
-templ MainPageHead(p cfg.Preferences) {
-	if *p.SearchSuggestions {
-		<link rel="stylesheet" href="/_/static/index.css"/>
-	}
-}
-
-templ MainPage(p cfg.Preferences) {
+templ MainPage() {
 	<footer>
 		<div style="margin-top:5rem;gap:1rem;display:grid;grid-template:auto/auto auto auto;justify-content:center">
 			<a class="btn" href="/discover">Discover Playlists</a>

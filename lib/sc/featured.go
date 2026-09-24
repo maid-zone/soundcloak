@@ -12,9 +12,30 @@ type Selection struct {
 	Items Paginated[*UserPlaylistTrack] `json:"items"` // ?? why
 }
 
-func GetSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
+// "discover playlists"
+func GetMixedSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
 	uri := baseUri()
 	uri.SetPath("/mixed-selections")
+	uri.QueryArgs().Set("limit", "20")
+
+	// There is no pagination
+	p := Paginated[*Selection]{Next: uri}
+	err := p.Proceed(false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range p.Collection {
+		t.Fix(prefs)
+	}
+
+	return &p, nil
+}
+
+// "charts"
+func GetChartSelections(prefs cfg.Preferences) (*Paginated[*Selection], error) {
+	uri := baseUri()
+	uri.SetPath("/charts/selections")
 	uri.QueryArgs().Set("limit", "20")
 
 	// There is no pagination
