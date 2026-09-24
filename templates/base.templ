@@ -63,6 +63,9 @@ templ MainPage() {
 			<a class="btn" href="/_/static/notice.txt">Legal notice</a>
 		</div>
 
-		<p style="text-align:center">Build <a class="link" href={templ.SafeURL(cfg.CommitURL)}>{cfg.Commit}</a></p>
+		<p style="text-align:center">Build <a class="link" 
+		if cfg.CommitURL != "unknown" {
+			href={templ.SafeURL(cfg.CommitURL)}
+		}>{cfg.Commit}</a></p>
 	</footer>
 }
