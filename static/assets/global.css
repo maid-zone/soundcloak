@@ -25,6 +25,10 @@ body {
   color: var(--accent);
 }
 
+#sc > h1 {
+	margin: 0;
+}
+
 input, select {
   font-family: inherit;
   font-size: 100%;
@@ -54,7 +58,7 @@ input {
   border-style: solid;
 }
 
-input:focus {
+input:focus, input[type="submit"]:hover {
   border-color: var(--accent);
   border-style: solid;
   outline: none;
@@ -69,6 +73,7 @@ input:focus {
   padding: 0.5rem 0.75rem;
   display: block;
   text-align: center;
+  border-width: 2px;
 }
 
 .btn:hover,
@@ -86,6 +91,7 @@ input:focus {
   column-gap: 1rem;
   margin-bottom: 1rem;
   padding: 0.5rem;
+  border-width: 2px;
 }
 
 .listing:hover {
@@ -141,12 +147,18 @@ details > summary:hover {
 
 select {
   background: var(--secondary);
-  border-color: var(--0);
-  border-style: solid;
+  border: var(--0) solid 2px;
   color: var(--text);
+  cursor: pointer;
+  outline: 0;
+  padding: 0 3px;
 }
 
-select:focus {
+input[type="submit"] {
+	cursor: pointer;
+}
+
+select:open {
   border-color: var(--accent);
 }
 
@@ -360,6 +372,9 @@ select:focus {
 	display: flex;
     align-items: center;
     justify-content: space-between;
+	margin: 1.5rem 0;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .header-search {
@@ -372,4 +387,5 @@ select:focus {
 .header-search-query {
 	padding: 7px 10px;
 	flex: 1;
+	width: 100px;
 }

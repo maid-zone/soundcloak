@@ -234,7 +234,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 					<div class="track-title">{ t.Title }</div>
 				</div>
 				if t.Genre != "" {
-					<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag">{ t.Genre }</p></a>
+					<a href={ templ.SafeURL("/tags/" + t.Genre) }><p class="tag btn">{ t.Genre }</p></a>
 				}
 			</div>
 			@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
