@@ -27,7 +27,8 @@ templ Base(p cfg.Preferences, title string, content templ.Component, head templ.
 				@head
 			}
 		</head>
-		<body>
+		<body class="noJs">
+			<script>document.body.classList.remove('noJs')</script>
 			if cfg.Debug {
 				<h1>!! running in debug mode !!</h1>
 			}

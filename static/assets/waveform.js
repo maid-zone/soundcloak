@@ -5,6 +5,30 @@ var clip = document.querySelector("#wf-p rect");
 var path2 = svg.querySelector("path").cloneNode(false);
 var timeStart = document.querySelector('.waveform-start')
 const playButton = document.querySelector('.play-button')
+const volumeInput = document.querySelector('.track-volume')
+const repeatButton = document.querySelector('.track-repeat')
+
+const savedVolume = JSON.parse(localStorage.getItem('volume') || '100')
+volumeInput.value = ~~savedVolume
+audio.volume = ~~savedVolume / 100
+volumeInput.addEventListener('input', e => {
+	localStorage.setItem('volume', JSON.stringify(~~volumeInput.value))
+	audio.volume = ~~volumeInput.value / 100
+})
+
+const repeat = JSON.parse(localStorage.getItem('repeat') || 'false')
+audio.loop = repeat
+if(repeat) repeatButton.classList.add('active')
+repeatButton.addEventListener('click', e => {
+	let newRepeat = !repeatButton.classList.contains('active')
+	audio.loop = newRepeat
+	localStorage.setItem('repeat', JSON.stringify(newRepeat))
+	if(newRepeat) {
+		repeatButton.classList.add('active')
+	} else {
+		repeatButton.classList.remove('active')
+	}
+})
 
 function formatTime(time) {
 	const seconds = time % 60
@@ -33,8 +57,7 @@ path2.setAttribute("clip-path", "url(#wf-p)");
 svg.appendChild(path2);
 
 if (audio && svg && clip) {
-	//audio.classList.add('hidden')
-	wrapper.classList.remove('hidden')
+	audio.classList.add('hidden')
 
     clip.setAttribute("width", "0");
     wrapper.style.cursor = "pointer";

@@ -467,3 +467,32 @@ select:open {
 #search-suggestions > li:hover {
     cursor: pointer;
 }
+
+
+.track-volume {
+	writing-mode: sideways-lr;
+}
+
+.track-bottom {
+  display: flex;
+}
+
+.track-controls {
+  flex: 1;
+  display: flex;
+  gap: .5rem;
+}
+
+.track-volume-tooltip svg, .track-repeat svg {
+   width: 16px;
+}
+
+.track-repeat, .track-volume-tooltip {
+	cursor: pointer;
+}
+
+.track-repeat.active svg {
+	color: var(--accent);
+}
+
+.noJs .jsOnly { display: none; }

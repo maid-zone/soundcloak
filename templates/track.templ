@@ -120,7 +120,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 				></audio>
 
 				if *prefs.Waveform {
-					<div class="waveform-wrapper hidden">
+					<div class="waveform-wrapper jsOnly">
 						@track.RenderWaveform()
 						<div class="waveform-overlay">
 							<div class="waveform-time waveform-start" data-time="0"></div>
@@ -262,11 +262,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 			<div class="track-title-block">
 				<div class="track-title-left">
 					if *prefs.Waveform {
-						<div class="play-button paused">
+						<div class="play-button paused jsOnly">
 							<div class="icon-paused">
 								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.346 11.58a.5.5 0 0 1 0 .84L7.77 20.506a.5.5 0 0 1-.77-.42V3.914a.5.5 0 0 1 .77-.42l12.576 8.084Z" fill="currentColor"></path></svg>
 							</div>
-							<div class="icon-playing">
+							<div class="icon-playing jsOnly">
 								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 4.5c0-.276-.252-.5-.563-.5H5.563C5.252 4 5 4.224 5 4.5v15c0 .276.252.5.563.5h3.875c.31 0 .562-.224.562-.5v-15ZM19 4.5c0-.276-.252-.5-.563-.5h-3.875c-.31 0-.562.224-.562.5v15c0 .276.252.5.563.5h3.874c.311 0 .563-.224.563-.5v-15Z" fill="currentColor"></path></svg>
 							</div>
 						</div>
@@ -278,11 +278,34 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 				}
 			</div>
 			@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
-			<div class="track-meta">
-				@TrackMetaItem(PlayIcon(), "Plays", t.Played)
-				@TrackMetaItem(LikeIcon(), "Likes", t.Likes)
-				@TrackMetaItem(RepostIcon(), "Reposts", t.Reposted)
+			<div class="track-bottom">
+				<div class="track-controls">
+					if *prefs.Waveform {
+						<div class="track-volume-tooltip tooltip jsOnly">
+							<div class="tooltip-content-wrapper">
+								<div class="tooltip-content">
+									<input type="range" class="track-volume" min="0" max="100">
+								</div>
+							</div>
+							@VolumeIcon()
+						</div>
+						<div class="track-repeat tooltip jsOnly">
+							<div class="tooltip-content-wrapper">
+								<div class="tooltip-content">
+									Repeat
+								</div>
+							</div>
+							@RepeatIcon()
+						</div>
+					}
+				</div>
+				<div class="track-meta">
+					@TrackMetaItem(PlayIcon(), "Plays", t.Played)
+					@TrackMetaItem(LikeIcon(), "Likes", t.Likes)
+					@TrackMetaItem(RepostIcon(), "Reposts", t.Reposted)
+				</div>
 			</div>
+
 		</div>
 		if t.Artwork != "" {
 			<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px" height="300px"/>
