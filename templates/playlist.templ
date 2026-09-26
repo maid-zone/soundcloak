@@ -41,13 +41,15 @@ templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 }
 
 templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
-	if p.Artwork != "" {
-		<img src={ p.Artwork } width="300px"/>
-	}
-	<h1>{ p.Title }</h1>
-	@UserItem(&p.Author)
-	<div style="display: flex;">
-		<a class="btn" href={ templ.SafeURL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
+	<div class="hero-section">
+		if p.Artwork != "" {
+			<img src={ p.Artwork } width="300px"/>
+		}
+		<div style="width: 100%">
+			<h1>{ p.Title }</h1>
+			@UserItem(&p.Author)
+			<a class="btn" style="width: fit-content" href={ templ.SafeURL("https://soundcloud.com" + p.Href()) }>view on soundcloud</a>
+		</div>
 	</div>
 	<br/>
 	@Description(prefs, p.Description, nil)

@@ -2,6 +2,7 @@ package templates
 
 import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
@@ -156,13 +157,13 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 		</noscript>
 		
 		if track.Policy == sc.PolicySnip {
-			<div>
-				<p>Only a 30-second snippet is available.</p>
-			</div>
+			@Alert(Warning) {
+				Only a 30-second snippet is available.
+			}
 		}
 		if track.Media.HasDRM() {
-			<div>
-				<p>Soundcloud is enforcing DRM on this track, so it may not be able to play.
+			@Alert(Warning) {
+				Soundcloud is enforcing DRM on this track, so it may not be able to play.
 				switch *prefs.Player {
 					case cfg.HLSPlayer:
 						if !*prefs.DRM {
@@ -171,8 +172,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 					case cfg.RestreamPlayer, cfg.ProgressivePlayer:
 						<a href="/_/preferences">You can enable HLS player and DRM in preferences</a>. You must also enable it in your browser settings
 				}
-			</p>
-			</div>
+			}
 		}
 		if *prefs.ShowAudio {
 			<div>
@@ -216,15 +216,15 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 	<div class="track-meta-item tooltip">
 		<div class="tooltip-content-wrapper">
-			<div class="tooltip-content">
-				{alt}
+			<div class="tooltip-content" style="white-space: nowrap;">
+				{ strconv.FormatInt(number, 10) + " " + alt }
 			</div>
 		</div>
 		<div class="track-meta-icon">
 			@icon
 		</div>
 		<div class="track-meta-number">
-			{ strconv.FormatInt(number, 10) }
+			{ misc.HumanizeNumber(number) }
 		</div>
 	</div>
 }
@@ -406,7 +406,7 @@ templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastT
 				<h3>
 					<a class="link" href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a>
 					at
-					<a class="link" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
+					<a class="link" href="#" data-timestamp={c.Timestamp}>{ misc.FormatTimecode(c.Timestamp) }</a>
 				</h3>
 				<p>
 					if *prefs.ParseDescriptions {

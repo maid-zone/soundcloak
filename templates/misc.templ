@@ -1,14 +1,14 @@
 package templates
 
 import (
-    "git.maid.zone/stuff/soundcloak/lib/cfg"
-	"git.maid.zone/stuff/soundcloak/lib/sc"
-    "git.maid.zone/stuff/soundcloak/lib/textparsing"
-	"github.com/valyala/fasthttp"
 	"context"
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
+	"git.maid.zone/stuff/soundcloak/lib/textparsing"
+	"github.com/valyala/fasthttp"
 	"io"
-	"strconv"
 	"net/url"
+	"strconv"
 )
 
 templ Description(prefs cfg.Preferences, text string, injected templ.Component) {
@@ -38,6 +38,20 @@ func Bytes(b []byte) templ.Component {
 	})
 }
 
+type Variant string
+
+const (
+	Warning Variant = "warning"
+	Notice  Variant = "notice"
+	Error   Variant = "error"
+)
+
+templ Alert(variant Variant) {
+	<div class={ "alert", string(variant) }>
+		@InfoIcon()
+		<p>{ children... }</p>
+	</div>
+}
 
 templ UserPlaylistTrackItem(pl *sc.UserPlaylistTrack) {
 	<a class="listing" href={ templ.SafeURL(pl.Href()) }>
@@ -87,14 +101,13 @@ templ Search(p *sc.Paginated[*sc.UserPlaylistTrack], prefs cfg.Preferences, cont
 
 templ Modal(modalId string, content templ.Component) {
 	{{ id := "modal-" + modalId + "-open" }}
-
 	<div>
-		<input id={id} name={id} class="modal-cond" type="checkbox">
-
+		<input id={ id } name={ id } class="modal-cond" type="checkbox"/>
 		<div class="modal">
-			<label class="modal-backdrop" for={id}></label>
+			<label class="modal-backdrop" for={ id }></label>
 			<div class="modal-content-wrapper">
-				<label class="modal-close" for={id}>@CloseIcon()</label>
+				<label class="modal-close" for={ id }>@CloseIcon()
+</label>
 				<div class="modal-content">
 					@content
 				</div>
