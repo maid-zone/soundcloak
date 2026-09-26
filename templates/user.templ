@@ -56,7 +56,7 @@ templ UserLinks(links []sc.Link) {
 }
 
 templ UserBase(prefs cfg.Preferences, u sc.User) {
-	<div class="user-hero-section">
+	<div class="hero-section">
 		if u.Avatar != "" {
 			<img src={ u.Avatar } width="300px"/>
 		}

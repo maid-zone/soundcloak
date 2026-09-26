@@ -495,7 +495,7 @@ select:open {
 	color: var(--accent);
 }
 
-.user-hero-section {
+.hero-section {
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
@@ -506,3 +506,22 @@ select:open {
 }
 
 .noJs .jsOnly { display: none; }
+
+.alert {
+  padding-inline: 1rem;
+  margin-block: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: fit-content;
+
+  &.warning {
+    background-color: color-mix(in srgb, orange, transparent 80%);
+  }
+
+  svg {
+    height: 1.5rem;
+    width: 1.5rem;
+    color: rgba(0, 0, 0, 0.5);
+  }
+}
