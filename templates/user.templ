@@ -2,6 +2,7 @@ package templates
 
 import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
@@ -69,9 +70,9 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 				<p style="color: var(--accent)">Verified</p>
 			}
 			<hr/>
-			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/followers") }><span title={ u.Followers }>{ cfg.HumanizeNumber(int(u.Followers)) }</span> followers</a></p>
-			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/following") }><span title={ u.Following }>{ cfg.HumanizeNumber(int(u.Following)) }</span> followings</a></p>
-			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/likes") }><span title={ u.Liked }>{ cfg.HumanizeNumber(int(u.Liked)) }</span> liked</a></p>
+			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/followers") }><span title={ u.Followers }>{ misc.HumanizeNumber(u.Followers) }</span> followers</a></p>
+			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/following") }><span title={ u.Following }>{ misc.HumanizeNumber(u.Following) }</span> followings</a></p>
+			<p><a class="link" href={ templ.SafeURL("/" + u.Permalink + "/likes") }><span title={ u.Liked }>{ misc.HumanizeNumber(u.Liked) }</span> liked</a></p>
 		</div>
 	</div>
 	if len(u.WebProfiles) != 0 {

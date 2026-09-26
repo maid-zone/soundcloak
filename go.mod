@@ -23,7 +23,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/dlclark/regexp2cg v0.4.0 // indirect
-	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/gofiber/schema v1.8.7 // indirect

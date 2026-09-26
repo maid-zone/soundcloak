@@ -2,6 +2,7 @@ package templates
 
 import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"net/url"
 	"strconv"
@@ -156,12 +157,12 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 		</noscript>
 		
 		if track.Policy == sc.PolicySnip {
-			@Alert("warning") {
+			@Alert(Warning) {
 				Only a 30-second snippet is available.
 			}
 		}
 		if track.Media.HasDRM() {
-			@Alert("warning") {
+			@Alert(Warning) {
 				Soundcloud is enforcing DRM on this track, so it may not be able to play.
 				switch *prefs.Player {
 					case cfg.HLSPlayer:
@@ -223,7 +224,7 @@ templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 			@icon
 		</div>
 		<div class="track-meta-number">
-			{ cfg.HumanizeNumber(int(number)) }
+			{ misc.HumanizeNumber(number) }
 		</div>
 	</div>
 }
@@ -405,7 +406,7 @@ templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastT
 				<h3>
 					<a class="link" href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a>
 					at
-					<a class="link" href="#" data-timestamp={c.Timestamp}>{ cfg.FormatTimecode(c.Timestamp) }</a>
+					<a class="link" href="#" data-timestamp={c.Timestamp}>{ misc.FormatTimecode(c.Timestamp) }</a>
 				</h3>
 				<p>
 					if *prefs.ParseDescriptions {
