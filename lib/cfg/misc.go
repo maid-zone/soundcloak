@@ -1,10 +1,13 @@
 package cfg
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/dustin/go-humanize"
 )
 
 // seems soundcloud has 4 of these (i1, i2, i3, i4)
@@ -139,6 +142,12 @@ func FormatTimecode(timecode int) string {
 		return string([]byte{n(minutes), n2(minutes), ':', n(seconds), n2(seconds)})
 	}
 }
+
+func HumanizeNumber(num int) string {
+	val, suffix := humanize.ComputeSI(float64(num))
+	return fmt.Sprintf("%.0f%s", val, suffix)
+}
+
 
 func init() {
 	defer func() {

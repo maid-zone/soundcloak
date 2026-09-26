@@ -216,15 +216,15 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 	<div class="track-meta-item tooltip">
 		<div class="tooltip-content-wrapper">
-			<div class="tooltip-content">
-				{alt}
+			<div class="tooltip-content" style="white-space: nowrap;">
+				{ strconv.FormatInt(number, 10) + " " + alt }
 			</div>
 		</div>
 		<div class="track-meta-icon">
 			@icon
 		</div>
 		<div class="track-meta-number">
-			{ strconv.FormatInt(number, 10) }
+			{ cfg.HumanizeNumber(int(number)) }
 		</div>
 	</div>
 }

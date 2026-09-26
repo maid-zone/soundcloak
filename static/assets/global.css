@@ -165,8 +165,8 @@ select:open {
 }
 
 .btns {
-  display: grid;
-  grid-template: auto / auto auto auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
 }
 
@@ -493,6 +493,16 @@ select:open {
 
 .track-repeat.active svg {
 	color: var(--accent);
+}
+
+.user-hero-section {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 700px) {
+    flex-direction: column;
+  }
 }
 
 .noJs .jsOnly { display: none; }
