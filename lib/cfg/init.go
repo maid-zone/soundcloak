@@ -120,28 +120,8 @@ var EmbedFiles = true
 
 // // end of config // //
 
-// defaults are:
-// Player: RestreamPlayer if Restream is enabled, otherwise - HLSPlayer
-// ProxyStreams: same as ProxyStreams in your config (false by default)
-// FullyPreloadTrack: false
-// ProxyImages: same as ProxyImages in your config (false by default)
-// ParseDescriptions: true
-// AutoplayNextTrack: false
-// DefaultAutoplayMode: AutoplayNormal
-// HLSAudio: AudioMP3
-// RestreamAudio: AudioMP3
-// DownloadAudio: AudioMP3
-// ShowAudio: false
-// SearchSuggestions: false
-// DynamicLoadComments: false
 func defaultPreferences() {
-	var p string
-	if Restream {
-		p = RestreamPlayer
-	} else {
-		p = HLSPlayer
-	}
-	DefaultPreferences.Player = &p
+	DefaultPreferences.Player = &Auto
 
 	DefaultPreferences.ProxyStreams = &ProxyStreams
 
@@ -173,13 +153,7 @@ func loadDefaultPreferences(loaded Preferences) {
 	if loaded.Player != nil {
 		DefaultPreferences.Player = loaded.Player
 	} else {
-		var p string
-		if Restream {
-			p = RestreamPlayer
-		} else {
-			p = HLSPlayer
-		}
-		DefaultPreferences.Player = &p
+		DefaultPreferences.Player = &Auto
 	}
 
 	if loaded.ProxyStreams != nil {

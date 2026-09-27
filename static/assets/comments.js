@@ -1,8 +1,5 @@
 var comm = document.getElementById('comments');
 var in_flight = false;
-if (!audio) {
-    var audio = document.getElementById("track");
-}
 function comments(self) {
     if (in_flight) return;
     var xhr = new XMLHttpRequest();
@@ -30,7 +27,8 @@ function comments(self) {
             el.onclick = function (event) {
                 event.preventDefault();
                 var ts = el.dataset.timestamp / 1000;
-                if (window.Hls) {
+                if (player === "hls") {
+                    audio.currentTime = ts;
                     audio.play();
                     audio.currentTime = ts;
                 } else {

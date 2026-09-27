@@ -136,9 +136,7 @@ func (r *reader) Close() error {
 func (r *reader) Read(buf []byte) (n int, err error) {
 	misc.Log("we read")
 	if len(r.leftover) != 0 {
-		h := min(len(buf), len(r.leftover))
-
-		n = copy(buf, r.leftover[:h])
+		n = copy(buf, r.leftover[:min(len(buf), len(r.leftover))])
 
 		if n > len(r.leftover) {
 			r.leftover = r.leftover[:0]

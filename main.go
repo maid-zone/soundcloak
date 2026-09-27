@@ -928,7 +928,36 @@ Disallow: /`)
 		var tr *sc.Transcoding
 
 		if *prefs.Player != cfg.NonePlayer {
-			if *prefs.Player == cfg.HLSPlayer {
+		again:
+			switch *prefs.Player {
+			case cfg.AutoPlayer:
+				p := cfg.ProgressivePlayer
+				if cfg.Restream {
+					p = cfg.RestreamPlayer
+				}
+				if track.Policy == sc.PolicySnip {
+					*prefs.Player = p
+					goto again
+				} else if track.Media.HasDRM() {
+					*prefs.Player = cfg.HLSPlayer
+					goto again
+				} else {
+					// clientside will try to do hls, restream/progressive is fallback
+					if cfg.Restream {
+						stream.URL = "/_/api/restream" + track.Href()
+						tr = track.Media.SelectCompatibleRestream(*prefs.RestreamAudio)
+					} else {
+						stream.URL = "/_/api/progressive" + track.Href()
+						if !*prefs.ProxyStreams {
+							stream.URL += "?redirect=true"
+						}
+						tr = track.Media.SelectCompatibleProgressive(prefs)
+					}
+					if tr == nil {
+						err = sc.ErrIncompatibleStream
+					}
+				}
+			case cfg.HLSPlayer:
 				tr = track.Media.SelectCompatibleAnyHLS(prefs)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
@@ -947,13 +976,13 @@ Disallow: /`)
 						}
 					}
 				}
-			} else if *prefs.Player == cfg.RestreamPlayer {
+			case cfg.RestreamPlayer:
 				stream.URL = "/_/api/restream" + track.Href()
 				tr = track.Media.SelectCompatibleRestream(*prefs.RestreamAudio)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				}
-			} else {
+			case cfg.ProgressivePlayer:
 				tr = track.Media.SelectCompatibleProgressive(prefs)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
@@ -966,9 +995,10 @@ Disallow: /`)
 			}
 
 			if err != nil {
-				displayErr = "Failed to get track stream: " + err.Error()
 				if track.Policy == sc.PolicyBlock {
-					displayErr += "\nThis track may be blocked in the country where this instance is hosted."
+					displayErr = "This track is blocked in the country where this instance is hosted. Please try another"
+				} else {
+					displayErr = "Failed to get track stream: " + err.Error()
 				}
 			}
 		}

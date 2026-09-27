@@ -158,4 +158,4 @@ This combines both HLS (automatically converting to regular audio file) and Prog
 
 ## Old API
 
-Currently, it's still all working, but I plan to remove it sometime later, so please migrate everything to the new methods. Also `/_/restream/...` has been redirected to `/_/api/restream/...`
+Has been removed. Please migrate everything to the new methods. `/_/restream/...` is still redirected to `/_/api/restream/...`
