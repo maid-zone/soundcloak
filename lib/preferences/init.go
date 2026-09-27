@@ -168,6 +168,7 @@ type PrefsForm struct {
 	KeepPlayerFocus          string
 	Waveform                 string
 	DRM                      string
+	AutoAudio                string
 }
 
 type Export struct {
@@ -238,18 +239,16 @@ func Load(r *fiber.App) {
 			old.ShowAudio = &cfg.False
 		}
 
-		if *old.Player == cfg.HLSPlayer || *old.Player == cfg.ProgressivePlayer {
-			if cfg.ProxyStreams {
-				switch p.ProxyStreams {
-				case on:
-					old.ProxyStreams = &cfg.True
-				case "":
-					old.ProxyStreams = &cfg.False
-				}
+		if *old.Player != cfg.RestreamPlayer {
+			switch p.ProxyStreams {
+			case on:
+				old.ProxyStreams = &cfg.True
+			case "":
+				old.ProxyStreams = &cfg.False
 			}
 		}
 
-		if *old.Player == cfg.HLSPlayer {
+		if *old.Player == cfg.HLSPlayer || *old.Player == cfg.AutoPlayer {
 			if p.FullyPreloadTrack == on {
 				old.FullyPreloadTrack = &cfg.True
 			} else {
@@ -261,20 +260,32 @@ func Load(r *fiber.App) {
 			} else {
 				old.DRM = &cfg.False
 			}
-
-			old.HLSAudio = &p.HLSAudio
 		}
 
 		if cfg.Restream {
-			if *old.Player == cfg.RestreamPlayer {
-				old.RestreamAudio = &p.RestreamAudio
-			}
-
 			old.DownloadAudio = &p.DownloadAudio
 		}
 
-		if *old.Player == cfg.ProgressivePlayer {
+		switch *old.Player {
+		case cfg.HLSPlayer:
+			old.HLSAudio = &p.HLSAudio
+		case cfg.ProgressivePlayer:
 			old.ProgressiveAudio = &p.ProgressiveAudio
+		case cfg.RestreamPlayer:
+			old.RestreamAudio = &p.RestreamAudio
+		case cfg.AutoPlayer:
+			old.HLSAudio = &p.AutoAudio
+			old.RestreamAudio = &p.AutoAudio
+			switch p.AutoAudio {
+			case cfg.AudioAACHQ, cfg.AudioMP3:
+				old.ProgressiveAudio = &p.AutoAudio
+			default:
+				if len(cfg.AccountTokens) != 0 && p.AutoAudio == cfg.AudioAAC {
+					old.ProgressiveAudio = &p.AutoAudio
+				} else {
+					old.ProgressiveAudio = &cfg.MP3
+				}
+			}
 		}
 
 		if cfg.ProxyImages {

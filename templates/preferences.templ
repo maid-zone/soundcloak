@@ -59,47 +59,35 @@ templ Preferences(prefs cfg.Preferences) {
 		<label>
 			Player:
 			@sel("Player", []option{
+				{cfg.AutoPlayer, "Auto", false},
 				{cfg.RestreamPlayer, "Restream Player", !cfg.Restream},
 				{cfg.HLSPlayer, "HLS Player", false},
 				{cfg.ProgressivePlayer, "Progressive Player", false},
 				{cfg.NonePlayer, "None", false},
 			}, *prefs.Player)
 		</label>
-		<details style="margin-bottom:1rem">
-			<summary>Explanation of each player</summary>
-			Each player option uses a different way to deliver/playback the music for you.
-			<ul>
-				<li>
-					Restream Player
-					<p>
-						It's most suitable for listening to music, because audio must be loaded from start to finish.
-						Streaming protocols are handled on server-side, so works without JavaScript enabled. 
-						You can stream all the available audio presets with it.
-					</p>
-				</li>
-				<li>
-					HLS Player
-					<p>
-						It's recommended if you listen to long audios. Since streaming protocol (HLS) is handled on your browser, 
-						you can skip parts of an audio without needing to load them.
-						<span class="js">It also requires enabled JavaScript to function.</span>
-					</p>
-				</li>
-				<li>
-					Progressive Player
-					<p>
-						Similar to Restream Player, but available in case restream is disabled. You can only stream MP3 at 128kb/s using it.
-					</p>
-				</li>
-				<li>
-					None
-					<p>
-						Don't stream audio at all :)
-					</p>
-				</li>
-			</ul>
-		</details>
 		switch *prefs.Player {
+			case cfg.AutoPlayer:
+				if cfg.ProxyStreams {
+					<label>
+						Proxy song streams:
+						@checkbox("ProxyStreams", *prefs.ProxyStreams)
+					</label>
+				}
+				<label>
+					Fully preload track:
+					@checkbox("FullyPreloadTrack", *prefs.FullyPreloadTrack)
+				</label>
+				// this is a pseudo-config option, it will just set config for HLS, Restream and Progressive at once
+				<label>
+					Streaming audio:
+					@sel_audio("AutoAudio", *prefs.HLSAudio)
+				</label>
+				<label>
+					Widevine DRM:
+					@checkbox("DRM", *prefs.DRM)
+					@js()
+				</label>
 			case cfg.ProgressivePlayer:
 				if cfg.ProxyStreams {
 					<label>
@@ -112,6 +100,7 @@ templ Preferences(prefs cfg.Preferences) {
 					@sel_audio_prog("ProgressiveAudio", *prefs.ProgressiveAudio)
 				</label>
 			case cfg.HLSPlayer:
+				@js()
 				if cfg.ProxyStreams {
 					<label>
 						Proxy song streams:

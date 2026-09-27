@@ -8,14 +8,14 @@
 
 | Name                             | Key                 | Default                                                                | Possible values               | Description                                                                                                                                                                                                              |
 | :--------------------------------- | --------------------- | ------------------------------------------------------------------------ | ------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Player                               | Player                     | "restream" if Restream is enabled in backend config, otherwise - "hls" | "restream", "hls", "progressive", "none"     | Method used to play the track in the frontend. HLS - requires JavaScript, loads the track in pieces. Restream/Progressive - works without JavaScript, loads entire track through the backend right away. None - don't play the track |
+| Player                               | Player                     | "auto" | "auto", "restream", "hls", "progressive", "none"     | Method used to play the track in the frontend. HLS - requires JavaScript, loads the track in pieces. Restream/Progressive - works without JavaScript, loads entire track through the backend right away. None - don't play the track |
 
 ## HLS Player
 
 | Name                | Key               | Default                                | Possible values | Description                                                                         |
 | :-------------------- | ------------------- | ---------------------------------------- | ----------------- | :------------------------------------------------------------------------------------ |
 | Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend |
-| Fully preload track | FullyPreloadTrack | false                                  | true, false     | Fully load track when the page is loaded (track stream expires in ~5 minutes)       |
+| Fully preload track | FullyPreloadTrack | false                                  | true, false     | Fully load track when the page is loaded       |
 | Streaming audio     | HLSAudio          | "mpeg"                                 | "aac_hq", "aac", "mpeg", "aac_lq"   | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio          |
 | Widevine DRM  | DRM      | false | true, false     | Allow playing tracks that soundcloud recently started locking behind DRM. Downloads still won't work, but at least you can play it if you enable DRM in your browser. If you enable ProxyStreams, the DRM license API will also be proxied |
 
@@ -31,21 +31,27 @@
 
 | Name            | Key           | Default | Possible values               | Description                                                                |
 | :---------------- | --------------- | --------- | ------------------------------- | :--------------------------------------------------------------------------- |
-| Streaming audio | RestreamAudio | "mpeg"  | "aac_hq", "mpeg" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
+| Streaming audio | ProgressiveAudio | "mpeg"  | "aac_hq", "mpeg" | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio |
 | Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend |
 
+## Auto player
+| Name            | Key           | Default | Possible values               | Description                                                                |
+| :---------------- | --------------- | --------- | ------------------------------- | :--------------------------------------------------------------------------- |
+| Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend. Note that if it falls back onto restream, this will always be true. |
+| Fully preload track | FullyPreloadTrack | false                                  | true, false     | Fully load track when the page is loaded. Note that if it falls back onto restream, this will be ignored.       |
+| Streaming audio     | HLSAudio          | "mpeg"                                 | "aac_hq", "aac", "mpeg", "aac_lq"   | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio          |
+| Widevine DRM  | DRM      | false | true, false     | Allow playing tracks that soundcloud recently started locking behind DRM. Downloads still won't work, but at least you can play it if you enable DRM in your browser. If you enable ProxyStreams, the DRM license API will also be proxied. Please note that this will only work with HLS player, so requires JS. |
 
 # Frontend enhancements
 
 | Name                             | Key                 | Default                                                                | Possible values               | Description                                                                                                                                                                                                              |
 | :--------------------------------- | --------------------- | ------------------------------------------------------------------------ | ------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Proxy images                         | ProxyImages                | same as ProxyImages in backend config                                  | true, false                   | Proxy images through the backend. ProxyImages must be enabled on the backend                                                                                                                                             |
-| Parse descriptions                   | ParseDescriptions          | true                                                                   | true, false                   | Turn @mentions, external links (https://example.org) and emails (hello@example.org) inside descriptions into clickable links                                                                                             |
+| Parse descriptions                   | ParseDescriptions          | true                                                                   | true, false                   | Turn @mentions, external links (https://example.org) and emails (hello@example.org) inside descriptions and comments into clickable links                                                                                             |
 | Show current audio                   | ShowAudio                  | false                                                                  | true, false                   | Show what [audio preset](AUDIO_PRESETS.md) is being streamed below the audio player                                                                                                                                       |
 | Fetch search suggestions             | SearchSuggestions          | false                                                                  | true, false                   | Load search suggestions on main page when you type. Requires JS                                                                                                                                                          |
-| Dynamically load comments            | DynamicLoadComments        | false                                                                  | true, false                   | Dynamically load track comments, without leaving the page. Requires JS    
 | Keep player focus                    | KeepPlayerFocus            | false                                                                  | true, false                   | Always keep track element in focus, so you can control it with keyboard. Requires JS                                                                                                                                                   |
-| Show track waveform                  | Waveform                   | false                                                                  | true, false                   | Shows track waveform. If you have enabled JS, it will also be filled according to how much of the track played, and you can control playback with it                                                                                                                                                   |
+| Show track waveform                  | Waveform                   | true                                                                  | true, false                   | Shows track waveform. If you have enabled JS, it will also be filled according to how much of the track played, and you can control playback with it                                                                                                                                                   |
 
 ## Autoplay
 *Requires JS. You also need to allow autoplay from this domain*

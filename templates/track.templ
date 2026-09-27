@@ -58,7 +58,7 @@ templ TrackHeader(prefs cfg.Preferences, t sc.Track, needPlayer bool) {
 	<meta name="og:description" content={ t.FormatDescription() }/>
 	<meta name="og:image" content={ t.Artwork }/>
 	<link rel="icon" type="image/x-icon" href={ t.Artwork }/>
-	if needPlayer && *prefs.Player == cfg.HLSPlayer {
+	if needPlayer && (*prefs.Player == cfg.HLSPlayer || *prefs.Player == cfg.AutoPlayer) {
 		<script src="/_/static/external/hls.min.js"></script>
 	}
 }
@@ -109,7 +109,7 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 					controls 
 					autoplay?={ autoplay }
 				if nextTrack != nil {
-					data-next={ next(&track, nextTrack, playlist, mode, "") } 
+					next={ next(&track, nextTrack, playlist, mode, "") } 
 					volume={ volume }	
 				}
 				if *prefs.FullyPreloadTrack {
@@ -118,7 +118,11 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 				if stream.License != "" {
 					license={ stream.License }
 				}
+					player={*prefs.Player}
+					keepfocus?={*prefs.KeepPlayerFocus}
+					waveform?={*prefs.Waveform}
 				></audio>
+				// TODO: remove keepfocus entirely, just add keyboard controls to the waveform player
 
 				if *prefs.Waveform {
 					<div class="waveform-wrapper jsOnly">
@@ -128,33 +132,27 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 							<div class="waveform-time waveform-end" data-time={track.Duration / 1000}></div>
 						</div>
 					</div>
-					<script async src="/_/static/waveform.js"></script>
 				}
 			</div>
 		}
-		if *prefs.Player == cfg.HLSPlayer {
-			<script
-				async
-				src="/_/static/player.js"
-			></script>
-		} else if nextTrack != nil {
-			<script async src="/_/static/restream.js"></script>
+		<script
+			async
+			src="/_/static/player.js"
+		></script>
+		if *prefs.Player == "hls" {
+			<noscript>
+				<br/>
+				JavaScript is disabled! Audio playback may not work without it enabled. 
+				<br/>
+				<a class="link" href="/_/preferences">You can enable 
+				if cfg.Restream { 
+					Restream or Progressive
+				} else {
+					Progressive
+				}
+				player in the preferences. It works without JavaScript.</a>
+			</noscript>
 		}
-		if *prefs.KeepPlayerFocus {
-			<script async src="/_/static/keepfocus.js"></script>
-		}
-		<noscript>
-			<br/>
-			JavaScript is disabled! Audio playback may not work without it enabled. 
-			<br/>
-			<a class="link" href="/_/preferences">You can enable 
-			if cfg.Restream { 
-				Restream or Progressive
-			} else {
-				Progressive
-			}
-			player in the preferences. It works without JavaScript.</a>
-		</noscript>
 		
 		if track.Policy == sc.PolicySnip {
 			@Alert(Warning) {
@@ -165,12 +163,12 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 			@Alert(Warning) {
 				Soundcloud is enforcing DRM on this track, so it may not be able to play.
 				switch *prefs.Player {
-					case cfg.HLSPlayer:
+					case cfg.HLSPlayer, cfg.AutoPlayer:
 						if !*prefs.DRM {
 							<a href="/_/preferences">You can enable DRM in preferences</a> and in your browser settings
 						}
 					case cfg.RestreamPlayer, cfg.ProgressivePlayer:
-						<a href="/_/preferences">You can enable HLS player and DRM in preferences</a>. You must also enable it in your browser settings
+						<a href="/_/preferences">You can enable Auto player and DRM in preferences</a>. You must also enable it in your browser settings
 				}
 			}
 		}
@@ -180,9 +178,10 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 			</div>
 		}
 	} else {
-		<div>
-			<p style="white-space: pre-wrap;">{ displayErr }</p>
-		</div>
+		// maybe error alert? but its not implemented
+		@Alert(Warning) {
+			{ displayErr }
+		}
 	}
 }
 
@@ -261,7 +260,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 		<div class="track-main">
 			<div class="track-title-block">
 				<div class="track-title-left">
-					if *prefs.Waveform {
+					if *prefs.Waveform && displayErr == "" {
 						<div class="play-button paused jsOnly">
 							<div class="icon-paused">
 								<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.346 11.58a.5.5 0 0 1 0 .84L7.77 20.506a.5.5 0 0 1-.77-.42V3.914a.5.5 0 0 1 .77-.42l12.576 8.084Z" fill="currentColor"></path></svg>
@@ -280,7 +279,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 			@TrackPlayer(prefs, t, tr, stream, displayErr, autoplay, nextTrack, playlist, volume, mode)
 			<div class="track-bottom">
 				<div class="track-controls">
-					if *prefs.Waveform {
+					if *prefs.Waveform && displayErr == "" {
 						<div class="track-volume-tooltip tooltip jsOnly">
 							<div class="tooltip-content-wrapper">
 								<div class="tooltip-content">
@@ -300,9 +299,9 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 					}
 				</div>
 				<div class="track-meta">
-					@TrackMetaItem(PlayIcon(), "Plays", t.Played)
-					@TrackMetaItem(LikeIcon(), "Likes", t.Likes)
-					@TrackMetaItem(RepostIcon(), "Reposts", t.Reposted)
+					@TrackMetaItem(PlayIcon(), "plays", t.Played)
+					@TrackMetaItem(LikeIcon(), "likes", t.Likes)
+					@TrackMetaItem(RepostIcon(), "reposts", t.Reposted)
 				</div>
 			</div>
 
@@ -396,15 +395,14 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 		<div id="comments">
 			@Comments(prefs, comments, lastCommentTime)
 		</div>
-		<script async src="/_/static/comments.js"></script>
 		if comments.NextHref != "" {
 			<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(comments.NextHref[sc.H+len("/tracks/")+len(string(t.ID))+len("/comments?"):])) } rel="noreferrer" onclick="event.preventDefault(); comments(this)" data-id={ string(t.ID) }>more comments</a>
 		}
 	} else {
 		<div id="comments"></div>
-		<script async src="/_/static/comments.js"></script>
 		<a class="btn" href="?pagination=%3Flimit%3D20%26threaded%3D1" data-id={ string(t.ID) } onclick="event.preventDefault(); comments(this)">load comments</a>
 	}
+	<script async src="/_/static/comments.js"></script>
 }
 
 templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastTime int) {
