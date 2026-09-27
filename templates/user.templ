@@ -81,11 +81,13 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 		@Description(prefs, u.Description, nil)
 	}
 	<div>
-		<p>{ strconv.FormatInt(u.Tracks, 10) } tracks</p>
-		<p>{ strconv.FormatInt(u.Playlists, 10) } playlists & albums</p>
-		<br/>
-
 		<dl>
+			<dt>Tracks</dt>
+			<dd>{ strconv.FormatInt(u.Tracks, 10) }</dd>
+
+			<dt>Playlists and albums</dt>
+			<dd>{ strconv.FormatInt(u.Playlists, 10) }</dd>
+
 			if u.CreatedAt != "" {
 				<dt>Created</dt>
 				<dd>{ misc.TryFormatRfc3339(u.CreatedAt) }</dd>

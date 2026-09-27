@@ -1193,22 +1193,32 @@ func (t *Track) Postfix(prefs cfg.Preferences, fixAuthor bool) {
 }
 
 func (t Track) FormatDescription() string {
-	desc := t.Description
+	desc := strings.Builder{}
 	if t.Description != "" {
-		desc += "\n\n"
+		desc.WriteString(t.Description)
+		desc.WriteByte('\n')
 	}
 
-	desc += strconv.FormatInt(t.Likes, 10) + " ❤️ | " + strconv.FormatInt(t.Played, 10) + " ▶️ | " + strconv.FormatInt(t.Reposted, 10) + " 🔁"
+	desc.WriteString(misc.HumanizeNumber(t.Likes))
+	desc.WriteString(" ❤️ | ")
+	desc.WriteString(misc.HumanizeNumber(t.Played))
+	desc.WriteString(" ▶️ | ")
+	desc.WriteString(misc.HumanizeNumber(t.Reposted))
+	desc.WriteString(" 🔁")
 	if t.Genre != "" {
-		desc += "\nGenre: " + t.Genre
+		desc.WriteString("\nGenre: ")
+		desc.WriteString(t.Genre)
 	}
-	desc += "\nCreated: " + misc.TryFormatRfc3339(t.CreatedAt)
-	desc += "\nLast modified: " + misc.TryFormatRfc3339(t.LastModified)
+	desc.WriteString("\nCreated: ")
+	desc.WriteString(misc.TryFormatRfc3339(t.CreatedAt))
+	desc.WriteString("\nLast modified: ")
+	desc.WriteString(misc.TryFormatRfc3339(t.LastModified))
 	if len(t.TagList) != 0 {
-		desc += "\nTags: " + TagListParser(t.TagList)
+		desc.WriteString("\nTags: ")
+		TagListParserSB(t.TagList, &desc)
 	}
 
-	return desc
+	return desc.String()
 }
 
 func GetTrackByID(id string) (Track, error) {

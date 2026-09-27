@@ -415,7 +415,11 @@ func (p *Paginated[T]) Proceed(shouldUnfold bool) error {
 
 func TagListParser(taglist string) string {
 	sb := strings.Builder{}
-	sb.Grow(len(taglist) * 5 / 3)
+	TagListParserSB(taglist, &sb)
+	return sb.String()
+}
+
+func TagListParserSB(taglist string, sb *strings.Builder) {
 	inString := false
 	for _, c := range cfg.S2b(taglist) {
 		if c == '"' {
@@ -430,8 +434,6 @@ func TagListParser(taglist string) string {
 
 		sb.WriteByte(c)
 	}
-
-	return sb.String()
 }
 
 type SearchSuggestion struct {

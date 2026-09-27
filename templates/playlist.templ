@@ -55,7 +55,29 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	</div>
 	<br/>
 	@Description(prefs, p.Description, nil)
-	<p>{ strconv.FormatInt(p.TracksCount(), 10) } tracks</p>
+	<dl>
+		<dt>Tracks</dt>
+		<dd>{ strconv.FormatInt(p.TracksCount(), 10) }</dd>
+
+		if p.TagList != "" {
+			<dt>Tags</dt>
+			<dd>{ sc.TagListParser(p.TagList) }</dd>
+		}
+
+		if p.CreatedAt != "" {
+			<dt>Created</dt>
+			<dd>{ misc.TryFormatRfc3339(p.CreatedAt) }</dd>
+		}
+
+		<dt>Last modified</dt>
+		<dd>{ misc.TryFormatRfc3339(p.LastModified) }</dd>
+
+		<dt>Likes</dt>
+		<dd>{ misc.HumanizeNumber(p.Likes) }</dd>
+
+		<dt>Reposts</dt>
+		<dd>{ misc.HumanizeNumber(p.Reposts) }</dd>
+	</dl>
 	<br/>
 	<br/>
 	<div>
@@ -70,27 +92,6 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	if len(p.MissingTracks) != 0 {
 		<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
 	}
-	<br/>
-	<div>
-		<p>{ misc.HumanizeNumber(p.Likes) } likes</p>
-		<br/>
-
-		<dl>
-			if p.TagList != "" {
-				<dt>Tags</dt>
-				<dd>{ sc.TagListParser(p.TagList) }</dd>
-			}
-
-
-			if p.CreatedAt != "" {
-				<dt>Created</dt>
-				<dd>{ misc.TryFormatRfc3339(p.CreatedAt) }</dd>
-			}
-
-			<dt>Last modified</dt>
-			<dd>{ misc.TryFormatRfc3339(p.LastModified) }</dd>
-		</dl>
-	</div>
 }
 
 templ SearchPlaylists(p *sc.Paginated[*sc.Playlist], prefs cfg.Preferences, content string) {

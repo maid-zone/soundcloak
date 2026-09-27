@@ -47,22 +47,16 @@ func HumanizeNumber(input int64) string {
 	}
 }
 
-
 // return the date string forrmatted, or just raw if it fails
 func TryFormatRfc3339(rfc3339 string) string {
 	t, err := time.Parse(time.RFC3339, rfc3339)
 
-	var result string
-
 	if err != nil {
-		result = rfc3339
+		return rfc3339
 	} else {
-		result =  t.Format("Monday, Jan 2, 2006 at 3:04pm")
+		return t.Format("Monday, Jan 2, 2006 at 3:04pm")
 	}
-
-	return result
 }
-
 
 var HlsClient = &fasthttp.HostClient{
 	Addr:                cfg.HLSCDN + ":443",
