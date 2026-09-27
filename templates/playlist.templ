@@ -3,6 +3,8 @@ package templates
 import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
+
 	"net/url"
 	"strconv"
 )
@@ -68,16 +70,26 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	if len(p.MissingTracks) != 0 {
 		<a class="btn" href={ templ.SafeURL("?pagination=" + url.QueryEscape(p.MissingTracks)) } rel="noreferrer">more tracks</a>
 	}
+	<br/>
 	<div>
-		if p.TagList != "" {
-			<p>Tags: { sc.TagListParser(p.TagList) }</p>
-		}
-		<p>{ strconv.FormatInt(p.Likes, 10) } likes</p>
+		<p>{ misc.HumanizeNumber(p.Likes) } likes</p>
 		<br/>
-		if p.CreatedAt != "" {
-			<p>Created: { p.CreatedAt }</p>
-		}
-		<p>Last modified: { p.LastModified }</p>
+
+		<dl>
+			if p.TagList != "" {
+				<dt>Tags</dt>
+				<dd>{ sc.TagListParser(p.TagList) }</dd>
+			}
+
+
+			if p.CreatedAt != "" {
+				<dt>Created</dt>
+				<dd>{ misc.TryFormatRfc3339(p.CreatedAt) }</dd>
+			}
+
+			<dt>Last modified</dt>
+			<dd>{ misc.TryFormatRfc3339(p.LastModified) }</dd>
+		</dl>
 	</div>
 }
 

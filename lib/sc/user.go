@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
@@ -177,8 +178,8 @@ func (u User) FormatDescription() string {
 
 	desc += strconv.FormatInt(u.Followers, 10) + " followers | " + strconv.FormatInt(u.Following, 10) + " following"
 	desc += "\n" + strconv.FormatInt(u.Tracks, 10) + " tracks | " + strconv.FormatInt(u.Playlists, 10) + " playlists"
-	desc += "\nCreated: " + u.CreatedAt
-	desc += "\nLast modified: " + u.LastModified
+	desc += "\nCreated: " + misc.TryFormatRfc3339(u.CreatedAt)
+	desc += "\nLast modified: " + misc.TryFormatRfc3339(u.LastModified)
 
 	return desc
 }

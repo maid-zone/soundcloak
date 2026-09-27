@@ -132,8 +132,31 @@ input[type="submit"]:hover {
 
 details {
   border-color: var(--0);
+  overflow: hidden;
   border-style: solid;
   padding: 0.5rem 0.75rem;
+}
+
+details::details-content {
+  interpolate-size: allow-keywords;
+  block-size: 0;
+  content-visibility: hidden;
+  transition: 
+    block-size .2s ease,
+    content-visibility .2s allow-discrete;
+}
+
+details[open]::details-content {
+  block-size: auto;
+  content-visibility: visible;
+}
+
+details>summary {
+  user-select: none;
+}
+
+details>summary:focus-visible {
+  text-decoration: underline;
 }
 
 details>summary:hover {
@@ -531,3 +554,50 @@ select:open {
   width: 1.5rem;
   color: rgba(0, 0, 0, 0.5);
 }
+
+hr {
+  border: 0;
+  background-color: var(--0);
+  height: 2px;
+  width: 100%;
+}
+
+dl {
+  display: flex;
+  flex-direction: column;
+}
+
+dt {
+  font-weight: semibold;
+  opacity: .5;
+}
+
+dd {
+  margin: 0;
+  margin-bottom: 1rem
+}
+
+
+@media (min-width: 700px) {
+  dl {
+    display: grid;
+    width: fit-content;
+    column-gap: 1rem;
+    grid-template-columns: auto auto;
+  }
+
+  dt {
+    display: flex;
+    align-items: baseline;
+    min-width: 14rem;
+    gap: 1rem;
+  }
+
+  dt::after {
+    content: "";
+    background: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='50' fill='lightgrey' /></svg>") round;
+    block-size: .2em;
+    flex: 1;
+  }
+}
+

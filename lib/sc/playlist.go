@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 )
 
 var PlaylistsCache = map[string]Cached[Playlist]{}
@@ -136,8 +137,8 @@ func (p Playlist) FormatDescription() string {
 
 	desc += strconv.FormatInt(int64(len(p.Tracks)), 10) + " tracks"
 	desc += "\n" + strconv.FormatInt(p.Likes, 10) + " ❤️"
-	desc += "\nCreated: " + p.CreatedAt
-	desc += "\nLast modified: " + p.LastModified
+	desc += "\nCreated: " +  misc.TryFormatRfc3339(p.CreatedAt)
+	desc += "\nLast modified: " + misc.TryFormatRfc3339(p.LastModified)
 	if len(p.TagList) != 0 {
 		desc += "\nTags: " + TagListParser(p.TagList)
 	}

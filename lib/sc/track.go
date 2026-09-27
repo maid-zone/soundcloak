@@ -1202,8 +1202,8 @@ func (t Track) FormatDescription() string {
 	if t.Genre != "" {
 		desc += "\nGenre: " + t.Genre
 	}
-	desc += "\nCreated: " + t.CreatedAt
-	desc += "\nLast modified: " + t.LastModified
+	desc += "\nCreated: " + misc.TryFormatRfc3339(t.CreatedAt)
+	desc += "\nLast modified: " + misc.TryFormatRfc3339(t.LastModified)
 	if len(t.TagList) != 0 {
 		desc += "\nTags: " + TagListParser(t.TagList)
 	}
