@@ -344,26 +344,52 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	// </div>
 	<br/>
 	@Description(prefs, t.Description, nil)
-	if t.CreatedAt != "" {
-		<p>Created: { t.CreatedAt }</p>
-	}
-	<p>Last modified: { t.LastModified }</p>
-	if t.License != "" {
-		<p>License: { t.License }</p>
-	}
-	if t.PublisherMetadata.ISRC != "" {
-		<p>ISRC: { t.PublisherMetadata.ISRC }</p>
-	}
-	if t.PublisherMetadata.ISWC != "" {
-		<p>ISWC: { t.PublisherMetadata.ISWC }</p>
-	}
-	if t.PublisherMetadata.UPCorEAN != "" {
-		<p>UPC/EAN: { t.PublisherMetadata.UPCorEAN }</p>
-	}
-	<p>Policy: { t.Policy }</p>
-	if t.TagList != "" {
-		<p>Tags: { sc.TagListParser(t.TagList) }</p>
-	}
+
+	<dl style="margin-top: 3rem;">
+		if t.CreatedAt != "" {
+			<dt>Created</dt>
+			<dd>{ misc.TryFormatRfc3339(t.CreatedAt) }</dd>
+		}
+
+		<dt>Last modified</dt>
+		<dd>{ misc.TryFormatRfc3339(t.LastModified) }</dd>
+
+		if t.TagList != "" {
+			<dt>Tags</dt>
+			<dd>{ sc.TagListParser(t.TagList) }</dd>
+		}
+	</dl>
+
+	<details style="padding: 0; margin: 0; border: 0; margin-bottom: 3rem;">
+		<summary>Advanced info</summary>
+
+		<dl style="padding-top: 1rem; margin: 0">
+			if t.License != "" {
+				<dt>License</dt>
+				<dd>{ t.License }</dd>
+			}
+			if t.PublisherMetadata.ISRC != "" {
+				<dt>ISRC</dt>
+				<dd>{ t.PublisherMetadata.ISRC }</dd>
+			}
+
+			if t.PublisherMetadata.ISWC != "" {
+				<dt>ISWC</dt>
+				<dd>{ t.PublisherMetadata.ISWC }</dd>
+			}
+
+			if t.PublisherMetadata.UPCorEAN != "" {
+				<dt>UPC/EAN</dt>
+				<dd>{ t.PublisherMetadata.UPCorEAN }</dd>
+			}
+
+			<dt>Policy</dt>
+			<dd>{ t.Policy }</dd>
+		</dl>
+	</details>
+
+	<hr/>
+
 	<h1>Comments</h1>
 	if comments != nil {
 		<div id="comments">

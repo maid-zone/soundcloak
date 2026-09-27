@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 )
 
 var PlaylistsCache = map[string]Cached[Playlist]{}
@@ -29,6 +30,7 @@ type Playlist struct {
 	Tracks        []Track `json:"tracks"`
 	Author        User    `json:"user"`
 	Likes         int64   `json:"likes_count"`
+	Reposts       int64   `json:"reposts_count"`
 	TrackCount    int64   `json:"track_count"`
 	Album         bool    `json:"is_album"`
 }
@@ -129,20 +131,27 @@ func (p *Playlist) Postfix(prefs cfg.Preferences, fixTracks bool, fixAuthor bool
 }
 
 func (p Playlist) FormatDescription() string {
-	desc := p.Description
+	desc := strings.Builder{}
 	if p.Description != "" {
-		desc += "\n\n"
+		desc.WriteString(p.Description)
+		desc.WriteByte('\n')
 	}
 
-	desc += strconv.FormatInt(int64(len(p.Tracks)), 10) + " tracks"
-	desc += "\n" + strconv.FormatInt(p.Likes, 10) + " ❤️"
-	desc += "\nCreated: " + p.CreatedAt
-	desc += "\nLast modified: " + p.LastModified
+	desc.WriteString(strconv.FormatInt(int64(len(p.Tracks)), 10))
+	desc.WriteString(" tracks\n")
+	desc.WriteString(misc.HumanizeNumber(p.Likes))
+	desc.WriteString(" ❤️ | ")
+	desc.WriteString(misc.HumanizeNumber(p.Reposts))
+	desc.WriteString(" 🔁\nCreated: ")
+	desc.WriteString(misc.TryFormatRfc3339(p.CreatedAt))
+	desc.WriteString("\nLast modified: ")
+	desc.WriteString(misc.TryFormatRfc3339(p.LastModified))
 	if len(p.TagList) != 0 {
-		desc += "\nTags: " + TagListParser(p.TagList)
+		desc.WriteString("\nTags: ")
+		TagListParserSB(p.TagList, &desc)
 	}
 
-	return desc
+	return desc.String()
 }
 
 type MissingTrack struct {

@@ -15,18 +15,20 @@ templ Description(prefs cfg.Preferences, text string, injected templ.Component) 
 	if text != "" || injected != nil {
 		<details>
 			<summary>Description</summary>
-			<p style="white-space: pre-wrap;">
-				if text != "" {
-					if *prefs.ParseDescriptions {
-						@templ.Raw(textparsing.Format(text))
-					} else {
-						{ text }
+			<div style="padding-block: 1rem;">
+				<p style="white-space: pre-wrap; margin: 0;">
+					if text != "" {
+						if *prefs.ParseDescriptions {
+							@templ.Raw(textparsing.Format(text))
+						} else {
+							{ text }
+						}
 					}
-				}
-				if injected != nil {
-					@injected
-				}
-			</p>
+					if injected != nil {
+						@injected
+					}
+				</p>
+			</div>
 		</details>
 	}
 }

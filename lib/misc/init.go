@@ -3,6 +3,7 @@ package misc
 import (
 	"log"
 	"strconv"
+	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"github.com/valyala/fasthttp"
@@ -43,6 +44,17 @@ func HumanizeNumber(input int64) string {
 		return strconv.FormatInt(input/1_000, 10) + "K"
 	} else {
 		return strconv.FormatInt(input, 10)
+	}
+}
+
+// return the date string forrmatted, or just raw if it fails
+func TryFormatRfc3339(rfc3339 string) string {
+	t, err := time.Parse(time.RFC3339, rfc3339)
+
+	if err != nil {
+		return rfc3339
+	} else {
+		return t.Format("Monday, Jan 2, 2006 at 3:04pm")
 	}
 }
 

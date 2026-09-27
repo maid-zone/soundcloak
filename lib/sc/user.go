@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
@@ -170,17 +171,25 @@ func (u User) GetTracks(prefs cfg.Preferences, args string) (*Paginated[*Track],
 }
 
 func (u User) FormatDescription() string {
-	desc := u.Description
+	desc := strings.Builder{}
 	if u.Description != "" {
-		desc += "\n\n"
+		desc.WriteString(u.Description)
+		desc.WriteByte('\n')
 	}
 
-	desc += strconv.FormatInt(u.Followers, 10) + " followers | " + strconv.FormatInt(u.Following, 10) + " following"
-	desc += "\n" + strconv.FormatInt(u.Tracks, 10) + " tracks | " + strconv.FormatInt(u.Playlists, 10) + " playlists"
-	desc += "\nCreated: " + u.CreatedAt
-	desc += "\nLast modified: " + u.LastModified
+	desc.WriteString(misc.HumanizeNumber(u.Followers))
+	desc.WriteString(" followers | ")
+	desc.WriteString(misc.HumanizeNumber(u.Following))
+	desc.WriteString(" following\n")
+	desc.WriteString(misc.HumanizeNumber(u.Tracks))
+	desc.WriteString(" tracks | ")
+	desc.WriteString(strconv.FormatInt(u.Playlists, 10))
+	desc.WriteString(" playlists\nCreated: ")
+	desc.WriteString(misc.TryFormatRfc3339(u.CreatedAt))
+	desc.WriteString("\nLast modified: ")
+	desc.WriteString(misc.TryFormatRfc3339(u.LastModified))
 
-	return desc
+	return desc.String()
 }
 
 func (u User) FormatUsername() string {
