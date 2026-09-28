@@ -124,8 +124,9 @@ type Media struct {
 }
 
 type Stream struct {
-	URL     string `json:"url"`
-	License string `json:"licenseAuthToken"`
+	URL       string `json:"url"`
+	License   string `json:"licenseAuthToken"`
+	FPLicense string `json:"-"`
 }
 
 type Comment struct {
@@ -521,7 +522,7 @@ func (m Media) SelectCompatibleDownload(mode string) *Transcoding {
 	return nil
 }
 
-func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
+func (m Media) SelectCompatibleHLS(mode string, protocol Protocol) *Transcoding {
 	// aac_hq - aac_256k, aac_160k, mp3,      aac_96k
 	// aac    - aac_160k, aac_256k, mp3,      aac_96k
 	// mpeg   - mp3,      aac_256k, aac_160k, aac_96k
@@ -533,7 +534,7 @@ func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
 	switch mode {
 	case cfg.AudioAACHQ:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS {
+			if t.Format.Protocol == protocol {
 				switch t.Preset {
 				case "aac_256k":
 					t.SoundcloakPreset = cfg.AudioAACHQ
@@ -566,7 +567,7 @@ func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
 		}
 	case cfg.AudioAAC:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS {
+			if t.Format.Protocol == protocol {
 				switch t.Preset {
 				case "aac_256k":
 					if b[0] == nil {
@@ -599,7 +600,7 @@ func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
 		}
 	case cfg.AudioMP3:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS {
+			if t.Format.Protocol == protocol {
 				switch t.Preset {
 				case "aac_256k":
 					if b[0] == nil {
@@ -632,159 +633,7 @@ func (m Media) SelectCompatibleHLS(mode string) *Transcoding {
 		}
 	case cfg.AudioAACLQ:
 		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolHLS {
-				switch t.Preset {
-				case "aac_256k":
-					if b[2] == nil {
-						t.SoundcloakPreset = cfg.AudioAACHQ
-						b[2] = &t
-					}
-				case "aac_160k":
-					if b[1] == nil {
-						t.SoundcloakPreset = cfg.AudioAAC
-						b[1] = &t
-					}
-				case "aac_96k":
-					t.SoundcloakPreset = cfg.AudioAACLQ
-					return &t
-				default:
-					switch t.Format.MimeType {
-					case `audio/mp4; codecs="mp4a.40.2"`:
-						if b[3] == nil {
-							t.SoundcloakPreset = cfg.AudioAACHQ
-							b[3] = &t
-						}
-					case "audio/mpeg":
-						if b[0] == nil {
-							t.SoundcloakPreset = cfg.AudioMP3
-							b[0] = &t
-						}
-					}
-				}
-			}
-		}
-	}
-	for _, t := range b {
-		if t != nil {
-			return t
-		}
-	}
-	return nil
-}
-
-func (m Media) SelectCompatibleHLSDRM(mode string) *Transcoding {
-	// aac_hq - aac_256k, aac_160k, mp3,      aac_96k
-	// aac    - aac_160k, aac_256k, mp3,      aac_96k
-	// mpeg   - mp3,      aac_256k, aac_160k, aac_96k
-	// aac_lq - aac_96k,  mp3,      aac_160k, aac_256k
-	// aac_256k has an evil legacy twin
-	// this picks only stuff with drm
-
-	// to do just one iteration
-	var b [4]*Transcoding
-	switch mode {
-	case cfg.AudioAACHQ:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
-				switch t.Preset {
-				case "aac_256k":
-					t.SoundcloakPreset = cfg.AudioAACHQ
-					return &t
-				case "aac_160k":
-					if b[1] == nil {
-						t.SoundcloakPreset = cfg.AudioAAC
-						b[1] = &t
-					}
-				case "aac_96k":
-					if b[3] == nil {
-						t.SoundcloakPreset = cfg.AudioAACLQ
-						b[3] = &t
-					}
-				default:
-					switch t.Format.MimeType {
-					case `audio/mp4; codecs="mp4a.40.2"`:
-						if b[0] == nil {
-							t.SoundcloakPreset = cfg.AudioAACHQ
-							b[0] = &t
-						}
-					case "audio/mpeg":
-						if b[2] == nil {
-							t.SoundcloakPreset = cfg.AudioMP3
-							b[2] = &t
-						}
-					}
-				}
-			}
-		}
-	case cfg.AudioAAC:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
-				switch t.Preset {
-				case "aac_256k":
-					if b[0] == nil {
-						t.SoundcloakPreset = cfg.AudioAACHQ
-						b[0] = &t
-					}
-				case "aac_160k":
-					t.SoundcloakPreset = cfg.AudioAAC
-					return &t
-				case "aac_96k":
-					if b[3] == nil {
-						t.SoundcloakPreset = cfg.AudioAACLQ
-						b[3] = &t
-					}
-				default:
-					switch t.Format.MimeType {
-					case `audio/mp4; codecs="mp4a.40.2"`:
-						if b[1] == nil {
-							t.SoundcloakPreset = cfg.AudioAACHQ
-							b[1] = &t
-						}
-					case "audio/mpeg":
-						if b[2] == nil {
-							t.SoundcloakPreset = cfg.AudioMP3
-							b[2] = &t
-						}
-					}
-				}
-			}
-		}
-	case cfg.AudioMP3:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
-				switch t.Preset {
-				case "aac_256k":
-					if b[0] == nil {
-						t.SoundcloakPreset = cfg.AudioAACHQ
-						b[0] = &t
-					}
-				case "aac_160k":
-					if b[2] == nil {
-						t.SoundcloakPreset = cfg.AudioAAC
-						b[2] = &t
-					}
-				case "aac_96k":
-					if b[3] == nil {
-						t.SoundcloakPreset = cfg.AudioAACLQ
-						b[3] = &t
-					}
-				default:
-					switch t.Format.MimeType {
-					case `audio/mp4; codecs="mp4a.40.2"`:
-						if b[1] == nil {
-							t.SoundcloakPreset = cfg.AudioAACHQ
-							b[1] = &t
-						}
-					case "audio/mpeg":
-						t.SoundcloakPreset = cfg.AudioMP3
-						return &t
-					}
-				}
-			}
-		}
-	case cfg.AudioAACLQ:
-		for _, t := range m.Transcodings {
-			if t.Format.Protocol == ProtocolCTREncryptedHLS {
+			if t.Format.Protocol == protocol {
 				switch t.Preset {
 				case "aac_256k":
 					if b[2] == nil {
@@ -867,16 +716,6 @@ func (m Media) HasDRM() bool {
 		}
 	}
 	return false
-}
-
-func (m Media) SelectCompatibleAnyHLS(prefs cfg.Preferences) *Transcoding {
-	if *prefs.DRM {
-		t := m.SelectCompatibleHLSDRM(*prefs.HLSAudio)
-		if t != nil {
-			return t
-		}
-	}
-	return m.SelectCompatibleHLS(*prefs.HLSAudio)
 }
 
 func GetTrack(permalink string) (Track, error) {
@@ -1361,6 +1200,11 @@ func (t Track) GetComments(prefs cfg.Preferences, args string) (*Paginated[*Comm
 	for _, p := range p.Collection {
 		p.Author.Fix(false)
 		p.Author.Postfix(prefs)
+		if p.Timestamp > int(t.Duration) {
+			p.Timestamp = int(t.Duration)
+		} else if p.Timestamp < 0 {
+			p.Timestamp = 0
+		}
 	}
 
 	return &p, nil

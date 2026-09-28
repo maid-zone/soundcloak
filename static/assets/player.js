@@ -8,14 +8,46 @@ function loadHls() {
             if (audio.getAttribute("preload") == "yes") {
                 opts.maxBufferLength = Infinity
             }
-            var lic = audio.getAttribute("license")
-            if (lic) {
+            var proxystreams = audio.hasAttribute("proxystreams")
+            var wv = audio.getAttribute("wv")
+            if (wv) {
+                var fp = audio.getAttribute("fp")
+                if (proxystreams) {
+                    wv = "/_/api/wv?license_token="+wv
+                    fp = "/_/api/fp?license_token="+fp
+                } else {
+                    wv = "https://license.media-streaming.soundcloud.cloud/playback/widevine?license_token="+wv
+                    fp = "https://license.media-streaming.soundcloud.cloud/playback/fairplay?license_token="+fp
+                }
                 opts.emeEnabled = true
-                opts.drmSystems = { "com.widevine.alpha": { "licenseUrl": lic } }
+                opts.drmSystems = { 
+                    "com.widevine.alpha": { "licenseUrl": wv },
+                    "com.apple.fps":      { "licenseUrl": fp, "serverCertificateUrl": fp }
+                }
+                navigator.requestMediaKeySystemAccess("com.apple.fps", [{initDataTypes: ["cenc"]}])
+                    .then(function () {
+                        audio.src += "?drm=fp"
+                    })
+                    .catch(function () {
+                        audio.src += "?drm=wv"
+                    })
+                    .finally(function() {
+                        var hls = new Hls(opts)
+                        if (proxystreams) {
+                            audio.src += "&redirect_parts=true"
+                        }
+                        hls.loadSource(audio.src)
+                        hls.attachMedia(audio)
+                        document.getElementById("drmwarning").remove()
+                    })
+            } else {
+                var hls = new Hls(opts)
+                if (proxystreams) {
+                    audio.src += "?redirect_parts=true"
+                }
+                hls.loadSource(audio.src)
+                hls.attachMedia(audio)
             }
-            var hls = new Hls(opts)
-            hls.loadSource(audio.src)
-            hls.attachMedia(audio)
         } else {
             return "hls not supported"
         }

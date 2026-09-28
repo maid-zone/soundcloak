@@ -59,13 +59,22 @@ func Load(app *fiber.App) {
 			return err
 		}
 
-		var forcedQuality = c.RequestCtx().QueryArgs().Peek("audio")
-		if len(forcedQuality) != 0 {
-			v := cfg.B2s(forcedQuality)
+		var forced = c.RequestCtx().QueryArgs().Peek("audio")
+		if len(forced) != 0 {
+			v := cfg.B2s(forced)
 			p.HLSAudio = &v
 		}
 
-		tr := t.Media.SelectCompatibleAnyHLS(p)
+		proto := sc.ProtocolHLS
+		forced = c.RequestCtx().QueryArgs().Peek("drm")
+		switch string(forced) {
+		case "wv":
+			proto = sc.ProtocolCTREncryptedHLS
+		case "fp":
+			proto = sc.ProtocolCBCEncryptedHLS
+		}
+		tr := t.Media.SelectCompatibleHLS(*p.HLSAudio, proto)
+
 		if tr == nil {
 			return fiber.ErrExpectationFailed
 		}
@@ -421,6 +430,20 @@ func Load(app *fiber.App) {
 			req.URI().SetScheme("https")
 			req.URI().SetHost("license.media-streaming.soundcloud.cloud")
 			req.URI().SetPath("/playback/widevine")
+
+			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
+		})
+
+		app.Post("/_/api/fp", func(c fiber.Ctx) error {
+			req := c.Request()
+			req.Header.Reset()
+			req.Header.SetUserAgent(cfg.UserAgent)
+			if string(req.Header.Method()) != "GET" {
+				req.Header.SetMethod("POST")
+			}
+			req.URI().SetScheme("https")
+			req.URI().SetHost("license.media-streaming.soundcloud.cloud")
+			req.URI().SetPath("/playback/fairplay")
 
 			return sc.DoWithRetry(misc.HlsAacClient, req, c.Response())
 		})

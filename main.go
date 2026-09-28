@@ -958,23 +958,29 @@ Disallow: /`)
 					}
 				}
 			case cfg.HLSPlayer:
-				tr = track.Media.SelectCompatibleAnyHLS(prefs)
+				if *prefs.DRM {
+					tr = track.Media.SelectCompatibleHLS(*prefs.HLSAudio, sc.ProtocolCTREncryptedHLS)
+					if tr == nil {
+						goto nodrm
+					}
+					var cs, cs2 sc.Cached[sc.CachedStream]
+					cs, err = tr.GetStream("", track)
+					if err == nil {
+						fp := track.Media.SelectCompatibleHLS(*prefs.HLSAudio, sc.ProtocolCBCEncryptedHLS)
+						cs2, err = fp.GetStream("", track)
+
+						stream.License = cs.Value.License
+						stream.FPLicense = cs2.Value.License
+
+						stream.URL = "/_/api/hls" + track.Href()
+					}
+				}
+			nodrm:
+				tr = track.Media.SelectCompatibleHLS(*prefs.HLSAudio, sc.ProtocolHLS)
 				if tr == nil {
 					err = sc.ErrIncompatibleStream
 				} else {
 					stream.URL = "/_/api/hls" + track.Href()
-					if !*prefs.ProxyStreams {
-						stream.URL += "?redirect_parts=true"
-					}
-					if tr.HasDRM() {
-						var cs sc.Cached[sc.CachedStream]
-						cs, err = tr.GetStream("", track)
-						if *prefs.ProxyStreams {
-							stream.License = "/_/api/wv?license_token=" + cs.Value.License
-						} else {
-							stream.License = "https://license.media-streaming.soundcloud.cloud/playback/widevine?license_token=" + cs.Value.License
-						}
-					}
 				}
 			case cfg.RestreamPlayer:
 				stream.URL = "/_/api/restream" + track.Href()
