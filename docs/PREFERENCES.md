@@ -17,7 +17,7 @@
 | Proxy song streams  | ProxyStreams      | same as ProxyStreams in backend config | true, false     | Proxy song streams through the backend. ProxyStreams must be enabled on the backend |
 | Fully preload track | FullyPreloadTrack | false                                  | true, false     | Fully load track when the page is loaded       |
 | Streaming audio     | HLSAudio          | "mpeg"                                 | "aac_hq", "aac", "mpeg", "aac_lq"   | What [audio preset](AUDIO_PRESETS.md) should be loaded when streaming audio          |
-| Widevine DRM  | DRM      | false | true, false     | Allow playing tracks that soundcloud recently started locking behind DRM. Downloads still won't work, but at least you can play it if you enable DRM in your browser. If you enable ProxyStreams, the DRM license API will also be proxied |
+| Widevine/FairPlay DRM  | DRM      | false | true, false     | Allow playing tracks that soundcloud recently started locking behind DRM. Downloads still won't work, but at least you can play it if you enable DRM in your browser. If you enable ProxyStreams, the DRM license API will also be proxied |
 
 ## Restream Player
 
