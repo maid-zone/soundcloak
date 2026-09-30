@@ -31,6 +31,13 @@ function loadHls() {
                     .then(function () {
                         console.log("apple fairplay supported")
                         audio.src += "?drm=fp"
+                        opts.licenseXhrSetup = function (xhr, url, keyContext, licenseChallenge) {
+                            console.log("xhr", xhr)
+                            console.log("url", url)
+                            console.log("keyContext", keyContext)
+                            console.log("licenseChallenge", licenseChallenge)
+                            // let payload = "spc="+btoa(licenseChallenge)+"&assetId="+
+                        }
                     })
                     .catch(function () {
                         console.log("apple fairplay not supported, fallback to widevine")
