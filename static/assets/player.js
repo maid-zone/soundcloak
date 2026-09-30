@@ -27,7 +27,7 @@ function loadHls() {
                     "com.apple.fps":      { "licenseUrl": fp, "serverCertificateUrl": fp }
                 }
                 console.log("hls opts", opts)
-                navigator.requestMediaKeySystemAccess("com.apple.fps", [{initDataTypes: ["cenc"]}])
+                navigator.requestMediaKeySystemAccess("com.apple.fps", [{initDataTypes: ["cenc"], audioCapabilities: [{contentType: "audio/mp4; codecs=\"mp4a.40.2\""}]}])
                     .then(function () {
                         console.log("apple fairplay supported")
                         audio.src += "?drm=fp"
