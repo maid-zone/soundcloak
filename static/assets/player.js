@@ -3,6 +3,7 @@ var player = audio.getAttribute("player")
 
 function loadHls() {
     try {
+        console.log("loading hls")
         if (Hls.isSupported()) {
             var opts = {}
             if (audio.getAttribute("preload") == "yes") {
@@ -11,6 +12,7 @@ function loadHls() {
             var proxystreams = audio.hasAttribute("proxystreams")
             var wv = audio.getAttribute("wv")
             if (wv) {
+                console.log("using drm")
                 var fp = audio.getAttribute("fp")
                 if (proxystreams) {
                     wv = "/_/api/wv?license_token="+wv
@@ -24,11 +26,14 @@ function loadHls() {
                     "com.widevine.alpha": { "licenseUrl": wv },
                     "com.apple.fps":      { "licenseUrl": fp, "serverCertificateUrl": fp }
                 }
+                console.log("hls opts", opts)
                 navigator.requestMediaKeySystemAccess("com.apple.fps", [{initDataTypes: ["cenc"]}])
                     .then(function () {
+                        console.log("apple fairplay supported")
                         audio.src += "?drm=fp"
                     })
                     .catch(function () {
+                        console.log("apple fairplay not supported, fallback to widevine")
                         audio.src += "?drm=wv"
                     })
                     .finally(function() {
@@ -36,6 +41,7 @@ function loadHls() {
                         if (proxystreams) {
                             audio.src += "&redirect_parts=true"
                         }
+                        console.log("loading", audio.src)
                         hls.loadSource(audio.src)
                         hls.attachMedia(audio)
                         document.getElementById("drmwarning").remove()
@@ -49,9 +55,11 @@ function loadHls() {
                 hls.attachMedia(audio)
             }
         } else {
+            console.log("hls not supported")
             return "hls not supported"
         }
     } catch (err) {
+        console.log("failed to load hls", err)
         return err
     }
 }
