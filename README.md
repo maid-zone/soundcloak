@@ -1,7 +1,9 @@
 # soundcloak
+
 Frontend for SoundCloud
 
 # About
+
 - Designed to preserve your privacy. All requests to SoundCloud API are done server-side, without logging into an account. Media (tracks, images) can also be proxied if enabled by instance maintainer. No unnecessary requests or telemetry tracking your every move
 - Lightweight and performant. Both server-side and client-side. Not far behind the official webapp, even faster in some cases
 - Works without JavaScript (for most of the functionality)
@@ -11,6 +13,7 @@ Frontend for SoundCloud
 - It's also possible to download tracks, together with metadata
 
 # Screenshots
+
 <details>
 <summary>Click to view</summary>
 
@@ -20,11 +23,15 @@ Frontend for SoundCloud
 </details>
 
 # Documentation
+
 ## [User Guide](docs/USER_GUIDE.md)
+
 ## [Instance Maintainer Guide](docs/INSTANCE_GUIDE.md)
+
 ## [Development Guide](docs/DEV_GUIDE.md)
 
 If you have any questions, or just wanna talk about soundcloak, you can join the maid.zone XMPP chat: [public@muc.maid.zone](xmpp:public@muc.maid.zone?join)
 
 # Notice
+
 soundcloak is not affiliated with SoundCloud.

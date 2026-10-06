@@ -6,15 +6,14 @@ import (
 )
 
 templ Selection(title string, p *sc.Paginated[*sc.Selection]) {
-	<h1>{title}</h1>
+	<h1>{ title }</h1>
 	<span>Got { strconv.FormatInt(int64(len(p.Collection)), 10) } selections</span>
 	if len(p.Collection) != 0 {
 		for _, selection := range p.Collection {
 			if len(selection.Items.Collection) == 0 {
 				{{ continue }}
 			}
-
-			<h2>{selection.Title}</h2>
+			<h2>{ selection.Title }</h2>
 			for _, pl := range selection.Items.Collection {
 				@UserPlaylistTrackItem(pl)
 			}

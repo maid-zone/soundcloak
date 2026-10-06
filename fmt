@@ -1,0 +1,3 @@
+go fmt
+go tool templ fmt .
+go run github.com/wasilibs/go-prettier/v3/cmd/prettier@latest --write .

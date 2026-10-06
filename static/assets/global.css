@@ -25,7 +25,7 @@ body {
   color: var(--accent);
 }
 
-#sc>h1 {
+#sc > h1 {
   margin: 0;
 }
 
@@ -100,13 +100,13 @@ input[type="submit"]:hover {
   border-color: var(--accent);
 }
 
-.listing>img {
+.listing > img {
   width: 4rem;
   object-fit: cover;
   height: 4rem;
 }
 
-.listing>.meta {
+.listing > .meta {
   flex-grow: 0;
   display: flex;
   flex-direction: column;
@@ -115,18 +115,18 @@ input[type="submit"]:hover {
   gap: 0.25rem;
 }
 
-.listing>.meta>h3 {
+.listing > .meta > h3 {
   margin: 0;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
 }
 
-.listing>.meta>span {
+.listing > .meta > span {
   color: var(--accent);
 }
 
-.listing>.meta>p {
+.listing > .meta > p {
   margin: 0;
 }
 
@@ -141,9 +141,9 @@ details::details-content {
   interpolate-size: allow-keywords;
   block-size: 0;
   content-visibility: hidden;
-  transition: 
-    block-size .2s ease,
-    content-visibility .2s allow-discrete;
+  transition:
+    block-size 0.2s ease,
+    content-visibility 0.2s allow-discrete;
 }
 
 details[open]::details-content {
@@ -151,15 +151,15 @@ details[open]::details-content {
   content-visibility: visible;
 }
 
-details>summary {
+details > summary {
   user-select: none;
 }
 
-details>summary:focus-visible {
+details > summary:focus-visible {
   text-decoration: underline;
 }
 
-details>summary:hover {
+details > summary:hover {
   cursor: pointer;
 }
 
@@ -202,7 +202,7 @@ select:open {
   text-decoration: underline;
 }
 
-.listing>.comment>h3 {
+.listing > .comment > h3 {
   margin: 0;
 }
 
@@ -216,7 +216,7 @@ select:open {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   justify-content: space-between;
 }
 
@@ -261,7 +261,7 @@ select:open {
   }
 }
 
-.track-meta-icon>svg,
+.track-meta-icon > svg,
 .track-meta-icon {
   width: 16px;
   height: 16px;
@@ -269,13 +269,13 @@ select:open {
 
 .track-meta-item {
   display: flex;
-  gap: .1rem;
+  gap: 0.1rem;
   align-items: center;
 }
 
 .track-meta {
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .tooltip {
@@ -283,7 +283,9 @@ select:open {
 }
 
 .tooltip-content-wrapper {
-  transition: opacity .2s, bottom .2s;
+  transition:
+    opacity 0.2s,
+    bottom 0.2s;
   opacity: 0;
   z-index: -1;
   position: absolute;
@@ -294,10 +296,10 @@ select:open {
   align-items: center;
   border-bottom: 5px solid transparent;
   font-size: 14px;
-  animation: tooltip-z-index-out .2s;
+  animation: tooltip-z-index-out 0.2s;
 }
 
-.tooltip:hover>.tooltip-content-wrapper {
+.tooltip:hover > .tooltip-content-wrapper {
   bottom: 100%;
   opacity: 1;
   z-index: 1000;
@@ -313,7 +315,7 @@ select:open {
 }
 
 .tooltip-content::before {
-  content: '';
+  content: "";
   border: 4px black solid;
   transform: rotate(45deg);
   position: absolute;
@@ -323,11 +325,11 @@ select:open {
 
 @keyframes tooltip-z-index-out {
   100% {
-    z-index: -1
+    z-index: -1;
   }
 
   0% {
-    z-index: 1000
+    z-index: 1000;
   }
 }
 
@@ -366,7 +368,7 @@ select:open {
   height: 32px;
 }
 
-.play-button>div {
+.play-button > div {
   background: var(--primary);
   width: 60px;
   height: 60px;
@@ -403,7 +405,7 @@ select:open {
 
 .header-search {
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
   flex: 1;
   max-width: 500px;
 }
@@ -418,7 +420,7 @@ select:open {
   display: none;
 }
 
-.modal-cond:checked~.modal {
+.modal-cond:checked ~ .modal {
   display: flex;
 }
 
@@ -462,9 +464,9 @@ select:open {
 
 .download-metadata {
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
   align-items: center;
-  margin-bottom: .35rem;
+  margin-bottom: 0.35rem;
 }
 
 .listing-reply {
@@ -483,14 +485,13 @@ select:open {
   margin-top: 40px;
 }
 
-#search-suggestions>li {
+#search-suggestions > li {
   padding-bottom: 1rem;
 }
 
-#search-suggestions>li:hover {
+#search-suggestions > li:hover {
   cursor: pointer;
 }
-
 
 .track-volume {
   writing-mode: sideways-lr;
@@ -503,7 +504,7 @@ select:open {
 .track-controls {
   flex: 1;
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .track-volume-tooltip svg,
@@ -569,14 +570,13 @@ dl {
 
 dt {
   font-weight: semibold;
-  opacity: .5;
+  opacity: 0.5;
 }
 
 dd {
   margin: 0;
-  margin-bottom: 1rem
+  margin-bottom: 1rem;
 }
-
 
 @media (min-width: 700px) {
   dl {
@@ -595,9 +595,9 @@ dd {
 
   dt::after {
     content: "";
-    background: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='50' fill='lightgrey' /></svg>") round;
-    block-size: .2em;
+    background: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'><circle cx='50' cy='50' r='50' fill='lightgrey' /></svg>")
+      round;
+    block-size: 0.2em;
     flex: 1;
   }
 }
-

@@ -2,8 +2,8 @@ package templates
 
 import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
-	"git.maid.zone/stuff/soundcloak/lib/sc"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
+	"git.maid.zone/stuff/soundcloak/lib/sc"
 
 	"net/url"
 	"strconv"
@@ -23,14 +23,14 @@ func playlist(t sc.Track, p sc.Playlist) string {
 
 templ PlaylistItem(playlist *sc.Playlist, showUsername bool) {
 	<a class="listing" href={ templ.SafeURL(playlist.Href()) }>
-		<img 
-			loading="lazy" 
+		<img
+			loading="lazy"
 			fetchpriority="low"
-		if playlist.Artwork != "" {
-			src={ playlist.Artwork }
-		} else {
-			src="/_/static/placeholder.jpg"
-		}
+			if playlist.Artwork != "" {
+				src={ playlist.Artwork }
+			} else {
+				src="/_/static/placeholder.jpg"
+			}
 		/>
 		<div class="meta">
 			<h3>{ playlist.Title }</h3>
@@ -58,23 +58,18 @@ templ Playlist(prefs cfg.Preferences, p sc.Playlist) {
 	<dl>
 		<dt>Tracks</dt>
 		<dd>{ strconv.FormatInt(p.TracksCount(), 10) }</dd>
-
 		if p.TagList != "" {
 			<dt>Tags</dt>
 			<dd>{ sc.TagListParser(p.TagList) }</dd>
 		}
-
 		if p.CreatedAt != "" {
 			<dt>Created</dt>
 			<dd>{ misc.TryFormatRfc3339(p.CreatedAt) }</dd>
 		}
-
 		<dt>Last modified</dt>
 		<dd>{ misc.TryFormatRfc3339(p.LastModified) }</dd>
-
 		<dt>Likes</dt>
 		<dd>{ misc.HumanizeNumber(p.Likes) }</dd>
-
 		<dt>Reposts</dt>
 		<dd>{ misc.HumanizeNumber(p.Reposts) }</dd>
 	</dl>

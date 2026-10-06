@@ -51,7 +51,9 @@ const (
 templ Alert(variant Variant) {
 	<div class={ "alert", string(variant) }>
 		@InfoIcon()
-		<p>{ children... }</p>
+		<p>
+			{ children... }
+		</p>
 	</div>
 }
 
@@ -108,8 +110,9 @@ templ Modal(modalId string, content templ.Component) {
 		<div class="modal">
 			<label class="modal-backdrop" for={ id }></label>
 			<div class="modal-content-wrapper">
-				<label class="modal-close" for={ id }>@CloseIcon()
-</label>
+				<label class="modal-close" for={ id }>
+					@CloseIcon()
+				</label>
 				<div class="modal-content">
 					@content
 				</div>

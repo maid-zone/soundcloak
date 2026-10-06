@@ -21,11 +21,11 @@ templ UserItem(user *sc.User) {
 		<img
 			loading="lazy"
 			fetchpriority="low"
-		if user.Avatar != "" {
-			src={ user.Avatar }
-		} else {
-			src="/_/static/placeholder.jpg"
-		}
+			if user.Avatar != "" {
+				src={ user.Avatar }
+			} else {
+				src="/_/static/placeholder.jpg"
+			}
 		/>
 		<div class="meta">
 			<h3>{ user.Username }</h3>
@@ -84,15 +84,12 @@ templ UserBase(prefs cfg.Preferences, u sc.User) {
 		<dl>
 			<dt>Tracks</dt>
 			<dd>{ strconv.FormatInt(u.Tracks, 10) }</dd>
-
 			<dt>Playlists and albums</dt>
 			<dd>{ strconv.FormatInt(u.Playlists, 10) }</dd>
-
 			if u.CreatedAt != "" {
 				<dt>Created</dt>
 				<dd>{ misc.TryFormatRfc3339(u.CreatedAt) }</dd>
 			}
-
 			<dt>Last modified</dt>
 			<dd>{ misc.TryFormatRfc3339(u.LastModified) }</dd>
 		</dl>
@@ -118,13 +115,17 @@ templ UserButtons(current string, user sc.User) {
 					if b.override {
 						href={ templ.SafeURL(b.href) }
 					} else {
-					href={ templ.SafeURL("/" + user.Permalink + b.href) }
+						href={ templ.SafeURL("/" + user.Permalink + b.href) }
+					}
+					if b.external {
+						referrerpolicy="no-referrer"
+						rel="external nofollow noopener noreferrer"
+						target="_blank"
+					}
 				}
-				if b.external {
-					referrerpolicy="no-referrer" rel="external nofollow noopener noreferrer" target="_blank"
-				}
-			}
-			>{ b.text }</a>
+			>
+				{ b.text }
+			</a>
 		}
 	</div>
 }

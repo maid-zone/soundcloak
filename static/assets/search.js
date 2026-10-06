@@ -1,54 +1,58 @@
-var searchSuggestions = document.getElementById('search-suggestions');
-var input = document.getElementById('q');
+var searchSuggestions = document.getElementById("search-suggestions");
+var input = document.getElementById("q");
 var timeout;
 
 function getSuggestions() {
-    if (input.value == 0) {
-        searchSuggestions.style.display = 'none';
+  if (input.value == 0) {
+    searchSuggestions.style.display = "none";
+    return;
+  }
+
+  var xhr = new XMLHttpRequest();
+  xhr.open(
+    "GET",
+    "/_/searchSuggestions?q=" + encodeURIComponent(input.value),
+    true,
+  );
+  xhr.onload = function () {
+    try {
+      var cloned = searchSuggestions.cloneNode(false);
+
+      var data = JSON.parse(xhr.responseText);
+      if (data.length == 0) {
+        searchSuggestions.style.display = "none";
         return;
+      }
+
+      for (var i = 0; i < data.length; i++) {
+        var e = document.createElement("li");
+        e.textContent = data[i];
+        e.onclick = function () {
+          input.value = this.textContent;
+          input.parentElement.submit();
+          searchSuggestions.style.display = "none";
+        };
+        cloned.appendChild(e);
+      }
+
+      searchSuggestions.parentNode.replaceChild(cloned, searchSuggestions);
+      searchSuggestions = cloned;
+      searchSuggestions.style.display = "block";
+    } catch {
+      searchSuggestions.style.display = "none";
     }
+  };
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/_/searchSuggestions?q=' + encodeURIComponent(input.value), true);
-    xhr.onload = function () {
-        try {
-            var cloned = searchSuggestions.cloneNode(false);
+  xhr.onerror = function () {
+    searchSuggestions.style.display = "none";
+  };
 
-            var data = JSON.parse(xhr.responseText);
-            if (data.length == 0) {
-                searchSuggestions.style.display = 'none';
-                return;
-            }
-
-            for (var i = 0; i < data.length; i++) {
-                var e = document.createElement('li');
-                e.textContent = data[i];
-                e.onclick = function () {
-                    input.value = this.textContent;
-                    input.parentElement.submit();
-                    searchSuggestions.style.display = 'none';
-                }
-                cloned.appendChild(e);
-            }
-
-            searchSuggestions.parentNode.replaceChild(cloned, searchSuggestions);
-            searchSuggestions = cloned;
-            searchSuggestions.style.display = 'block';
-        } catch {
-            searchSuggestions.style.display = 'none';
-        }
-    }
-
-    xhr.onerror = function () {
-        searchSuggestions.style.display = 'none';
-    }
-
-    xhr.send();
+  xhr.send();
 }
 
-input.addEventListener('input', function () {
-    if (timeout) {
-        clearTimeout(timeout);
-    }
-    timeout = setTimeout(getSuggestions, 250);
+input.addEventListener("input", function () {
+  if (timeout) {
+    clearTimeout(timeout);
+  }
+  timeout = setTimeout(getSuggestions, 250);
 });
