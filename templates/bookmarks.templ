@@ -1,0 +1,20 @@
+package templates
+
+import "git.maid.zone/stuff/soundcloak/lib/sc"
+
+templ Bookmarks(tracks []sc.Track) {
+	<h1>Bookmarked tracks</h1>
+	<p>these are saved locally, in a cookie. export the cookie if you want to share the list across devices</p>
+	<br/>
+	<hr/>
+	<br/>
+	if len(tracks) != 0 {
+		for _, track := range tracks {
+			<div>
+				@TrackItem(&track, true, "")
+			</div>
+		}
+	} else {
+		<p>nothing saved yet! click on the 'bookmark' button on a track's page</p>
+	}
+}

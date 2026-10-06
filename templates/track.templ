@@ -46,6 +46,8 @@ templ TrackButtons(prefs cfg.Preferences, current string, track sc.Track) {
 		if cfg.Restream {
 			<label class="btn" for="modal-download-open">download</label>
 		}
+		<div id="bookmark-button-slot" data-track-id={ track.ID.String() }></div>
+		<script async src="/_/static/bookmark.js"></script>
 	</div>
 }
 

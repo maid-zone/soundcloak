@@ -591,6 +591,46 @@ Disallow: /`)
 		return r(c, prefs, "Discover", templates.Selection("Discover Playlists", selections), nil)
 	})
 
+	app.Get("/_/bookmarks", func(c fiber.Ctx) error {
+		prefs, err := preferences.Get(c)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("%s\n", c.Cookies("bookmarked-tracks"))
+
+		data, err := url.QueryUnescape(c.Cookies("bookmarked-tracks"))
+
+		if err != nil {
+			log.Println("error decoding cookie:", err)
+			return err
+		}
+
+		var bookmarkedIds []string
+
+		err = json.Unmarshal([]byte(data), &bookmarkedIds)
+		if err != nil {
+			log.Printf("error parsing bookmarked tracks: %s\n", err)
+			bookmarkedIds = []string{}
+		}
+
+		fmt.Printf("%s\n", bookmarkedIds)
+
+		tracks := []sc.Track{}
+
+		if len(bookmarkedIds) != 0 {
+			tracks, err = sc.GetTracks(strings.Join(bookmarkedIds, ","))
+
+			if err != nil {
+				log.Printf("error fetching bookmarked tracks: %s\n", err)
+				return err
+			}
+		}
+
+		return r(c, prefs, "Bookmarks", templates.Bookmarks(tracks), nil)
+
+	})
+
 	app.Get("/charts", func(c fiber.Ctx) error {
 		prefs, err := preferences.Get(c)
 		if err != nil {

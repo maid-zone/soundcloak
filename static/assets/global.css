@@ -76,6 +76,8 @@ input[type="submit"]:hover {
   display: block;
   text-align: center;
   border-width: 2px;
+  font-size: 1rem;
+  font-family: system-ui;
 }
 
 .btn:hover,
