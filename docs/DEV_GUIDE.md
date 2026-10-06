@@ -1,9 +1,12 @@
 # Setup
+
 ## Prerequisites
+
 1. [golang](https://go.dev) (Soundcloak tries to always target the latest, so choose it)
 2. [git](https://git-scm.com)
 
 ## The setup
+
 1. Clone this repository:
 
 ```sh
@@ -35,7 +38,9 @@ This uses the `build` script, which generates code from templates, generates cod
 Now, you can run soundcloak with the `./main` binary. By default, it is listening on `127.0.0.1:4664`. For a configuration guide, [refer to here](INSTANCE_GUIDE.md#configuration-guide)
 
 # Updating your local setup
+
 1. Retrieve the latest code:
+
 ```sh
 git fetch origin
 git pull
@@ -50,6 +55,7 @@ go tool soundcloakctl js download # re-download JS modules
 ```
 
 3. Run codegen and build the binary:
+
 ```sh
 ./build
 ```
@@ -57,6 +63,7 @@ go tool soundcloakctl js download # re-download JS modules
 Now, you can run soundcloak with the `./main` binary.
 
 # Contributing
+
 Contributions are appreciated!
 
 We develop soundcloak on [our forgejo instance](https://git.maid.zone/stuff/soundcloak), but feel free to contribute on our [Codeberg](https://codeberg.org/maid-zone/soundcloak) and [Github](https://github.com/maid-zone/soundcloak) as well!

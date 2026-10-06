@@ -4,48 +4,45 @@ import (
 	"git.maid.zone/stuff/soundcloak/lib/cfg"
 	"git.maid.zone/stuff/soundcloak/lib/misc"
 	"git.maid.zone/stuff/soundcloak/lib/sc"
+	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 	"net/url"
 	"strconv"
 	"strings"
-	"git.maid.zone/stuff/soundcloak/lib/textparsing"
 )
 
 templ TrackButtons(prefs cfg.Preferences, current string, track sc.Track) {
 	if cfg.Restream {
 		@Modal("download", DownloadModal(prefs, track))
 	}
-
 	<div class="btns">
 		{{
 			buttons := []btn{
 				{"related tracks", "/recommended", false, false},
 				{"in albums", "/albums", false, false},
 				{"in playlists", "/sets", false, false},
-				{"track station", "/discover/sets/"+track.Station, true, false},
-				{"view on soundcloud", "https://soundcloud.com"+track.Href(), true, true},
+				{"track station", "/discover/sets/" + track.Station, true, false},
+				{"view on soundcloud", "https://soundcloud.com" + track.Href(), true, true},
 			}
 		}}
-
 		for _, b := range buttons {
 			<a
-			if b.text == current {
-				class="btn active"
-			} else {
-				class="btn"
-				if b.override {
-					href={ templ.SafeURL(b.href) }
+				if b.text == current {
+					class="btn active"
 				} else {
-					href={ templ.SafeURL(track.Href() + b.href) }
+					class="btn"
+					if b.override {
+						href={ templ.SafeURL(b.href) }
+					} else {
+						href={ templ.SafeURL(track.Href() + b.href) }
+					}
+					if b.external {
+						referrerpolicy="no-referrer"
+						rel="external nofollow noopener noreferrer"
+						target="_blank"
+					}
 				}
-				if b.external {
-					referrerpolicy="no-referrer" 
-					rel="external nofollow noopener noreferrer" 
-					target="_blank"
-				}
-			}
 			>{ b.text }</a>
 		}
-
 		if cfg.Restream {
 			<label class="btn" for="modal-download-open">download</label>
 		}
@@ -103,57 +100,54 @@ templ TrackPlayer(prefs cfg.Preferences, track sc.Track, transcoding *sc.Transco
 	if displayErr == "" {
 		if stream.URL != "" {
 			<div id="track-wrapper">
-				<audio 
-					id="track" 
-					src={ stream.URL } 
-					controls 
+				<audio
+					id="track"
+					src={ stream.URL }
+					controls
 					autoplay?={ autoplay }
-				if nextTrack != nil {
-					next={ next(&track, nextTrack, playlist, mode, "") } 
-					volume={ volume }	
-				}
-				if *prefs.FullyPreloadTrack {
-					preload="yes"
-				}
-				if stream.License != "" {
-					license={ stream.License }
-				}
-					player={*prefs.Player}
-					keepfocus?={*prefs.KeepPlayerFocus}
-					waveform?={*prefs.Waveform}
+					if nextTrack != nil {
+						next={ next(&track, nextTrack, playlist, mode, "") }
+						volume={ volume }
+					}
+					if *prefs.FullyPreloadTrack {
+						preload="yes"
+					}
+					if stream.License != "" {
+						license={ stream.License }
+					}
+					player={ *prefs.Player }
+					keepfocus?={ *prefs.KeepPlayerFocus }
+					waveform?={ *prefs.Waveform }
 				></audio>
 				// TODO: remove keepfocus entirely, just add keyboard controls to the waveform player
-
 				if *prefs.Waveform {
 					<div class="waveform-wrapper jsOnly">
 						@track.RenderWaveform()
 						<div class="waveform-overlay">
 							<div class="waveform-time waveform-start" data-time="0"></div>
-							<div class="waveform-time waveform-end" data-time={track.Duration / 1000}></div>
+							<div class="waveform-time waveform-end" data-time={ track.Duration / 1000 }></div>
 						</div>
 					</div>
 				}
 			</div>
 		}
-		<script
-			async
-			src="/_/static/player.js"
-		></script>
+		<script async src="/_/static/player.js"></script>
 		if *prefs.Player == "hls" {
 			<noscript>
 				<br/>
 				JavaScript is disabled! Audio playback may not work without it enabled. 
 				<br/>
-				<a class="link" href="/_/preferences">You can enable 
-				if cfg.Restream { 
-					Restream or Progressive
-				} else {
-					Progressive
-				}
-				player in the preferences. It works without JavaScript.</a>
+				<a class="link" href="/_/preferences">
+					You can enable 
+					if cfg.Restream {
+						Restream or Progressive
+					} else {
+						Progressive
+					}
+					player in the preferences. It works without JavaScript.
+				</a>
 			</noscript>
 		}
-		
 		if track.Policy == sc.PolicySnip {
 			@Alert(Warning) {
 				Only a 30-second snippet is available.
@@ -193,14 +187,14 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 			}
 		}}
 		<a class="listing" href={ templ.SafeURL(overrideHref) }>
-			<img 
-				loading="lazy" 
+			<img
+				loading="lazy"
 				fetchpriority="low"
-			if track.Artwork != "" {
-				src={ track.Artwork }
-			} else {
-				src="/_/static/placeholder.jpg"
-			}
+				if track.Artwork != "" {
+					src={ track.Artwork }
+				} else {
+					src="/_/static/placeholder.jpg"
+				}
 			/>
 			<div class="meta">
 				<h3>{ track.Title }</h3>
@@ -229,23 +223,21 @@ templ TrackMetaItem(icon templ.Component, alt string, number int64) {
 }
 
 templ DownloadModal(prefs cfg.Preferences, t sc.Track) {
-	<h1><a href={templ.SafeURL(t.Href())} id="title">{ t.Title }</a></h1>
-
-	<form action={"/_/download" + t.Href()} method="post" autocomplete="off">
+	<h1>
+		<a href={ templ.SafeURL(t.Href()) } id="title">{ t.Title }</a>
+	</h1>
+	<form action={ "/_/download" + t.Href() } method="post" autocomplete="off">
 		@sel_audio2("audio", *prefs.RestreamAudio, t.GetDisabledFormats())
 		<details style="margin-top: 1rem; margin-bottom: 1rem">
 			<summary>File metadata</summary>
-			
 			<label class="download-metadata">
 				Title:
 				@text("title", t.Title)
 			</label>
-
 			<label class="download-metadata">
 				Author:
 				@text("author", t.Author.Username)
 			</label>
-
 			<label class="download-metadata">
 				Genre:
 				@text("genre", t.Genre)
@@ -283,7 +275,7 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 						<div class="track-volume-tooltip tooltip jsOnly">
 							<div class="tooltip-content-wrapper">
 								<div class="tooltip-content">
-									<input type="range" class="track-volume" min="0" max="100">
+									<input type="range" class="track-volume" min="0" max="100"/>
 								</div>
 							</div>
 							@VolumeIcon()
@@ -304,13 +296,11 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 					@TrackMetaItem(RepostIcon(), "reposts", t.Reposted)
 				</div>
 			</div>
-
 		</div>
 		if t.Artwork != "" {
 			<img loading="lazy" fetchpriority="low" src={ t.Artwork } width="300px" height="300px"/>
 		}
 	</div>
-	
 	if nextTrack != nil {
 		<details open style="margin-bottom: 1rem;" id="pbinfo">
 			<summary>Playback info</summary>
@@ -344,25 +334,20 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 	// </div>
 	<br/>
 	@Description(prefs, t.Description, nil)
-
 	<dl style="margin-top: 3rem;">
 		if t.CreatedAt != "" {
 			<dt>Created</dt>
 			<dd>{ misc.TryFormatRfc3339(t.CreatedAt) }</dd>
 		}
-
 		<dt>Last modified</dt>
 		<dd>{ misc.TryFormatRfc3339(t.LastModified) }</dd>
-
 		if t.TagList != "" {
 			<dt>Tags</dt>
 			<dd>{ sc.TagListParser(t.TagList) }</dd>
 		}
 	</dl>
-
 	<details style="padding: 0; margin: 0; border: 0; margin-bottom: 3rem;">
 		<summary>Advanced info</summary>
-
 		<dl style="padding-top: 1rem; margin: 0">
 			if t.License != "" {
 				<dt>License</dt>
@@ -372,24 +357,19 @@ templ Track(prefs cfg.Preferences, t sc.Track, tr *sc.Transcoding, stream sc.Str
 				<dt>ISRC</dt>
 				<dd>{ t.PublisherMetadata.ISRC }</dd>
 			}
-
 			if t.PublisherMetadata.ISWC != "" {
 				<dt>ISWC</dt>
 				<dd>{ t.PublisherMetadata.ISWC }</dd>
 			}
-
 			if t.PublisherMetadata.UPCorEAN != "" {
 				<dt>UPC/EAN</dt>
 				<dd>{ t.PublisherMetadata.UPCorEAN }</dd>
 			}
-
 			<dt>Policy</dt>
 			<dd>{ t.Policy }</dd>
 		</dl>
 	</details>
-
 	<hr/>
-
 	<h1>Comments</h1>
 	if comments != nil {
 		<div id="comments">
@@ -411,7 +391,6 @@ templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastT
 			isReply := lastTime == c.Timestamp
 			lastTime = c.Timestamp
 		}}
-
 		<div
 			if isReply {
 				class="listing listing-reply"
@@ -420,17 +399,19 @@ templ Comments(prefs cfg.Preferences, comments *sc.Paginated[*sc.Comment], lastT
 			}
 		>
 			<img
-			if c.Author.Avatar != "" {
-				src={ c.Author.Avatar }
-			} else {
-				src="/_/static/placeholder.jpg"
-			}
+				if c.Author.Avatar != "" {
+					src={ c.Author.Avatar }
+				} else {
+					src="/_/static/placeholder.jpg"
+				}
 			/>
 			<div class="comment">
 				<h3>
 					<a class="link" href={ templ.SafeURL("/" + c.Author.Permalink) }>{ c.Author.Username }</a>
 					at
-					<a class="link" href="#" data-timestamp={c.Timestamp}>{ misc.FormatTimecode(c.Timestamp) }</a>
+					<a class="link" href="#" data-timestamp={ c.Timestamp }>
+						{ misc.FormatTimecode(c.Timestamp) }
+					</a>
 				</h3>
 				<p>
 					if *prefs.ParseDescriptions {

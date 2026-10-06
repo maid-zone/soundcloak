@@ -24,15 +24,15 @@ Scroll down to the end of the preferences page. There you can see a management t
 
 soundcloak tries to keep the URL schemes same to SoundCloud's, so you can just replace `soundcloud.com` with your instance URL. For short links: `https://on.soundcloud.com/boiKDP46fayYDoVK9` -> `<instance>/on/boiKDP46fayYDoVK9`
 
-To automatically redirect, you can use [LibRedirect](https://libredirect.github.io/) extension. Soundcloak is supported 
+To automatically redirect, you can use [LibRedirect](https://libredirect.github.io/) extension. Soundcloak is supported
 
 # Following artists
 
-There is no accounts system yet (maybe in the future?), but you can use [RSS](https://en.wikipedia.org/wiki/RSS) feeds to keep up with new tracks. 
+There is no accounts system yet (maybe in the future?), but you can use [RSS](https://en.wikipedia.org/wiki/RSS) feeds to keep up with new tracks.
 
 You can subscribe to `<instance>/_/rss/<username>` in your feed reader program. Thunderbird works well for this
 
 # Extra notes
 
-If you find music that you like, make sure to download it! Stuff that's on there may be deleted or changed at any moment, without any warning or ability to experience it again, unless you download it for yourself. Download button is available if `Restream` is enabled in backend config. You can configure audio preset for downloading in preferences page. 
+If you find music that you like, make sure to download it! Stuff that's on there may be deleted or changed at any moment, without any warning or ability to experience it again, unless you download it for yourself. Download button is available if `Restream` is enabled in backend config. You can configure audio preset for downloading in preferences page.
 <!-- For easily and quickly downloading entire users or playlists, you can use my tool [scrip](https://git.maid.zone/laptop/scrip) (its not really maintained, maybe in the future?) -->
