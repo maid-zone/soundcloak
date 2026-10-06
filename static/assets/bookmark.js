@@ -1,15 +1,36 @@
 // @ts-check
 function getCookie(/** @type {string} */ name) {
-  const cookie = document.cookie
-    .split("; ")
-    .find((cookie) => cookie.startsWith(`${name}=`));
+  try {
+    const cookie = document.cookie
+      .split("; ")
+      .find((cookie) => cookie.startsWith(`${name}=`));
 
-  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+    return cookie
+      ? decodeURIComponent(cookie.slice(name.length + 1))
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+/**
+ * @template T
+ * @param {() => T | undefined} cb
+ * @param {T} fb
+ * @returns {T}
+ */
+function orFallback(cb, fb) {
+  try {
+    return cb() ?? fb;
+  } catch {
+    return fb;
+  }
 }
 
 class Bookmarks {
   /** @type {Set<string>} */
-  #set = new Set(JSON.parse(getCookie("bookmarked-tracks") ?? "[]"));
+  #set = new Set(
+    orFallback(() => JSON.parse(getCookie("bookmarked-tracks") ?? "[]"), []),
+  );
 
   add(/** @type {string} */ id) {
     this.#set.add(id);
