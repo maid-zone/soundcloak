@@ -18,7 +18,7 @@ templ text(name string, value string) {
 
 templ DownloadTrack(prefs cfg.Preferences, t sc.Track, disabled_formats map[string]bool) {
 	if t.Artwork != "" {
-		<img src={ t.Artwork } width="300px"/>
+		<img src={ t.Artwork } width="300" height="300" decoding="async"/>
 	}
 	<h1><a href={ templ.SafeURL(t.Href()) } id="title">{ t.Title }</a></h1>
 	if t.Policy == sc.PolicySnip {

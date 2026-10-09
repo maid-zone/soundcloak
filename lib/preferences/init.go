@@ -196,6 +196,7 @@ func setPrefs(c fiber.Ctx, p *cfg.Preferences) error {
 
 func Load(r *fiber.App) {
 	r.Get("/_/preferences", func(c fiber.Ctx) error {
+		c.Set("Cache-Control", "private, no-store")
 		p, err := Get(c)
 		if err != nil {
 			return err

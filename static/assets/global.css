@@ -1,6 +1,7 @@
 @font-face {
   font-family: "fixed";
   src: url("/_/static/fixed.ttf");
+  font-display: swap;
 }
 
 :root {
@@ -9,6 +10,11 @@
   --secondary: #00010a;
   --0: #3b4252;
   --text: white;
+}
+
+html[aria-busy="true"],
+html[aria-busy="true"] a {
+  cursor: progress;
 }
 
 body {

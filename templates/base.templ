@@ -1,6 +1,9 @@
 package templates
 
-import "git.maid.zone/stuff/soundcloak/lib/cfg"
+import (
+	"git.maid.zone/stuff/soundcloak/lib/cfg"
+	"git.maid.zone/stuff/soundcloak/static"
+)
 
 type HeaderOptions struct {
 	SearchQuery string
@@ -13,9 +16,10 @@ templ Base(p cfg.Preferences, title string, content templ.Component, head templ.
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link rel="stylesheet" href="/_/static/global.css"/>
-			<link rel="stylesheet" href="/_/static/instance.css"/>
-			<link rel="icon" href="/_/static/favicon.ico"/>
+			<link rel="stylesheet" href={ static.URL("global.css") }/>
+			<link rel="stylesheet" href={ static.URL("instance.css") }/>
+			<link rel="icon" href={ static.URL("favicon.ico") }/>
+			<script defer src={ static.URL("navigation.js") } data-navigation></script>
 			<link rel="search" type="application/opensearchdescription+xml" title="soundcloak" href="/_/opensearch.xml"/>
 			<title>
 				if title != "" {
@@ -53,7 +57,7 @@ templ Base(p cfg.Preferences, title string, content templ.Component, head templ.
 					}, options.SearchType)
 					if *p.SearchSuggestions {
 						<ul id="search-suggestions" style="display:none"></ul>
-						<script async src="/_/static/search.js"></script>
+						<script defer src={ static.URL("search.js") }></script>
 					}
 					<input
 						class="header-search-submit"

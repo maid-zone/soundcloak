@@ -155,12 +155,30 @@ new:
 }
 
 func ServeFS(r *fiber.App, filesystem fs.FS) {
+	static_files.Configure(filesystem)
 	cm := parseCompressionMaps(filesystem)
 	misc.Log(cm)
 
 	pfs := &pooledFs{filesystem, make(map[string]*sync.Pool), sync.RWMutex{}}
 
 	const path = "/_/static/"
+	r.Use(path, func(c fiber.Ctx) error {
+		name := strings.TrimPrefix(c.Path(), path)
+		version := static_files.Version(name)
+		c.Vary("Accept-Encoding")
+		c.Set("Cache-Control", "public, no-cache")
+		if version != "" {
+			if c.Query("v") == version && cfg.EmbedFiles {
+				c.Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
+			etag := "W/\"" + version + "\""
+			c.Set("ETag", etag)
+			if c.Get("If-None-Match") == etag {
+				return c.SendStatus(fiber.StatusNotModified)
+			}
+		}
+		return c.Next()
+	})
 
 	if len(cm) == 0 {
 		r.Use(path, func(c fiber.Ctx) error {
@@ -195,7 +213,6 @@ func ServeFS(r *fiber.App, filesystem fs.FS) {
 				return err
 			}
 
-			c.Set("Cache-Control", "public, max-age=28800")
 			return c.SendStream(f)
 		})
 	} else {
@@ -235,17 +252,14 @@ func ServeFS(r *fiber.App, filesystem fs.FS) {
 			}
 
 			if len(encs) != 0 {
-				ae := c.Request().Header.Peek("Accept-Encoding")
-				if len(ae) == 1 && ae[0] == '*' {
-					c.Response().Header.SetContentEncodingBytes(encs[0])
-					fp += "." + cfg.B2s(encs[0])
-				} else {
+				if c.Get("Accept-Encoding") != "" {
+					offers := make([]string, 0, len(encs))
 					for _, enc := range encs {
-						if bytes.Contains(ae, enc) {
-							c.Response().Header.SetContentEncodingBytes(enc)
-							fp += "." + cfg.B2s(enc)
-							break
-						}
+						offers = append(offers, string(enc))
+					}
+					if enc := c.AcceptsEncodings(offers...); enc != "" {
+						c.Set("Content-Encoding", enc)
+						fp += "." + enc
 					}
 				}
 			}
@@ -255,13 +269,14 @@ func ServeFS(r *fiber.App, filesystem fs.FS) {
 				return err
 			}
 
-			c.Set("Cache-Control", "public, max-age=28800")
 			return c.SendStream(f)
 		})
 	}
 }
 
 func render(c fiber.Ctx, t templ.Component) error {
+	c.Set("Cache-Control", "private, no-cache")
+	c.Vary("Cookie")
 	c.Response().Header.SetContentType("text/html")
 	return t.Render(c.RequestCtx(), c.Response().BodyWriter())
 }
@@ -290,13 +305,9 @@ func main() {
 
 	app.Use(compress.New(compress.Config{
 		Next: func(c fiber.Ctx) bool {
-			p := c.RequestCtx().Path()
-			// DO NOT COMPRESS
-			const x = "/_/api"
-			const y = "/_/proxy"
-			const z = "/_/static"
-			return len(p) > len(z) && (string(p[:len(x)]) == x || string(p[:len(y)]) == y || string(p[:len(z)]) == z)
-			//return strings.HasPrefix(c.Path(), "/_/static")
+			// Media streams must not be buffered/compressed. The middleware
+			// already skips assets with a precompressed Content-Encoding.
+			return strings.HasPrefix(c.Path(), "/_/api") || strings.HasPrefix(c.Path(), "/_/proxy")
 		},
 		Level: compress.LevelBestSpeed,
 	}))
