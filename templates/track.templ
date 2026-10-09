@@ -189,7 +189,9 @@ templ TrackItem(track *sc.Track, showUsername bool, overrideHref string) {
 		}}
 		<a class="listing" href={ templ.SafeURL(overrideHref) }>
 			<img
-				width="100" height="100" decoding="async"
+				width="100"
+				height="100"
+				decoding="async"
 				loading="lazy"
 				fetchpriority="low"
 				if track.Artwork != "" {

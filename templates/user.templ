@@ -19,7 +19,9 @@ templ UserHeader(u sc.User) {
 templ UserItem(user *sc.User) {
 	<a class="listing" href={ templ.SafeURL("/" + user.Permalink) }>
 		<img
-			width="100" height="100" decoding="async"
+			width="100"
+			height="100"
+			decoding="async"
 			loading="lazy"
 			fetchpriority="low"
 			if user.Avatar != "" {
