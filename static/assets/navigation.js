@@ -30,26 +30,30 @@
 
   window.soundcloakPageSignal = page.signal;
 
+  let nextScrollKey = 0;
+  const scrollPositions = new Map();
+  const positionKey = (state, href) => `${state.scrollKey}:${href}`;
+  let restoringHistory = false;
+
   history.replaceState(
-    { ...history.state, soundcloak: true, scroll: [scrollX, scrollY] },
+    {
+      ...history.state,
+      soundcloak: true,
+      scrollKey: nextScrollKey++,
+      scroll: [scrollX, scrollY],
+    },
     "",
   );
   history.scrollRestoration = "manual";
-
-  let /** @type {number | null} */ scrollFrame;
+  let currentPositionKey = positionKey(history.state, location.href);
+  scrollPositions.set(currentPositionKey, [scrollX, scrollY]);
 
   window.addEventListener(
     "scroll",
     () => {
-      if (scrollFrame || committing) return;
-      scrollFrame = requestAnimationFrame(() => {
-        scrollFrame = null;
-        if (!committing)
-          history.replaceState(
-            { ...history.state, scroll: [scrollX, scrollY] },
-            "",
-          );
-      });
+      if (!committing && !restoringHistory) {
+        scrollPositions.set(currentPositionKey, [scrollX, scrollY]);
+      }
     },
     { passive: true },
   );
@@ -273,12 +277,18 @@
       committing = true;
       renderedURL = new URL(result.url);
       if (!restoring) {
+        scrollPositions.set(currentPositionKey, [scrollX, scrollY]);
         history.replaceState(
           { ...history.state, scroll: [scrollX, scrollY] },
           "",
         );
-        history.pushState({ soundcloak: true, scroll: [0, 0] }, "", result.url);
+        history.pushState(
+          { soundcloak: true, scrollKey: nextScrollKey++, scroll: [0, 0] },
+          "",
+          result.url,
+        );
       }
+      currentPositionKey = positionKey(history.state, location.href);
       page.abort();
       page = new AbortController();
 
@@ -318,6 +328,7 @@
       }
 
       scrollTo(...(restoring?.scroll || [0, 0]));
+      scrollPositions.set(currentPositionKey, [scrollX, scrollY]);
 
       performance.measure("soundcloak:navigation", {
         start,
@@ -335,6 +346,7 @@
     } finally {
       if (id === sequence) {
         committing = false;
+        restoringHistory = false;
         document.documentElement.removeAttribute("aria-busy");
       }
     }
@@ -373,6 +385,12 @@
       location.reload();
       return;
     }
+    const destinationKey = positionKey(event.state, location.href);
+    const restoring = {
+      ...event.state,
+      scroll: scrollPositions.get(destinationKey) || event.state.scroll,
+    };
+    restoringHistory = true;
     if (
       !committing &&
       location.pathname === renderedURL.pathname &&
@@ -389,10 +407,13 @@
         // malformed fragment
       }
       if (target) target.scrollIntoView();
-      else scrollTo(...(event.state.scroll || [0, 0]));
+      else scrollTo(...(restoring.scroll || [0, 0]));
+      currentPositionKey = destinationKey;
+      scrollPositions.set(currentPositionKey, [scrollX, scrollY]);
+      restoringHistory = false;
       return;
     }
-    navigate(new URL(location.href), event.state);
+    navigate(new URL(location.href), restoring);
   });
 
   // preferences use a full document navigation, discard pre-preference html if
